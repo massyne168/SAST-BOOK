@@ -1,0 +1,13 @@
+.tactical-cursor{position:fixed;top:0;left:0;width:0;height:0;z-index:10000;pointer-events:none;opacity:0;color:#44b8ff;--trail-x:0px;--trail-y:0px}
+.tactical-cursor.visible:not(.over-dialog){opacity:1}
+.cursor-cross{position:absolute;left:-11px;top:-11px;width:22px;height:22px;filter:drop-shadow(0 1px 2px #000);background:linear-gradient(currentColor,currentColor) center top/1px 7px no-repeat,linear-gradient(currentColor,currentColor) center bottom/1px 7px no-repeat,linear-gradient(currentColor,currentColor) left center/7px 1px no-repeat,linear-gradient(currentColor,currentColor) right center/7px 1px no-repeat;transition:transform .16s ease}
+.cursor-dot{position:absolute;left:-1px;top:-1px;width:2px;height:2px;background:#eefaff;box-shadow:0 0 3px #000}
+.cursor-ring{position:absolute;left:-19px;top:-19px;width:38px;height:38px;border:1px solid #44b8ff66;border-top-color:#b8e8ff;border-bottom-color:#b8e8ff;border-radius:50%;transform:translate(var(--trail-x),var(--trail-y));transition:width .18s,height .18s,margin .18s,border-color .18s;box-shadow:0 0 8px #2387db18}
+.moving .cursor-ring{animation:crosshair-turn .8s linear infinite}
+.interactive .cursor-ring{width:46px;height:46px;margin:-4px;border-color:#72cdffb3}
+.pressed .cursor-cross{transform:scale(.7) rotate(90deg)}
+.pressed .cursor-ring{width:26px;height:26px;margin:6px;border-color:#eefaff}
+@keyframes crosshair-turn{from{transform:translate(var(--trail-x),var(--trail-y)) rotate(0)}to{transform:translate(var(--trail-x),var(--trail-y)) rotate(360deg)}}
+@media(hover:hover) and (pointer:fine){html.crosshair-active,html.crosshair-active *{cursor:none!important}}
+@media(prefers-reduced-motion:reduce){.tactical-cursor *{animation:none!important;transition:none!important}}
+@media(hover:none),(pointer:coarse){.tactical-cursor{display:none}}
