@@ -118,3 +118,42 @@ h1,.brand{font-family:'Black Ops One','Rajdhani',sans-serif;font-weight:400}.bra
 .access-icon{font:26px var(--mono);color:#5dc6ff;line-height:1}.access-copy{display:flex;flex:1;flex-direction:column;text-align:left;gap:5px}.access-copy small{font:1.55cqw var(--mono);letter-spacing:.1cqw;color:#83b8d9}.access-copy strong{font:700 3.3cqw var(--display);letter-spacing:.22cqw}.access-arrow{font-size:22px;color:#8cd6ff;transition:transform .2s}#open-archive:hover .access-arrow{transform:translate(2px,-2px)}
 @media(max-width:700px){.brand{font-size:17px;gap:9px}.brand .site-logo{width:37px;height:37px}h1{font-size:25px!important}.access-copy small{font-size:1.85cqw}.access-copy strong{font-size:3.7cqw}#open-archive{min-height:53px;gap:8px}.access-icon{font-size:20px}}
 @media(prefers-reduced-motion:reduce){#open-archive,.access-arrow{transition:none}}
+
+/* Restrained archive typography and blue accents; existing geometry is preserved. */
+:root{
+ --body:'Bahnschrift','Inter',Arial,sans-serif;
+ --display:'Bahnschrift SemiCondensed','Bahnschrift','Barlow Condensed','Arial Narrow',sans-serif;
+}
+body,button,.page{font-family:var(--body)}
+.archive-label,.header-note,.edition,.eyebrow,.access,.page-indicator,
+.gesture-hint,footer,.board-label,.reading-access button,
+.reader-controls .text-button,#open-archive,.access-copy small{
+ font-family:var(--body);
+}
+h1,.brand,.dialog-head h2{
+ font-family:var(--display);
+ font-stretch:semi-condensed;
+ font-weight:600;
+ letter-spacing:.055em;
+}
+.brand{letter-spacing:.1em}
+.access-copy strong{font-family:var(--body);letter-spacing:.08em}
+.masthead{position:relative}
+.masthead::after{
+ content:'';
+ position:absolute;
+ left:0;
+ bottom:-1px;
+ width:52px;
+ height:1px;
+ background:#58bfff99;
+ pointer-events:none;
+}
+.brand .site-logo{filter:drop-shadow(0 0 4px #58bfff26)}
+#open-archive:hover{
+ box-shadow:inset 3px 0 #9fe2ff,inset 0 0 12px #339de526,0 0 14px #339de52e;
+}
+.reader-controls button:focus-visible,.reading-access button:focus-visible{
+ outline:2px solid #58bfff;
+ outline-offset:5px;
+}
