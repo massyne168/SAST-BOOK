@@ -18,6 +18,8 @@ function hide() {
 function draw(now) {
   frame = 0;
   if (!visible) return;
+  cursor.style.setProperty('--pointer-x', `${x}px`);
+  cursor.style.setProperty('--pointer-y', `${y}px`);
   const moving = now - lastMove < 110;
   const ease = reducedMotion.matches ? 1 : .23;
   trailX += (x - trailX) * ease;
@@ -33,7 +35,7 @@ document.addEventListener('pointermove', event => {
   if (!visible) { trailX = x; trailY = y; }
   visible = true;
   lastMove = performance.now();
-  cursor.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+
   cursor.classList.add('visible');
   // Keep the native pointer inside top-layer dialogs, above the body cursor.
   const inDialog = Boolean(event.target.closest('dialog[open]'));
@@ -53,3 +55,4 @@ window.addEventListener('blur', hide);
 document.addEventListener('visibilitychange', () => { if (document.hidden) hide(); });
 document.addEventListener('keydown', event => { if (event.key === 'Tab') hide(); });
 finePointer.addEventListener('change', hide);
+reducedMotion.addEventListener('change', hide);

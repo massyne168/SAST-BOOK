@@ -157,3 +157,44 @@ h1,.brand,.dialog-head h2{
  outline:2px solid #58bfff;
  outline-offset:5px;
 }
+/* Reader enhancements retain the existing book geometry and artwork. */
+[hidden]{display:none!important}
+.reader-controls{flex-wrap:wrap;height:auto;min-height:42px;padding:0 16px;gap:12px}
+.reader-controls .text-button{min-height:44px}
+.reader-progress{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px auto;color:#aedcff;font:11px var(--body);letter-spacing:.08em}
+#spread-progress{appearance:none;width:min(180px,35vw);height:3px;border:0;background:#18354a;color:#54bfff;box-shadow:0 0 8px #38aaff55}
+#spread-progress::-webkit-progress-bar{background:#18354a}
+#spread-progress::-webkit-progress-value{background:#54bfff;box-shadow:0 0 8px #38aaff88}
+#spread-progress::-moz-progress-bar{background:#54bfff}
+.archive-closed .reader-progress{display:none}
+#reader-status{text-align:center;color:#aedcff;font-size:12px}
+#reader-status:empty{display:none}
+.section-tabs{position:absolute;left:calc(100% + 8px);top:8%;display:flex;flex-direction:column;gap:8px;z-index:6}
+.section-tabs button{font:9px var(--body);letter-spacing:.06em;background:#0d2b40;border:1px solid #3786b3;border-left:3px solid #64c9ff;color:#bce6ff;padding:10px 6px;min-height:36px;writing-mode:vertical-rl}
+.section-tabs button:hover,.section-tabs button[aria-current="location"]{background:#174a6b}
+#access-stamp{position:absolute;top:43%;left:50%;z-index:8;pointer-events:none;white-space:nowrap;border:3px double #64c9ff;padding:12px 18px;color:#97dcff;background:#071e36bd;font:bold clamp(14px,2.5vw,28px) var(--body);letter-spacing:.12em;transform:translateX(-50%) rotate(-8deg);animation:authorize 1.1s both}
+@keyframes authorize{0%{opacity:0;transform:translateX(-50%) rotate(-8deg) scale(1.3)}20%,75%{opacity:1;transform:translateX(-50%) rotate(-8deg) scale(1)}100%{opacity:0}}
+@media(hover:hover) and (pointer:fine){.archive-cover.webp-cover:after{content:'';display:block;position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;filter:none;background:linear-gradient(transparent 40%,#50bbff22 49%,#82d6ff66 50%,transparent 53%) 0 0/100% 220%;transition:opacity .2s}.archive-cover.webp-cover:hover:after{opacity:1;animation:cover-scan 2.8s ease-in-out both}}
+@keyframes cover-scan{from{background-position:0 100%}to{background-position:0 -100%}}
+#zoom-dialog{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;padding:0;border:0;overflow:hidden}
+.zoom-toolbar{height:68px;display:flex;align-items:center;justify-content:center;gap:14px;padding:10px;background:#0c2436;border-bottom:1px solid #31749f}
+.zoom-toolbar h2{font:14px var(--body);letter-spacing:.1em;margin:0 auto 0 12px}
+.zoom-toolbar button{min-width:44px;min-height:44px;background:#10344d;border:1px solid #3786b3;color:#d8f0ff;font:12px var(--body)}
+#zoom-level{font-size:12px;min-width:40px;text-align:center}
+#zoom-viewport{height:calc(100% - 68px);display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;user-select:none;cursor:grab}
+#zoom-image{width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;transform-origin:center;pointer-events:none;flex-shrink:0}
+@media(max-width:700px){.reading-room{padding-right:49px}.reader-controls{gap:8px}.zoom-toolbar{gap:5px;padding:8px}.zoom-toolbar h2{font-size:11px;margin-left:0}.zoom-toolbar button{font-size:10px}}
+@media(max-width:420px){.section-tabs{display:none}.reading-room{padding-right:23px}}
+@media(prefers-reduced-motion:reduce){.archive-cover.webp-cover:hover:after{animation:none;display:none}#access-stamp{animation:none}}
+
+/* Touch-only turn budget: preserve the resting book and all desktop styling. */
+.book.turning-touch .leaf-strip{will-change:transform}
+.book.turning-touch .leaf-face:after,.book.turning-touch .page:before{display:none}
+.book.turning-touch .page-slot{box-shadow:none}
+.book.turning-touch .leaf-face,.book.turning-touch .leaf-content,.book.turning-touch .page{filter:none;box-shadow:none;animation:none}
+.book.turning-touch{-webkit-user-select:none;-webkit-touch-callout:none}
+@media(pointer:coarse){
+ .book,.book img{-webkit-user-select:none;-webkit-touch-callout:none}
+ .book img{-webkit-user-drag:none}
+ dialog::backdrop{backdrop-filter:none}
+}
