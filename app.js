@@ -11,7 +11,7 @@ const status = message => { $('#reader-status').textContent = message; };
 const busy = () => preparing || coverOpening || turning;
 const blocked = () => preparing || coverOpening || main.classList.contains('archive-closed') || !!document.querySelector('dialog[open]');
 function controls(spread) {
-  document.querySelectorAll('.reader-controls button,.section-tabs button,#read-spread').forEach(button => { button.disabled = busy(); });
+  document.querySelectorAll('.reader-controls button,#read-spread').forEach(button => { button.disabled = busy(); });
   $('#previous').disabled = busy() || spread === 0;
   $('#next').disabled = busy() || spread === 14;
   book.setAttribute('aria-busy', String(busy()));
@@ -22,9 +22,6 @@ function changed(spread) {
   $('#spread-progress').value = spread + 1;
   $('#progress-text').textContent = `SPREAD ${String(spread + 1).padStart(2, '0')} / 15`;
   book.setAttribute('aria-label', `Pages ${spread * 2 + 1} and ${spread * 2 + 2} of 30. Drag across the spine or use arrow keys. Double-click a page to zoom.`);
-  document.querySelectorAll('.section-tabs button').forEach(button => {
-    button.setAttribute('aria-current', Number(button.dataset.spread) === spread ? 'location' : 'false');
-  });
   saveSpread(storage, spread); controls(spread);
   if (matchMedia('(any-pointer: coarse)').matches) void prepareNearby(spread);
 }
@@ -56,16 +53,6 @@ $('#download-page').onclick = () => {
   link.download = link.href.split('/').pop();
   document.body.append(link); link.click(); link.remove();
 };
-document.querySelectorAll('.section-tabs button').forEach(button => {
-  button.setAttribute('aria-label', `${button.textContent}, spread ${Number(button.dataset.spread) + 1}`);
-  button.onclick = async () => {
-    if (busy() || engine.pending) return;
-    preparing = true; controls(engine.spread); status('Preparing section…');
-    try { const target = Number(button.dataset.spread); await prepareSpread(target); engine.goTo(target); status(''); }
-    catch { status('Unable to load this section. Please try again.'); }
-    finally { preparing = false; controls(engine.spread); book.focus({preventScroll:true}); }
-  };
-});
 const readDialog = $('#read-dialog');
 $('#read-spread').onclick = () => {
   if (busy()) return;

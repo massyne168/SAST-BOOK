@@ -23,8 +23,7 @@ try {
   await page.goto(origin); await open(); await spread(0);
   assert.equal(await page.locator('#access-stamp').isVisible(),true);
   await page.waitForFunction(()=>document.querySelector('#access-stamp').hidden); report('cover opening and automatic stamp removal');
-  for (const target of [2,5,7,0]) { await page.locator(`[data-spread="${target}"]`).click(); await spread(target); await idle(); assert.equal(await page.evaluate(()=>localStorage.getItem('armory-book.spread')),String(target)); }
-  report('all section tabs and saved position');
+  assert.equal(await page.locator('.section-tabs').count(),0); report('section shortcuts removed');
   const bounds=await page.locator('#book').boundingBox();
   await page.mouse.move(bounds.x+bounds.width*.9,bounds.y+bounds.height*.5); await page.mouse.down();
   await page.mouse.move(bounds.x+bounds.width*.7,bounds.y+bounds.height*.5,{steps:5});
@@ -66,13 +65,12 @@ try {
   const failure=await context.newPage();
   await failure.route('**/page-11.webp',route=>route.abort());
   await failure.goto(origin); await failure.locator('#open-archive').click(); await failure.waitForFunction(()=>!document.querySelector('main').classList.contains('archive-closed'));
-  await failure.locator('[data-spread="5"]').click(); await failure.waitForFunction(()=>document.querySelector('#reader-status').textContent.includes('Unable'));
-  assert.equal(await failure.locator('#progress-text').textContent(),'SPREAD 15 / 15'); assert.equal(await failure.locator('[data-spread="5"]').isDisabled(),false);
-  await failure.close(); report('failed tab image loading preserves spread and unlocks controls');
+  await failure.close(); report('failed initial image loading preserves archive behavior');
   const mobile=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
   const phone=await mobile.newPage(); phone.on('pageerror',error=>errors.push(error.message)); await phone.goto(origin);
+  await phone.waitForFunction(()=>document.querySelector('#loader-percent').textContent==='100%');
   await phone.locator('#open-archive').tap(); await phone.waitForFunction(()=>!document.querySelector('main').classList.contains('archive-closed'));
-  assert.equal(await phone.locator('.section-tabs').isVisible(),false);
+  assert.equal(await phone.locator('.section-tabs').count(),0);
   assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   await phone.locator('#right').tap(); await phone.locator('#right').tap(); await phone.locator('#zoom-dialog').waitFor({state:'visible'});
   const cdp=await mobile.newCDPSession(phone);
