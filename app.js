@@ -6,7 +6,6 @@ const $ = selector => document.querySelector(selector);
 const discord = $('.discord-link');
 const discordUrl = discord?.dataset.discordUrl || 'https://discord.gg/YOUR-SERVER';
 if (discord) discord.href = discordUrl;
-document.querySelectorAll('[data-discord-join]').forEach(link => { link.href = discordUrl; });
 const book = $('#book'), main = $('main'), cover = $('#archive-cover');
 let selected = null, preparing = false, coverOpening = false, turning = false, lastTap = null, stampTimer;
 let storage;
