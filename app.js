@@ -3,6 +3,8 @@ import {pages, pageFiles, prepareSpread, prepareNearby} from './page-content.js'
 import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
 const $ = selector => document.querySelector(selector);
+const discord = $('.discord-link');
+if (discord?.dataset.discordUrl) discord.href = discord.dataset.discordUrl;
 const book = $('#book'), main = $('main'), cover = $('#archive-cover');
 let selected = null, preparing = false, coverOpening = false, turning = false, lastTap = null, stampTimer;
 let storage;
