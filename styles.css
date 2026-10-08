@@ -625,3 +625,70 @@ dialog::backdrop{background:#020812b8}
   .discord-icon-wrap::before,.loader-logo{animation:none}
   .rank-category-list button,.reader-controls button,.discord-link{transition:none}
 }
+
+/* Reusable, click-through neon frame. The moving highlight is a single pseudo layer. */
+.neon-border{--neon-edge:#79a9bf;--neon-glow:#79a9bf24;position:relative;isolation:isolate;border-color:color-mix(in srgb,var(--neon-edge) 54%,transparent)!important;box-shadow:0 0 0 1px color-mix(in srgb,var(--neon-edge) 18%,transparent),0 0 14px var(--neon-glow),inset 0 0 12px color-mix(in srgb,var(--neon-edge) 5%,transparent)}
+.neon-border::before{content:"";position:absolute;inset:-1px;z-index:-1;pointer-events:none;border:1px solid color-mix(in srgb,var(--neon-edge) 72%,transparent);border-radius:inherit;opacity:.65;box-shadow:0 0 7px var(--neon-glow)}
+.neon-border::after{content:"";position:absolute;inset:-2px;z-index:-1;pointer-events:none;border-radius:inherit;opacity:0;background:linear-gradient(105deg,transparent 0 41%,color-mix(in srgb,var(--neon-edge) 0%,transparent) 45%,color-mix(in srgb,var(--neon-edge) 70%,transparent) 50%,color-mix(in srgb,var(--neon-edge) 0%,transparent) 55%,transparent 60%);transform:translate3d(-45%,0,0);will-change:transform,opacity}
+.neon-border--active{--neon-glow:#79a9bf32;--neon-edge:#9bd7eb}
+.neon-border--active::before{opacity:.85}
+.neon-border--soft{--neon-glow:#79a9bf18;--neon-edge:#7297a9}
+.neon-border--soft::before{opacity:.48}
+.neon-border--red-accent{--neon-red:#b56b76}
+.neon-border--red-accent::before{background:linear-gradient(135deg,transparent 0 88%,var(--neon-red) 88% 89%,transparent 89%);box-shadow:inset -1px -1px 0 color-mix(in srgb,var(--neon-red) 56%,transparent),0 0 7px var(--neon-glow)}
+.rank-book-shell>.rank-book.neon-border{border-radius:3px}
+.book.neon-border::before,.book.neon-border::after{inset:-19px -20px -31px;border-radius:6px;z-index:8}
+.book.neon-border::before{--neon-edge:#78aabd;opacity:.46}
+.book.neon-border::after{background:linear-gradient(105deg,transparent 0 43%,#9bd7eb00 47%,#9bd7eb88 50%,#9bd7eb00 53%,transparent 58%)}
+.book.neon-border--active::before{opacity:.7}
+.book.neon-border--red-accent::before{background:linear-gradient(135deg,transparent 0 91%,var(--neon-red) 91% 92%,transparent 92%);box-shadow:inset -1px -1px 0 #b56b7666,0 0 6px var(--neon-glow)}
+.rank-book-shell>.rank-book.neon-border::before,.rank-book-shell>.rank-book.neon-border::after{inset:-13px -14px -25px;border-radius:5px;z-index:8}
+.rank-book-shell>.rank-book.neon-border::after{inset:-15px -16px -27px;background:linear-gradient(105deg,transparent 0 43%,#9bd7eb00 47%,#9bd7eb99 50%,#9bd7eb00 53%,transparent 58%);opacity:0}
+.rank-book-shell>.rank-book.neon-border{--neon-glow:#79a9bf20;--neon-edge:#8cb9c9}
+.rank-book-shell>.rank-book.neon-border--active::before{opacity:.62}
+.rank-book-shell>.rank-book.neon-border--red-accent::before{background:linear-gradient(135deg,transparent 0 91%,var(--neon-red) 91% 92%,transparent 92%);box-shadow:inset -1px -1px 0 #b56b7666,0 0 6px var(--neon-glow)}
+.rank-category-list.neon-border{--neon-edge:#7099ad;--neon-glow:#79a9bf18}
+.rank-category-list.neon-border--active{--neon-edge:#8bc4d2;--neon-glow:#79a9bf2b}
+.discord-icon-wrap.neon-border{--neon-edge:#82b5c7;--neon-glow:#79a9bf1e;border-radius:50%}
+.discord-icon-wrap.neon-border::after{inset:-2px;border-radius:inherit}
+.loader-track.neon-border{--neon-edge:#80afc0;--neon-glow:#79a9bf20}
+.loader-track.neon-border::before{inset:0;border-radius:2px}
+.loader-track.neon-border::after{inset:0;border-radius:2px}
+#open-archive.neon-border--active,#open-rank-directory.neon-border--active,.rank-controls button.neon-border--active{--neon-edge:#9bd7eb;--neon-glow:#79a9bf2c}
+#open-archive.neon-border--red-accent::before,#open-rank-directory.neon-border--red-accent::before{background:linear-gradient(135deg,transparent 0 92%,var(--neon-red) 92% 93%,transparent 93%)}
+@keyframes neon-border-sweep{0%{transform:translate3d(-55%,0,0);opacity:0}12%{opacity:.75}55%{opacity:.58}100%{transform:translate3d(55%,0,0);opacity:0}}
+@keyframes neon-border-pulse{0%,100%{box-shadow:0 0 0 1px color-mix(in srgb,var(--neon-edge) 16%,transparent),0 0 11px var(--neon-glow),inset 0 0 10px color-mix(in srgb,var(--neon-edge) 4%,transparent)}50%{box-shadow:0 0 0 1px color-mix(in srgb,var(--neon-edge) 28%,transparent),0 0 18px color-mix(in srgb,var(--neon-glow) 125%,transparent),inset 0 0 12px color-mix(in srgb,var(--neon-edge) 7%,transparent)}}
+@media(min-width:701px) and (hover:hover) and (pointer:fine){
+  .neon-border{animation:neon-border-pulse 4.2s ease-in-out infinite}
+  .neon-border::after{animation:neon-border-sweep 5s ease-in-out infinite}
+  .rank-book-shell>.rank-book.neon-border{animation:none}
+  .rank-book-shell>.rank-book.neon-border::after{animation:neon-border-sweep 5s ease-in-out infinite}
+  .rank-category-list.neon-border{animation:neon-border-pulse 4.6s ease-in-out infinite}
+  .discord-icon-wrap.neon-border{animation:neon-border-pulse 4.4s ease-in-out infinite}
+  .loader-track.neon-border{animation:neon-border-pulse 4.8s ease-in-out infinite}
+  .neon-border:hover,.neon-border:focus-visible,.neon-border[aria-current="page"]{animation-play-state:paused}
+  .neon-border:not(:hover):not(:focus-visible):not([aria-current="page"]):not(.neon-border--active){animation:none}
+  .neon-border:not(:hover):not(:focus-visible):not([aria-current="page"]):not(.neon-border--active)::after{animation:none}
+  .neon-border--active::after{animation:neon-border-sweep 5s ease-in-out infinite}
+  main.archive-closed #book.neon-border,main.archive-closed #book.neon-border::after{animation:none}
+  main:not(.archive-closed) #archive-cover.neon-border,main:not(.archive-closed) #archive-cover.neon-border::after{animation:none}
+  #rank-directory[hidden] #rank-book.neon-border,#rank-directory[hidden] #rank-book.neon-border::after{animation:none}
+  #rank-directory:not([hidden]) #rank-book.neon-border{animation:none}
+  #rank-directory:not([hidden]) #rank-book.neon-border::after{animation:neon-border-sweep 5s ease-in-out infinite}
+  #rank-directory:not([hidden]) .rank-category-list.neon-border{animation:neon-border-pulse 4.6s ease-in-out infinite}
+  #rank-directory[hidden] .rank-category-list.neon-border,#rank-directory[hidden] .rank-category-list.neon-border::after{animation:none}
+  #rank-directory:not([hidden]) .rank-cover-stage-teaser .rank-cover.neon-border,#rank-directory:not([hidden]) .rank-cover-stage-teaser .rank-cover.neon-border::after{animation:none}
+  #rank-directory:not([hidden]) .rank-category-list button[aria-current="page"]{--neon-edge:#9bd7eb;--neon-glow:#79a9bf30;animation:neon-border-pulse 4.2s ease-in-out infinite}
+  body:not(.site-ready) .loader-track.neon-border{animation:none}
+}
+@media(max-width:700px),(pointer:coarse){
+  .neon-border,.neon-border--active{--neon-glow:#79a9bf12;animation:none!important;box-shadow:0 0 0 1px color-mix(in srgb,var(--neon-edge) 22%,transparent),0 0 7px var(--neon-glow),inset 0 0 7px color-mix(in srgb,var(--neon-edge) 4%,transparent)}
+  .neon-border::before{opacity:.55}
+  .neon-border::after{display:none;animation:none!important;will-change:auto}
+  .rank-book-shell>.rank-book.neon-border::before{opacity:.48}
+  .rank-category-list button[aria-current="page"]{--neon-edge:#8bc4d2;--neon-glow:#79a9bf16;animation:none!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .neon-border,.neon-border::before,.neon-border::after{animation:none!important;transition:none!important;will-change:auto}
+  .neon-border--active{box-shadow:0 0 0 1px #9bd7eb38,0 0 10px #79a9bf1c,inset 0 0 8px #79a9bf09}
+}
