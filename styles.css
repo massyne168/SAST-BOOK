@@ -603,6 +603,14 @@ main.directory-open #rank-directory .rank-controls{margin:12px auto 0;gap:9px}
 .rank-book .page-slot.right{background:linear-gradient(115deg,#293f4b,#314a56);box-shadow:none}
 .rank-book .page-slot.right:after{display:none}
 .rank-book .page-slot.right .rank-blank{display:none}
+.book>.board{z-index:0}
+.book>.paper-stack{z-index:1}
+.book>.page-slot{z-index:2}
+.page.image-page{position:relative;padding:0;overflow:hidden}
+.page.image-page img{display:block;width:100%;height:100%;object-fit:fill;position:relative;z-index:1}
+.page.image-page .page-fallback{display:none;position:absolute;inset:0;z-index:2;place-items:center;padding:16px;text-align:center;background:linear-gradient(145deg,#e8edf0,#dce5e9);color:#314957;font:700 clamp(10px,1.15cqw,16px) var(--mono);letter-spacing:.12em}
+.page.image-page.page-unavailable .page-fallback{display:grid}
+.page.image-page .page-fallback[hidden]{display:none}
 @media(max-width:999px){
   main.directory-open #rank-directory:not([hidden]){min-height:calc(100svh - 74px);padding:12px 12px 18px}
   main.directory-open #rank-directory .rank-directory-heading{margin-bottom:10px}
@@ -710,3 +718,48 @@ footer{border-color:#456b8266}
   .masthead{border-color:#456b8266}
   .reader-controls button{color:#dceaf0}
 }
+
+/* Armory cover clarity pass */
+:root{
+  --cover-bg:#0a1c2a;
+  --cover-panel:#112b3d;
+  --cover-blue:#79b6cf;
+  --cover-ice:#d8e9ee;
+  --cover-muted:#9eb9c4;
+  --cover-accent:#ad6873;
+  --cover-button:#c6d9dc;
+  --cover-button-text:#102535;
+}
+.archive-cover.webp-cover .cover-inner>*:not(#open-archive){visibility:hidden}
+.archive-cover.webp-cover .cover-inner{position:relative;z-index:1}
+.archive-cover.webp-cover{
+  border-color:#456b82;
+  background-color:#0a1c2a;
+  box-shadow:3px 4px 0 #456b82,6px 8px 0 #173145,9px 11px 0 #071522,18px 28px 52px #02081299,inset 0 0 24px #79b6cf12;
+}
+.archive-cover.webp-cover:before{border-color:#79b6cf55}
+.archive-cover.webp-cover:after{content:"";display:block;position:absolute;inset:0;z-index:0;pointer-events:none;opacity:1;animation:none;filter:brightness(1.08) saturate(.84);background:linear-gradient(180deg,rgba(10,28,42,.08) 0%,rgba(10,28,42,.02) 36%,rgba(10,28,42,.08) 66%,rgba(10,28,42,.28) 100%),linear-gradient(115deg,rgba(121,182,207,.06),rgba(121,182,207,0) 58%),url('assets/cover.webp') center center/100% 100% no-repeat}
+.archive-cover.webp-cover .cover-binding{background:#0a1c2ae8;border-color:#456b82;color:#9eb9c4}
+.archive-cover.webp-cover .cover-topline,
+.archive-cover.webp-cover .cover-bottom{color:#b8cbd2;text-shadow:0 1px 3px #06152299}
+.archive-cover.webp-cover .cover-topline,
+.archive-cover.webp-cover .cover-label{border-color:#9eb9c466}
+.archive-cover.webp-cover .file-tag{background:#0a1c2ab8;border-color:#9eb9c488;color:#d8e9ee;text-shadow:0 1px 3px #06152299}
+.archive-cover.webp-cover .cover-kicker{color:#c2d5dc;text-shadow:0 1px 3px #061522aa}
+.archive-cover.webp-cover h2{color:#d8e9ee;text-shadow:0 1px 5px #061522aa}
+.archive-cover.webp-cover h2 span{color:#b9d0d8;text-shadow:0 1px 3px #061522aa}
+.archive-cover.webp-cover .cover-stamp{color:#d4e3e8;text-shadow:0 1px 3px #061522aa}
+.archive-cover.webp-cover .cover-stamp span{color:#b2c9d1}
+.archive-cover.webp-cover .cover-stamp .crosshair{color:#79b6cf}
+.archive-cover.webp-cover .cover-label,
+.archive-cover.webp-cover .cover-label strong{color:#d8e9ee}
+.archive-cover.webp-cover .cover-label>span,
+.archive-cover.webp-cover .cover-label div{color:#b8cbd2}
+.archive-cover.webp-cover #open-archive{background:linear-gradient(110deg,#c6d9dc,#b9cfd4);color:#102535;border:1px solid #d8e9ee;margin:6% 0 4%;box-shadow:inset 3px 0 #79b6cf,0 3px 9px #02081244;transition:background .18s ease,border-color .18s ease}
+.archive-cover.webp-cover #open-archive:hover{background:linear-gradient(110deg,#d5e4e7,#c6d9dc);border-color:#eef6f7}
+.archive-cover.webp-cover .access-icon{color:#315d73}
+.archive-cover.webp-cover .access-copy small{color:#365c70}
+.archive-cover.webp-cover .access-copy strong{color:#102535;text-shadow:none}
+.archive-cover.webp-cover .access-arrow{color:#315d73}
+.archive-cover.webp-cover .cover-corner{border-color:#79b6cf99}
+.archive-cover.webp-cover .cover-corner.corner-br{border-color:#ad687366}

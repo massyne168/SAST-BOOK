@@ -1,5 +1,5 @@
 export const pageFiles = Array.from({length: 30}, (_, i) => `page-designs/page-${String(i + 1).padStart(2, '0')}.webp`);
-export const pages = pageFiles.map((src, i) => `<article class="page image-page" data-page-index="${i}"><img src="${src}" width="1191" height="1685" alt="ELYSIUM record — page ${i + 1}" loading="lazy" decoding="async" draggable="false"></article>`);
+export const pages = pageFiles.map((src, i) => `<article class="page image-page" data-page-index="${i}"><img src="${src}" width="1191" height="1685" alt="ELYSIUM record — page ${i + 1}" loading="lazy" decoding="async" draggable="false"><span class="page-fallback" aria-live="polite" hidden>PAGE DATA UNAVAILABLE</span></article>`);
 const ready = new Map();
 export function preparePage(index) {
   if (!ready.has(index)) {

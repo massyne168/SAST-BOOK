@@ -8,6 +8,16 @@ const discordUrl = discord?.dataset.discordUrl || 'https://discord.gg/YOUR-SERVE
 if (discord) discord.href = discordUrl;
 const book = $('#book'), main = $('main'), cover = $('#archive-cover');
 let selected = null, preparing = false, coverOpening = false, turning = false, lastTap = null, stampTimer;
+book.addEventListener('error', event => {
+  const image = event.target;
+  if (!(image instanceof HTMLImageElement) || !image.matches('.image-page img')) return;
+  const page = image.closest('.image-page');
+  const fallback = page?.querySelector('.page-fallback');
+  if (!page || !fallback) return;
+  image.hidden = true;
+  fallback.hidden = false;
+  page.classList.add('page-unavailable');
+}, true);
 let storage;
 try { storage = window.localStorage; } catch { /* Storage is optional. */ }
 const status = message => { $('#reader-status').textContent = message; };
@@ -68,13 +78,19 @@ readDialog.addEventListener('click', e => { if (e.target === readDialog) readDia
 $('#open-archive').onclick = async () => {
   if (coverOpening) return;
   coverOpening = true; $('#open-archive').disabled = true;
+  let pageDataUnavailable = false;
   try {
     await prepareSpread(engine.spread);
     void prepareNearby(engine.spread, 1);
+  } catch {
+    // Open the reader even when a page file is missing so its visible fallback can be shown.
+    pageDataUnavailable = true;
+  }
+  try {
     cover.classList.add('opening');
     await new Promise(resolve => setTimeout(resolve, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650));
     main.classList.remove('archive-closed');
-    status(''); book.focus({preventScroll:true});
+    status(pageDataUnavailable ? 'PAGE DATA UNAVAILABLE' : ''); book.focus({preventScroll:true});
     const stamp = $('#access-stamp'); stamp.hidden = false;
     clearTimeout(stampTimer);
     stampTimer = setTimeout(() => { stamp.hidden = true; }, 1100);

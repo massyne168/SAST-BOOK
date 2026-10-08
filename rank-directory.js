@@ -5,6 +5,7 @@ const $ = selector => document.querySelector(selector);
 const categoryCount = rankDirectoryData.length;
 let engine, rankBook, directory, initialized = false, switchingCategory = false;
 let closingDirectory = false;
+let archiveLeft, archiveRight, directoryLeft, directoryRight;
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const peoplePerPage = 8;
 const personnelPages = rankDirectoryData.map(() => 0);
@@ -66,6 +67,12 @@ const closeDirectory = () => {
   closingDirectory = true;
   directory.inert = true;
   directory.hidden = true;
+  if (archiveLeft && archiveRight && directoryLeft && directoryRight) {
+    directoryLeft.id = 'rank-left';
+    directoryRight.id = 'rank-right';
+    archiveLeft.id = 'left';
+    archiveRight.id = 'right';
+  }
   document.querySelector('main').classList.remove('directory-open');
   closingDirectory = false;
   $('#open-rank-directory').focus({preventScroll: true});
@@ -74,6 +81,14 @@ const closeDirectory = () => {
 function initialize() {
   directory = $('#rank-directory');
   rankBook = $('#rank-book');
+  archiveLeft = $('#book .page-slot.left');
+  archiveRight = $('#book .page-slot.right');
+  directoryLeft = rankBook.querySelector('.page-slot.left');
+  directoryRight = rankBook.querySelector('.page-slot.right');
+  archiveLeft.id = 'archive-left';
+  archiveRight.id = 'archive-right';
+  directoryLeft.id = 'left';
+  directoryRight.id = 'right';
   directory.hidden = false;
   engine = new FlipEngine(rankBook, {
     spreadCount: categoryCount,
@@ -119,6 +134,12 @@ function initialize() {
 
 export function openRankDirectory() {
   if (!initialized) initialize();
+  else {
+    archiveLeft.id = 'archive-left';
+    archiveRight.id = 'archive-right';
+    directoryLeft.id = 'left';
+    directoryRight.id = 'right';
+  }
   directory.inert = false;
   directory.hidden = false;
   updateCategory(engine.spread);
