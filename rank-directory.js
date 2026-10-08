@@ -1,9 +1,11 @@
-﻿import {FlipEngine} from './flip-engine.js';
+import {FlipEngine} from './flip-engine.js';
 import {rankDirectoryData} from './rank-directory-data.js';
+import {resetBookFocus} from './book-focus.js';
 
 const $ = selector => document.querySelector(selector);
 const categoryCount = rankDirectoryData.length;
 let engine, rankBook, directory, initialized = false, switchingCategory = false;
+let closingDirectory = false;
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const renderCategory = pageIndex => {
   const index = Math.floor(pageIndex / 2), category = rankDirectoryData[index];
@@ -42,8 +44,15 @@ const showCategory = index => {
   }));
   return true;
 };
-const closeDirectory = () => {
+const closeDirectory = async () => {
+  if (directory.hidden || closingDirectory) return;
+  closingDirectory = true;
+  directory.inert = true;
+  directory.classList.add('book-directory-closing');
+  await resetBookFocus('directory', 360);
   directory.hidden = true;
+  directory.classList.remove('book-directory-closing');
+  closingDirectory = false;
   $('#open-rank-directory').focus({preventScroll: true});
 };
 
@@ -63,8 +72,8 @@ function initialize() {
     }
   });
   $('#rank-close').addEventListener('click', closeDirectory);
-  $('#rank-return-first').addEventListener('click', () => {
-    closeDirectory();
+  $('#rank-return-first').addEventListener('click', async () => {
+    await closeDirectory();
     const target = document.querySelector('main').classList.contains('archive-closed') ? $('#open-archive') : $('#book');
     target.scrollIntoView({block: 'center', behavior: 'smooth'});
     target.focus({preventScroll: true});
@@ -79,6 +88,7 @@ function initialize() {
 
 export function openRankDirectory() {
   if (!initialized) initialize();
+  directory.inert = false;
   directory.hidden = false;
   updateCategory(engine.spread);
   rankBook.focus({preventScroll: true});

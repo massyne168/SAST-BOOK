@@ -1,3 +1,10 @@
 node_modules/
 test-results/
 dist/
+
+# Keep the Rank Directory's shipped cover while leaving other build output ignored.
+!dist/
+dist/*
+!dist/assets/
+dist/assets/*
+!dist/assets/rank-directory-cover.webp

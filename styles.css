@@ -25,7 +25,7 @@
 .book{aspect-ratio:2382 / 1685}.page.image-page{padding:0;background:#e4e2d7}.page.image-page:before{display:none}.image-page img{width:100%;height:100%;display:block;object-fit:fill;pointer-events:none;user-select:none}#read-content .page.image-page{padding:0;min-height:0;height:auto;margin-bottom:20px}#read-content .image-page img{height:auto;width:100%}
 @media(max-width:700px){.book{aspect-ratio:2382 / 1685}}
 
-/* Archive hardcover — independent of the 30 replaceable page images. */
+/* Archive hardcover â€” independent of the 30 replaceable page images. */
 body{background-color:#0b0e0c;background-image:radial-gradient(ellipse at 50% 45%,#34413066,transparent 68%),repeating-linear-gradient(90deg,#ffffff02 0 1px,transparent 1px 6px)}
 .cover-stage{display:none;justify-content:center;padding:28px 24px 55px;perspective:1600px}
 .archive-closed .cover-stage{display:flex}
@@ -360,3 +360,55 @@ body.book-drag-active{overflow:hidden;overscroll-behavior:none}
 .rank-blank{background:linear-gradient(145deg,#d6ddde,#cbd3d5);}
 .rank-blank:before{border-color:#64798325}
 @media(max-width:700px){.rank-personnel-list-page{gap:7%}.rank-list-heading{font-size:1.55cqw}.rank-list-heading h2{font-size:5.3cqw}.rank-person-row{font-size:2.2cqw;padding:2.8% 3%}.rank-person-head{font-size:1.6cqw}.rank-list-empty{font-size:2.2cqw}}
+/* Rank Directory printed cover uses its own optimized, precomposed WebP. */
+.rank-cover{
+  background-color:#07111e;
+  background-image:linear-gradient(180deg,rgba(5,12,21,.08),rgba(5,12,21,.08)),url("dist/assets/rank-directory-cover.webp");
+  background-size:cover;
+  background-position:center;
+  isolation:isolate;
+}
+.rank-cover:before{z-index:0;border-color:#c8d5dc4a}
+.rank-cover-binding{z-index:1}
+#open-rank-directory{
+  position:absolute;
+  z-index:2;
+  left:15%;
+  bottom:7%;
+  width:70%;
+  min-height:44px;
+  margin:0;
+  padding:3.2% 4%;
+  background:linear-gradient(105deg,rgba(24,48,65,.94),rgba(9,23,36,.94));
+  backdrop-filter:blur(2px);
+  font:600 2.25cqw var(--mono);
+  box-shadow:inset 3px 0 #78d9f6,0 6px 18px #0008;
+}
+#open-rank-directory:hover{background:linear-gradient(105deg,rgba(42,76,97,.96),rgba(13,32,47,.96))}
+@media(max-width:600px){#open-rank-directory{min-height:42px;font-size:clamp(8px,2.8cqw,11px)}}
+
+
+/* Two-book focus choreography: transforms and opacity only during focus/return. */
+.book-pair{position:relative;perspective:1700px;transform-style:preserve-3d;isolation:isolate}
+.book-pair>.primary-book,.book-pair>.rank-cover-stage-teaser{position:relative;z-index:1;transform:translate3d(0,0,0) scale(1) rotateX(0) rotateY(0);opacity:1;transform-style:preserve-3d;transition:transform .48s cubic-bezier(.2,.75,.2,1),opacity .48s ease}
+.book-pair.book-focus-transition{pointer-events:none}
+.book-pair[data-book-state="book-focused"],.book-pair[data-book-state="book-opening"],.book-pair[data-book-state="book-open"]{isolation:isolate}
+.book-pair[data-focused-book="archive"]>.primary-book{z-index:5;transform:translate3d(0,-10px,86px) scale(1.035) rotateX(1.4deg) rotateY(-2deg)}
+.book-pair[data-focused-book="archive"]>.rank-cover-stage-teaser{z-index:0;transform:translate3d(8px,0,-80px) scale(.97) rotateX(-1deg) rotateY(4deg);opacity:.58}
+.book-pair[data-focused-book="directory"]>.rank-cover-stage-teaser{z-index:5;transform:translate3d(0,-10px,86px) scale(1.035) rotateX(1.4deg) rotateY(2deg)}
+.book-pair[data-focused-book="directory"]>.primary-book{z-index:0;transform:translate3d(-8px,0,-80px) scale(.97) rotateX(-1deg) rotateY(-4deg);opacity:.58}
+.book-pair[data-book-state="book-closing"]>.primary-book,.book-pair[data-book-state="book-closing"]>.rank-cover-stage-teaser{z-index:1;transform:translate3d(0,0,0) scale(1) rotateX(0) rotateY(0);opacity:1}
+.book-pair.book-focus-transition .archive-cover,.book-pair.book-focus-transition .rank-cover{box-shadow:5px 7px 0 #9fb0b7,9px 13px 0 #283d4c,13px 19px 0 #080e14,27px 38px 70px #000c,inset 6px 0 16px #000b,0 0 24px #48bce647}
+.book-pair .archive-cover[data-book-state="book-hover"],.book-pair .rank-cover[data-book-state="book-hover"]{box-shadow:4px 6px 0 #95aab7,8px 12px 0 #293d4b,12px 18px 0 #081018,22px 32px 62px #000b,inset 6px 0 14px #000a,0 0 15px #4eb9df36}
+.archive-cover:focus-within,.rank-cover:focus-within{outline:2px solid #73d2f3;outline-offset:5px}
+.book-pair .archive-cover:after,.book-pair .rank-cover:after{content:"";position:absolute;inset:0;z-index:3;display:block;opacity:0;pointer-events:none;background:linear-gradient(180deg,transparent 0%,#65caff08 44%,#8adfff55 50%,#399dd51a 53%,transparent 60%) 0 -70%/100% 70% no-repeat}
+.book-pair[data-focused-book="archive"] .archive-cover:after,.book-pair[data-focused-book="directory"] .rank-cover:after{opacity:1;animation:book-focus-scan .78s ease-out both}
+.rank-cover-stage-teaser #open-rank-directory{z-index:4}
+.rank-directory{transition:opacity .36s ease,transform .36s ease}
+.rank-directory.book-directory-closing{opacity:0;transform:translate3d(0,14px,-30px) scale(.985);pointer-events:none}
+@media(max-width:999px){.book-pair{transform-style:flat;perspective:1100px}.book-pair[data-focused-book="archive"]>.primary-book{transform:translate3d(0,-8px,34px) scale(1.015) rotateX(1deg)}.book-pair[data-focused-book="directory"]>.rank-cover-stage-teaser{transform:translate3d(0,-8px,34px) scale(1.015) rotateX(1deg)}.book-pair[data-focused-book="archive"]>.rank-cover-stage-teaser{transform:translate3d(0,7px,-28px) scale(.985);opacity:.68}.book-pair[data-focused-book="directory"]>.primary-book{transform:translate3d(0,7px,-28px) scale(.985);opacity:.68}}
+@media(prefers-reduced-motion:reduce){.book-pair>.primary-book,.book-pair>.rank-cover-stage-teaser,.rank-directory{transition:none}.book-pair[data-focused-book="archive"] .archive-cover:after,.book-pair[data-focused-book="directory"] .rank-cover:after{animation:none;opacity:.35}}
+.book-pair[data-focused-book="archive"] .archive-cover,.book-pair[data-focused-book="directory"] .rank-cover{box-shadow:5px 7px 0 #9fb0b7,9px 13px 0 #283d4c,13px 19px 0 #080e14,27px 38px 70px #000c,inset 6px 0 16px #000b,0 0 20px #48bce63d}
+.book-pair .archive-cover:after,.book-pair .rank-cover:after{inset:-42% 0 auto;height:40%;background:linear-gradient(180deg,transparent,#6ed2ff08 34%,#8adfff55 50%,#399dd51a 65%,transparent);transform:translate3d(0,0,0)}
+@keyframes book-focus-scan{from{transform:translate3d(0,0,0);opacity:0}20%{opacity:1}to{transform:translate3d(0,355%,0);opacity:0}}
+.book-pair.book-opening-lock{pointer-events:none}
