@@ -4,11 +4,11 @@ Blue tactical archive with 30 replaceable WebP pages and a physical drag-to-flip
 
 ## Run locally
 
-Use Node.js 20 or newer and run `npm start` (or `node server.js`). Open **http://127.0.0.1:8080**. Any static HTTP server also works. Serve the site over HTTP/HTTPS rather than opening `index.html` as a file, because the scripts use ES modules. Deploy the root HTML, CSS, JavaScript, `assets/`, and `page-designs/` to your static host. Existing Google Fonts stylesheets are optional; local font fallbacks remain available.
+Use Node.js 20 or newer and run `npm start` (or `node server.js`). Open **http://127.0.0.1:8080**. The local server serves this project root. The documented static-host payload is the root HTML, CSS, JavaScript, `assets/`, and `page-designs/`; `dist/` is the matching runtime copy included with the deliverable. Keep its runtime files synchronized when changing the site. No separate build/deploy command is configured. Serve the site over HTTP/HTTPS rather than opening `index.html` as a file, because the scripts use ES modules. Existing Google Fonts stylesheets are optional; local font fallbacks remain available.
 
 ## Controls
 
-- **OPEN THE ARCHIVE** prepares the current pages, opens the cover, and briefly shows AUTHORIZED ACCESS. **COVER** returns to the artwork without losing your place.
+- Activate either book cover once to select and center it, then activate it again to open it. **COVER** returns to the two-cover overview without losing your place. The Rank Directory keeps its printed cover artwork and lists the selected rank's personnel by Full Name and Badge Number.
 - Drag the right page toward the left to go forward; drag the left page toward the right to go backward. Release before or exactly at the midpoint to return, or beyond it to finish. The arrow buttons and Left/Right arrow keys while the book is focused also navigate.
 - The blue bar and **SPREAD 04 / 15** indicator update when navigation finishes. The browser stores the zero-based spread under `armory-book.spread`. Reopening the archive restores it. Numbers are truncated and clamped to 0–14; missing or non-finite values become 0. Reading still works when storage is denied.
 - **FULLSCREEN**, beside COVER, toggles browser fullscreen. Its label reflects changes, including browser-controlled exits. Unsupported browsers hide the button; rejected requests show a short status message. All controls work with Tab and Enter/Space.
@@ -25,11 +25,11 @@ Keep the filenames `page-designs/page-01.webp` through `page-30.webp`, with dime
 
 ## Validation
 
-Run `npm run check` for JavaScript syntax checks and `npm test` for saved-position, storage-failure, boundary, and midpoint tests. This checkout originally contained no tests.
+Run `npm run check` for JavaScript syntax checks and `npm test` for saved-position, storage-failure, boundary, and midpoint tests.
 
 `npm run test:browser` runs the optional Playwright integration suite against installed Microsoft Edge. For development only, provide Playwright through your environment (or install it with `npm install --no-save playwright`). `PLAYWRIGHT_PATH` can point to its `index.mjs`; `BROWSER_CHANNEL=chrome` selects installed Chrome instead. The runner starts and stops its own local server and creates screenshots in `test-results/`.
 
-Browser coverage includes cover/stamp, all tabs, both drag directions and cancellation, arrows, downloads and selection, zoom/wheel/focus/Escape, reading view, fullscreen/fallback, restoration/clamping, touch double-tap/pinch, narrow layout, reduced motion, and all 30 image dimensions. Browser tests use emulated touch; real-device testing is recommended for device-specific browser fullscreen behavior.
+Browser coverage includes the maintenance unlock and retry flow, two-step cover focus/open, both book flows, rank switching, both drag directions and cancellation, arrows, downloads and selection, zoom/wheel/focus/Escape, reading view, fullscreen/fallback, restoration/clamping, touch double-tap/pinch, narrow layout, reduced motion, and all 30 image dimensions. Browser tests use emulated touch; real-device testing is recommended for device-specific browser fullscreen behavior.
 
 ## Project ZIP
 

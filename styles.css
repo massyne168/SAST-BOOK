@@ -410,7 +410,7 @@ body.book-drag-active{overflow:hidden;overscroll-behavior:none}
 /* Rank Directory printed cover uses its own optimized, precomposed WebP. */
 .rank-cover{
   background-color:#07111e;
-  background-image:linear-gradient(180deg,rgba(5,12,21,.08),rgba(5,12,21,.08)),url("dist/assets/rank-directory-cover.webp");
+  background-image:linear-gradient(180deg,rgba(5,12,21,.08),rgba(5,12,21,.08)),url("assets/rank-directory-cover.webp");
   background-size:cover;
   background-position:center;
   isolation:isolate;
@@ -505,7 +505,7 @@ dialog::backdrop{background:#020812b8}
 #open-archive{background:linear-gradient(110deg,#c6d8dc,#a9c2ca);color:#102430;border-color:#d6e3e5}
 #open-archive:hover{background:linear-gradient(110deg,#d5e4e7,#bed6dc)}
 .cover-corner{border-color:#879fa9}
-.rank-cover{border-color:#829ca8;background:radial-gradient(ellipse at 78% 19%,#85c6da24,transparent 38%),linear-gradient(115deg,#1d303b 0%,#506c7b 11%,#304b5a 14%,#1b303d 67%,#132330);box-shadow:3px 4px 0 #becbd0,6px 8px 0 #405a68,10px 13px 0 #13212c,20px 32px 62px #02081299,inset 7px 0 14px #02081299;}
+.rank-cover{border-color:#829ca8;background-color:#07111e;box-shadow:3px 4px 0 #becbd0,6px 8px 0 #405a68,10px 13px 0 #13212c,20px 32px 62px #02081299,inset 7px 0 14px #02081299;}
 .rank-cover-binding{background:linear-gradient(90deg,#111f29,#314a58);border-color:#15222b;color:#c0ced2}
 .rank-cover-inner{color:#e0e9eb}
 .rank-cover-label,.rank-cover-foot{color:#c3d0d4;border-color:#c0d0d344}
@@ -569,7 +569,7 @@ dialog::backdrop{background:#020812b8}
 .discord-link:hover .discord-icon-wrap{border-color:#84b9c8;box-shadow:0 0 14px #79a9bf24}
 .rank-cover-stage-teaser .rank-cover{box-shadow:3px 4px 0 #becbd0,6px 8px 0 #405a68,10px 13px 0 #13212c,20px 32px 62px #02081299,inset 7px 0 14px #02081299}
 .rank-cover-stage-teaser .rank-cover:after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(180deg,#07152235 0%,transparent 30%,#07152220 65%,#07152255 100%)}
-.rank-cover-stage-teaser #open-rank-directory{position:relative;z-index:1}
+.rank-cover-stage-teaser #open-rank-directory{position:absolute;z-index:1}
 .rank-cover-stage-teaser .rank-cover-binding{z-index:1}
 .rank-cover:after{background:linear-gradient(180deg,#07152235 0%,transparent 30%,#07152220 65%,#07152255 100%)}
 .rank-cover .rank-cover-binding{border-right-color:#1b303b}
@@ -583,16 +583,21 @@ dialog::backdrop{background:#020812b8}
   .rank-category-list button,.reader-controls button,.discord-link{transition:none}
 }
 
-/* Stable single-book overview and focused Rank Directory layout. */
-main:not(.directory-open) .book-pair{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;max-width:none;margin:0 auto;overflow:visible}
-main:not(.directory-open) .primary-book{flex:0 1 auto;width:100%;min-width:0}
-main:not(.directory-open) .rank-cover-stage-teaser{justify-content:center;padding:0;perspective:none}
-main:not(.directory-open) .rank-cover-stage-teaser .rank-cover{display:contents}
-main:not(.directory-open) .rank-cover-stage-teaser .rank-cover:before,main:not(.directory-open) .rank-cover-stage-teaser .rank-cover:after,main:not(.directory-open) .rank-cover-stage-teaser .rank-cover-binding{display:none}
-main:not(.directory-open) #open-rank-directory{position:relative;left:auto;right:auto;bottom:auto;width:min(300px,82vw);min-height:42px;margin:8px 0 24px;padding:10px 14px;font:600 11px var(--mono);letter-spacing:.1em;border:1px solid #66899a;border-radius:3px;background:linear-gradient(110deg,#253f50,#142b3a);color:#cfdee3;box-shadow:inset 2px 0 #77aabd,0 5px 16px #02081240}
-main:not(.directory-open) #open-rank-directory:hover{background:linear-gradient(110deg,#304f62,#1a3546);border-color:#86b8c8}
+/* The closed state is a matched two-cover overview; reading hides the unselected cover. */
+main.archive-closed .book-pair{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:clamp(16px,4vw,54px);max-width:1000px;margin:0 auto}
+main.archive-closed .primary-book,main.archive-closed .rank-cover-stage-teaser{flex:0 1 380px;width:min(43vw,380px);min-width:0}
+main.archive-closed .primary-book .cover-stage{display:flex;justify-content:center;padding:20px 0 24px}
+main.archive-closed .primary-book .archive-cover{width:min(100%,340px);margin:0 auto}
+main.archive-closed .rank-cover-stage-teaser{justify-content:center;padding:20px 0 24px;perspective:1600px}
+main.archive-closed .rank-cover-stage-teaser .rank-cover{display:block;width:min(100%,340px);aspect-ratio:1191/1685}
+main:not(.archive-closed):not(.directory-open) .rank-cover-stage-teaser{display:none}
+@media(max-width:700px){
+  main.archive-closed .book-pair{flex-direction:column;gap:8px}
+  main.archive-closed .primary-book,main.archive-closed .rank-cover-stage-teaser{flex:0 1 auto;width:min(350px,86vw)}
+  main.archive-closed .primary-book .cover-stage,main.archive-closed .rank-cover-stage-teaser{padding:14px 0}
+}
 
-main.directory-open .record-heading,main.directory-open .book-pair{display:none}
+main.directory-open .record-heading,main.directory-open .book-pair>.primary-book,main.directory-open .book-pair>.rank-cover-stage-teaser{display:none}
 main.directory-open #rank-directory:not([hidden]){display:block;width:100%;max-width:none;min-height:calc(100svh - 92px);margin:0 auto;padding:14px clamp(12px,3vw,42px) 20px}
 main.directory-open #rank-directory .rank-directory-heading{max-width:1440px;margin:0 auto 12px;padding-bottom:10px}
 main.directory-open #rank-directory .rank-cover-stage{width:100%;max-width:1440px;margin:0 auto;padding:0;gap:clamp(8px,1vw,14px);align-items:center}
@@ -635,6 +640,7 @@ main.directory-open #rank-directory .rank-controls{margin:12px auto 0;gap:9px}
 body.is-maintenance{overflow:hidden}
 .maintenance-screen{position:fixed;inset:0;z-index:9000;display:grid;place-items:center;min-height:100svh;padding:clamp(18px,5vw,56px);overflow:auto;background:radial-gradient(ellipse at 50% 38%,#183349 0%,#0d1d2b 48%,#07131f 100%);color:#d9e6eb;opacity:1;visibility:visible;transition:opacity .36s ease,visibility .36s ease}
 .maintenance-screen:before{position:absolute;inset:14px;border:1px solid #5b788866;content:"";pointer-events:none}
+#rank-status:not(:empty){flex-basis:100%;color:#d28b94;font-size:10px;letter-spacing:.08em}
 .maintenance-panel{position:relative;width:min(100%,640px);padding:clamp(26px,5vw,54px);text-align:center;background:linear-gradient(145deg,#12283ae8,#0d1d2bf2);border:1px solid #79a9bf55;box-shadow:0 24px 70px #02081288,0 0 34px #41728a20,inset 0 1px #d9e6eb12}
 .maintenance-panel:after{position:absolute;top:-1px;left:12%;width:76%;height:2px;background:linear-gradient(90deg,transparent,#9bd7eb99 48%,#b56b76 49%,#b56b76 51%,transparent);content:""}
 .maintenance-logo{display:block;width:clamp(64px,12vw,96px);height:auto;margin:0 auto 18px;object-fit:contain}
@@ -763,3 +769,138 @@ footer{border-color:#456b8266}
 .archive-cover.webp-cover .access-arrow{color:#315d73}
 .archive-cover.webp-cover .cover-corner{border-color:#79b6cf99}
 .archive-cover.webp-cover .cover-corner.corner-br{border-color:#ad687366}
+
+/* Matched physical locking plates outside the book artwork. */
+.archive-cover-unit,.rank-cover-unit{position:relative;display:flex;align-items:center;justify-content:center;gap:14px;width:100%;overflow:visible}
+.archive-cover-unit{--latch-accent:#6fd5f5;--latch-metal:#456b82}
+.rank-cover-unit{--latch-accent:#ed6475;--latch-metal:#8e2a3a}
+.archive-cover-unit::after,.rank-cover-unit::after{position:absolute;z-index:2;left:calc(50% + 37px);top:calc(50% + 34px);width:14px;height:30px;transform:translateY(-50%);border-top:1px solid var(--latch-metal);border-bottom:1px solid var(--latch-metal);background:linear-gradient(90deg,var(--latch-accent) 0 2px,transparent 2px 12px,var(--latch-accent) 12px);content:"";pointer-events:none}
+#open-archive.book-opening-tab,#open-rank-directory.book-opening-tab{
+  position:relative;inset:auto;z-index:5;display:grid;flex:0 0 184px;align-self:center;
+  grid-template-columns:16px minmax(0,1fr) 16px;grid-template-rows:18px auto;align-items:center;gap:7px 9px;
+  width:184px;min-height:92px;margin:0;padding:12px 12px 12px 15px;
+  border:1px solid #456b82;border-radius:0;clip-path:polygon(0 0,calc(100% - 11px) 0,100% 11px,100% 100%,11px 100%,0 calc(100% - 11px));
+  background:linear-gradient(110deg,#102b3d,#091c2a);color:#dceaf0;
+  font:600 10px/1.2 var(--mono);letter-spacing:.1em;text-align:left;cursor:pointer;
+  box-shadow:none;backdrop-filter:none;
+  transition:transform .18s ease,opacity .18s ease,color .18s ease,background-color .18s ease;
+}
+#open-archive.book-opening-tab::after,#open-rank-directory.book-opening-tab::after{
+  position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,transparent 4%,#6fd5f5 25% 72%,transparent);content:"";opacity:.72;pointer-events:none;
+}
+.opening-tab-lock{grid-column:1;grid-row:1;width:14px;height:16px;fill:none;stroke:currentColor;stroke-width:1.35;stroke-linecap:square;stroke-linejoin:miter}
+.opening-tab-id{grid-column:2;grid-row:1;overflow:hidden;color:#91adbf;font:500 8px/1 var(--mono);letter-spacing:.08em;white-space:nowrap}
+.opening-tab-label{grid-column:1/3;grid-row:2;display:block;color:#f0f5f7;font:700 11px/1.15 var(--mono);letter-spacing:.06em;white-space:nowrap}
+.opening-tab-arrow{grid-column:3;grid-row:1/3;justify-self:end;color:#6fd5f5;font:600 18px/1 var(--mono);transition:transform .18s ease,color .18s ease}
+#open-archive.book-opening-tab{--latch-accent:#6fd5f5;--latch-metal:#456b82;--latch-panel:#0d2637;--latch-text:#dceaf0;transform:translateY(34px);background:linear-gradient(115deg,#112c3d,#091b29 78%,#0d2433);border-color:var(--latch-metal);color:var(--latch-accent)}
+#open-rank-directory.book-opening-tab{--latch-accent:#ed6475;--latch-metal:#8e2a3a;--latch-panel:#281016;--latch-text:#f0e3e6;transform:translateY(34px);background:linear-gradient(115deg,#35131c,#170a0e 78%,#281016);border-color:var(--latch-metal);color:var(--latch-accent)}
+#open-archive.book-opening-tab:hover,#open-archive.book-opening-tab:focus-visible{transform:translateY(32px);background:linear-gradient(115deg,#173b50,#0b2232 78%,#102d3e);color:#9be9fb;outline:2px solid #6fd5f5;outline-offset:3px}
+#open-rank-directory.book-opening-tab:hover,#open-rank-directory.book-opening-tab:focus-visible{transform:translateY(32px);background:linear-gradient(115deg,#4a1724,#210b12 78%,#35131c);color:#ff8b99;outline:2px solid #ed6475;outline-offset:3px}
+#open-archive.book-opening-tab:hover .opening-tab-arrow,#open-archive.book-opening-tab:focus-visible .opening-tab-arrow{transform:translateX(3px);color:#d7f7ff}
+#open-rank-directory.book-opening-tab:hover .opening-tab-arrow,#open-rank-directory.book-opening-tab:focus-visible .opening-tab-arrow{transform:translateX(3px);color:#ffd0d6}
+#open-archive.book-opening-tab:hover::after,#open-archive.book-opening-tab:focus-visible::after,#open-rank-directory.book-opening-tab:hover::after,#open-rank-directory.book-opening-tab:focus-visible::after{opacity:1}
+#open-archive.book-opening-tab:focus-visible,#open-rank-directory.book-opening-tab:focus-visible{outline-style:solid}
+#open-archive.book-opening-tab[aria-label^="Opening archive"],#open-rank-directory.book-opening-tab[aria-label^="Opening directory"]{animation:latch-unlocking .42s ease both}
+@keyframes latch-unlocking{0%,100%{transform:translateY(34px) translateX(0);opacity:1}45%{transform:translateY(34px) translateX(6px);opacity:.72}75%{transform:translateY(34px) translateX(-2px);opacity:.92}}
+.archive-cover-unit .archive-cover,.rank-cover-unit .rank-cover{flex:0 1 276px;min-width:0;width:min(276px,calc(100% - 198px));margin:0}
+@media(min-width:1000px){
+  body:not(:has(.rank-directory:not([hidden]))) main.archive-closed .book-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:clamp(16px,3vw,32px);max-width:1000px;margin:0 auto;padding:0}
+  main.archive-closed .primary-book,main.archive-closed .rank-cover-stage-teaser{flex:0 1 480px;width:min(48vw,480px);min-width:0}
+  main.archive-closed .archive-cover-unit,main.archive-closed .rank-cover-unit{justify-content:center}
+  main.archive-closed .archive-cover-unit .archive-cover,main.archive-closed .rank-cover-unit .rank-cover{flex-basis:276px;width:min(276px,calc(100% - 198px))}
+}
+@media(max-width:999px){
+  main.archive-closed .archive-cover-unit,main.archive-closed .rank-cover-unit{flex-direction:column;gap:12px}
+  main.archive-closed .archive-cover-unit .archive-cover,main.archive-closed .rank-cover-unit .rank-cover{flex:0 1 auto;width:min(100%,340px)}
+  #open-archive.book-opening-tab,#open-rank-directory.book-opening-tab{
+    top:auto;align-self:center;flex:0 0 auto;grid-template-columns:16px minmax(0,1fr) 18px;grid-template-rows:18px auto;
+    width:min(100%,320px);min-height:74px;padding:10px 15px;margin:0;transform:none;
+  }
+  .archive-cover-unit::after,.rank-cover-unit::after{left:50%;top:calc(100% - 86px);width:30px;height:12px;transform:translateX(-50%);border:0;border-left:1px solid var(--latch-metal);border-right:1px solid var(--latch-metal);background:linear-gradient(var(--latch-accent) 0 2px,transparent 2px)}
+  #open-archive.book-opening-tab:hover,#open-archive.book-opening-tab:focus-visible,#open-rank-directory.book-opening-tab:hover,#open-rank-directory.book-opening-tab:focus-visible{transform:translateY(-1px)}
+  #open-archive.book-opening-tab[aria-label^="Opening archive"],#open-rank-directory.book-opening-tab[aria-label^="Opening directory"]{animation:latch-unlocking-mobile .42s ease both}
+  @keyframes latch-unlocking-mobile{0%,100%{transform:translateX(0);opacity:1}45%{transform:translateX(6px);opacity:.72}75%{transform:translateX(-2px);opacity:.92}}
+}
+
+/* Rank Directory crimson system: all rules stay inside the directory and its cover. */
+#rank-directory,.rank-cover-stage-teaser{--rd-bg:#170a0e;--rd-panel:#281016;--rd-crimson:#b92c43;--rd-highlight:#ed6475;--rd-text:#f0e3e6;--rd-secondary:#bc939c}
+#rank-directory{background:radial-gradient(ellipse at 50% 0%,#35141e 0%,#170a0e 62%);color:var(--rd-text);scrollbar-color:var(--rd-crimson) var(--rd-bg)}
+#rank-directory ::-webkit-scrollbar-track{background:var(--rd-bg)}
+#rank-directory ::-webkit-scrollbar-thumb{border-color:var(--rd-bg);background:var(--rd-crimson)}
+#rank-directory .rank-directory-heading{border-color:#b92c4366}
+#rank-directory .rank-directory-heading span,#rank-directory .rank-directory-heading p{color:var(--rd-secondary)}
+#rank-directory .rank-directory-heading h2{color:var(--rd-text)}
+#rank-directory .rank-close{border-color:#8e2a3a;background:linear-gradient(145deg,#281016,#170a0e);color:var(--rd-text)}
+#rank-directory .rank-close:hover,#rank-directory .rank-close:focus-visible{border-color:var(--rd-highlight);background:#35131c;color:#fff;outline-color:var(--rd-highlight)}
+#rank-directory .rank-book .board{border-color:#b92c43;background:linear-gradient(90deg,#170a0e,#4a1724 48%,#170a0e);box-shadow:inset 0 0 0 5px #170a0e,0 4px 0 #090508,0 9px 0 #6c1e2c,0 13px 0 #090508,0 28px 44px #090508}
+#rank-directory .rank-book .board-label{color:var(--rd-secondary)}
+#rank-directory .rank-book .paper-stack{background:repeating-linear-gradient(0deg,#63313a 0,#d6b8bd 1px,#bc939c 2px)}
+#rank-directory .rank-book .page-slot,#rank-directory .rank-book .leaf-face{background:var(--rd-bg);color:var(--rd-text);border-color:#6d2533}
+#rank-directory .rank-book .spine{background:linear-gradient(90deg,#170a0e,#5b1d2a,#bc939c,#4a1724,#170a0e)}
+#rank-directory .rank-book .ribbon{background:var(--rd-crimson)}
+#rank-directory .rank-book .page-slot.right{background:linear-gradient(115deg,#281016,#35131c)}
+#rank-directory .rank-page{background:linear-gradient(145deg,#281016,#170a0e 72%);color:var(--rd-text)}
+#rank-directory .rank-page:before{border-color:#b92c4366}
+#rank-directory .rank-list-heading{color:var(--rd-secondary);border-color:#b92c43}
+#rank-directory .rank-list-heading::after{background:linear-gradient(90deg,var(--rd-crimson),var(--rd-highlight) 70%,#5d1d2b)}
+#rank-directory .rank-list-heading h2{color:var(--rd-text)}
+#rank-directory .rank-personnel-table{border-color:#8e2a3a;background:#170a0e}
+#rank-directory .rank-person-head{background:linear-gradient(90deg,#681d2b,#a3273c);color:#fff1f3}
+#rank-directory .rank-person-rows{background:#281016}
+#rank-directory .rank-person-row{border-color:#5c202c;color:var(--rd-text)}
+#rank-directory .rank-person-row:not(.rank-person-head) span:last-child{color:var(--rd-highlight);font-weight:600}
+#rank-directory .rank-list-empty{color:var(--rd-secondary)}
+#rank-directory .rank-blank{background:linear-gradient(145deg,#281016,#170a0e)}
+#rank-directory .rank-blank:before{border-color:#b92c4355}
+#rank-directory .rank-page-head{color:var(--rd-secondary);border-color:#8e2a3a}
+#rank-directory .rank-page-head strong{color:var(--rd-text)}
+#rank-directory .rank-document{border-color:#8e2a3a;color:var(--rd-highlight)}
+#rank-directory .rank-category-title>div>span{color:var(--rd-secondary)}
+#rank-directory .rank-category-title h2{color:var(--rd-text)}
+#rank-directory .rank-count{color:var(--rd-highlight);border-color:#8e2a3a}
+#rank-directory .rank-tactical-rule{color:var(--rd-highlight)}
+#rank-directory .rank-tactical-rule i{background:linear-gradient(90deg,var(--rd-crimson),#5c202c)}
+#rank-directory .rank-record{border-color:#71303b;background:linear-gradient(140deg,#281016,#1b0c11);box-shadow:inset 3px 0 #b92c43}
+#rank-directory .rank-portrait{border-color:#8e2a3a;background:#281016}
+#rank-directory .rank-portrait-empty{color:var(--rd-secondary);background:repeating-linear-gradient(135deg,#281016 0 5px,#35131c 5px 10px)}
+#rank-directory .rank-record-name{border-color:#5c202c}
+#rank-directory .rank-record-name span,#rank-directory .rank-fields small,#rank-directory .rank-profile small,#rank-directory .rank-signature small{color:var(--rd-secondary)}
+#rank-directory .rank-record-name strong,#rank-directory .rank-fields strong{color:var(--rd-text)}
+#rank-directory .rank-record-name strong{font-variant-numeric:lining-nums}
+#rank-directory .rank-fields strong{font-variant-numeric:tabular-nums}
+#rank-directory .rank-profile{color:#dfc9ce}
+#rank-directory .rank-signature{border-color:#5c202c}
+#rank-directory .rank-signature strong{color:#e1c2c8}
+#rank-directory .rank-empty{border-color:#8e2a3a;background:#281016;color:var(--rd-secondary)}
+#rank-directory .rank-page-foot{border-color:#8e2a3a;color:var(--rd-secondary)}
+#rank-directory .rank-person-pagination{border-color:#8e2a3a;color:var(--rd-secondary)}
+#rank-directory .rank-person-pagination button{border-color:#8e2a3a;background:#281016;color:var(--rd-text)}
+#rank-directory .rank-person-pagination button:hover:not(:disabled),#rank-directory .rank-person-pagination button:focus-visible{border-color:var(--rd-highlight);outline-color:var(--rd-highlight)}
+#rank-directory .rank-selection-back{background:linear-gradient(145deg,#281016,#170a0e);color:var(--rd-text)}
+#rank-directory .rank-selection-back span,#rank-directory .rank-selection-back i{color:var(--rd-secondary)}
+#rank-directory .rank-selection-back strong{color:var(--rd-text)}
+#rank-directory .rank-selection-back:after{background:linear-gradient(90deg,var(--rd-crimson) 0 78%,var(--rd-highlight) 78%)}
+#rank-directory .rank-controls{color:var(--rd-secondary)}
+#rank-directory .rank-controls button,#rank-directory .rank-category-list button{border-color:#71303b;background:linear-gradient(145deg,#281016,#170a0e);color:var(--rd-text)}
+#rank-directory .rank-controls button:hover:not(:disabled),#rank-directory .rank-category-list button:hover{border-color:var(--rd-highlight);background:linear-gradient(145deg,#431620,#281016);color:#fff}
+#rank-directory .rank-controls button:focus-visible,#rank-directory .rank-category-list button:focus-visible{outline:2px solid var(--rd-highlight);outline-offset:2px}
+#rank-directory .rank-category-list{border-color:#71303b;background:linear-gradient(155deg,#170a0e,#281016 62%,#35131c)}
+#rank-directory .rank-category-list button{border-color:#5c202c;background:linear-gradient(105deg,#35131c,#210d13 74%,#281016);color:var(--rd-secondary)}
+#rank-directory .rank-category-list button::before{background:#8e2a3a}
+#rank-directory .rank-category-list button::after{border-color:var(--rd-highlight)}
+#rank-directory .rank-category-list button:hover{border-color:var(--rd-highlight);background:linear-gradient(105deg,#4a1724,#281016);color:var(--rd-text)}
+#rank-directory .rank-category-list button[aria-current="page"]{border-color:var(--rd-highlight);background:linear-gradient(105deg,#651d2c,#35131c 74%,#281016);color:#fff;box-shadow:inset 0 0 0 1px #ed64752b}
+#rank-directory .rank-category-list button[aria-current="page"]::before{background:linear-gradient(var(--rd-highlight) 0 72%,#741e30 72%)}
+#rank-directory .rank-category-list button[aria-current="page"]::after{background:var(--rd-highlight);border-color:#ffd0d6;opacity:1}
+.rank-cover-stage-teaser .rank-cover{border-color:#b92c43;background-color:#170a0e;background-image:linear-gradient(180deg,rgba(23,10,14,.06),rgba(23,10,14,.12)),url("assets/rank-directory-cover.webp");box-shadow:3px 4px 0 #721e2c,6px 8px 0 #281016,10px 13px 0 #090508,20px 32px 62px #090508}
+.rank-cover-stage-teaser .rank-cover:before{border-color:#ed647566}
+.rank-cover-stage-teaser .rank-cover:after{background:linear-gradient(180deg,#170a0e25 0%,transparent 30%,#170a0e18 65%,#170a0e5c 100%)}
+.rank-cover-stage-teaser .rank-cover-binding{background:linear-gradient(90deg,#170a0e,#421620);border-right-color:#090508;color:#bc939c}
+.rank-cover-stage-teaser #open-rank-directory.book-opening-tab{z-index:5}
+@media(max-width:999px){
+  .rank-cover-stage-teaser .rank-cover-unit{flex-direction:column;gap:12px}
+  .rank-cover-stage-teaser .rank-cover-unit .rank-cover{flex:0 1 auto;width:min(100%,340px)}
+}
+@media(prefers-reduced-motion:reduce){
+  #open-archive.book-opening-tab,#open-rank-directory.book-opening-tab,#open-archive.book-opening-tab .opening-tab-arrow,#open-rank-directory.book-opening-tab .opening-tab-arrow{transition:none;animation:none}
+}

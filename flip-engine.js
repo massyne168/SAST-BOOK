@@ -144,13 +144,19 @@ export class FlipEngine {
     this.book.classList.add('turning');
     this.book.classList.toggle('turning-touch', pointerType === 'touch' || this.lowPower);
     if (pointerType === 'touch') document.body.classList.add('book-drag-active');
-    this.onBusyChange?.(true);
     leaf.underlyingSlot = d === 1 ? this.right : this.left;
     leaf.originalContent = document.createDocumentFragment();
-    while (leaf.underlyingSlot.firstChild) leaf.originalContent.append(leaf.underlyingSlot.firstChild);
-    leaf.underlyingSlot.innerHTML = leaf.underneath;
-    this.paint(0);
-    return true;
+    try {
+      while (leaf.underlyingSlot.firstChild) leaf.originalContent.append(leaf.underlyingSlot.firstChild);
+      leaf.underlyingSlot.innerHTML = leaf.underneath;
+      this.paint(0);
+      this.onBusyChange?.(true);
+      return true;
+    } catch (cause) {
+      try { this.finish(false); }
+      catch (cleanupCause) { throw new AggregateError([cause, cleanupCause], 'Unable to start or clean up the page turn'); }
+      throw cause;
+    }
   }
 
   down(e) {
@@ -248,26 +254,51 @@ export class FlipEngine {
     if (!active) return;
     cancelAnimationFrame(this.frame); cancelAnimationFrame(this.settleFrame);
     this.frame = this.settleFrame = 0; this.sample = null;
-    if (complete) {
-      this.spread += active.d;
-      if (active.d === 1) {
-        const leftMarkup = this.render(this.spread * 2);
-        this.pageMarkup = [leftMarkup, active.underneath];
-        this.left.innerHTML = leftMarkup;
+    const previousSpread = this.spread;
+    const failures = [];
+    let completed = false;
+    try {
+      if (complete) {
+        const nextSpread = previousSpread + active.d;
+        if (active.d === 1) {
+          const leftMarkup = this.render(nextSpread * 2);
+          this.pageMarkup = [leftMarkup, active.underneath];
+          this.left.innerHTML = leftMarkup;
+        } else {
+          const rightMarkup = this.render(nextSpread * 2 + 1);
+          this.pageMarkup = [active.underneath, rightMarkup];
+          this.right.innerHTML = rightMarkup;
+        }
+        this.spread = nextSpread;
+        completed = true;
       } else {
-        const rightMarkup = this.render(this.spread * 2 + 1);
-        this.pageMarkup = [active.underneath, rightMarkup];
-        this.right.innerHTML = rightMarkup;
+        active.underlyingSlot.replaceChildren(active.originalContent);
       }
-    } else {
-      active.underlyingSlot.replaceChildren(active.originalContent);
+    } catch (cause) {
+      this.spread = previousSpread;
+      failures.push(cause);
+      try { active.underlyingSlot.replaceChildren(active.originalContent); }
+      catch (cleanupCause) { failures.push(cleanupCause); }
+    } finally {
+      this.drag = null; this.animating = false;
+      this.book.classList.remove('turning', 'turning-touch');
+      document.body.classList.remove('book-drag-active');
+      this.book.style.setProperty('--turn-shadow', 0);
+      try {
+        if (completed) this.onChange?.(this.spread);
+      } catch (cause) {
+        failures.push(cause);
+      } finally {
+        try { this.onBusyChange?.(false); }
+        catch (cause) { failures.push(cause); }
+        finally {
+          try { this.release(active.id); }
+          catch (cause) { failures.push(cause); }
+        }
+      }
     }
-    this.drag = null; this.animating = false;
-    this.book.classList.remove('turning', 'turning-touch');
-    document.body.classList.remove('book-drag-active');
-    this.book.style.setProperty('--turn-shadow', 0);
-    if (complete) this.onChange?.(this.spread);
-    this.onBusyChange?.(false); this.release(active.id);
+    if (failures.length === 1) throw failures[0];
+    if (failures.length > 1) throw new AggregateError(failures, 'Unable to finish or clean up the page turn');
   }
 
   cancel(immediate = false) {

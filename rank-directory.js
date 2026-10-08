@@ -1,5 +1,6 @@
 import {FlipEngine} from './flip-engine.js';
 import {rankDirectoryData} from './rank-directory-data.js';
+import {resetBookFocus} from './book-focus.js';
 
 const $ = selector => document.querySelector(selector);
 const categoryCount = rankDirectoryData.length;
@@ -45,37 +46,81 @@ const updateCategory = index => {
   $('#rank-next').disabled = index === categoryCount - 1;
   document.querySelectorAll('.rank-category-list button').forEach((button, buttonIndex) => button.setAttribute('aria-current', buttonIndex === index ? 'page' : 'false'));
 };
+const setRankStatus = message => { $('#rank-status').textContent = message; };
 const showCategory = index => {
-  if (switchingCategory || index === engine.spread || engine.drag || engine.animating) return false;
+  if (!Number.isInteger(index) || index < 0 || index >= categoryCount || switchingCategory || index === engine.spread || engine.drag || engine.animating) return false;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const moved = engine.goTo(index);
-    return moved;
+    try {
+      const moved = engine.goTo(index);
+      setRankStatus(moved ? '' : 'Unable to display the selected rank. Please try again.');
+      return moved;
+    } catch (cause) {
+      console.error('Unable to switch Rank Directory categories', cause);
+      setRankStatus('Unable to display the selected rank. Please try again.');
+      return false;
+    }
   }
   switchingCategory = true;
   rankBook.classList.add('rank-fade-out');
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    const moved = engine.goTo(index);
-    if (!moved) { rankBook.classList.remove('rank-fade-out'); switchingCategory = false; return; }
-    rankBook.classList.remove('rank-fade-out');
-    rankBook.classList.add('rank-fade-in');
-    requestAnimationFrame(() => { rankBook.classList.remove('rank-fade-in'); switchingCategory = false; });
-  }));
+  let executed = false;
+  let released = false;
+  let releaseTimer;
+  const release = () => {
+    if (released) return;
+    released = true;
+    window.clearTimeout(releaseTimer);
+    rankBook.classList.remove('rank-fade-out', 'rank-fade-in');
+    switchingCategory = false;
+  };
+  const execute = () => {
+    if (executed) return;
+    executed = true;
+    window.clearTimeout(fallbackTimer);
+    try {
+      const moved = engine.goTo(index);
+      if (!moved) {
+        setRankStatus('Unable to display the selected rank. Please try again.');
+        release();
+        return;
+      }
+      setRankStatus('');
+      rankBook.classList.remove('rank-fade-out');
+      rankBook.classList.add('rank-fade-in');
+      requestAnimationFrame(release);
+      releaseTimer = window.setTimeout(release, 500);
+    } catch (cause) {
+      console.error('Unable to switch Rank Directory categories', cause);
+      setRankStatus('Unable to display the selected rank. Please try again.');
+      release();
+    }
+  };
+  const fallbackTimer = window.setTimeout(execute, 120);
+  requestAnimationFrame(execute);
   return true;
 };
-const closeDirectory = () => {
+const closeDirectory = async () => {
   if (directory.hidden || closingDirectory) return;
   closingDirectory = true;
-  directory.inert = true;
-  directory.hidden = true;
-  if (archiveLeft && archiveRight && directoryLeft && directoryRight) {
-    directoryLeft.id = 'rank-left';
-    directoryRight.id = 'rank-right';
-    archiveLeft.id = 'left';
-    archiveRight.id = 'right';
+  try {
+    directory.inert = true;
+    directory.hidden = true;
+    if (archiveLeft && archiveRight && directoryLeft && directoryRight) {
+      directoryLeft.id = 'rank-left';
+      directoryRight.id = 'rank-right';
+      archiveLeft.id = 'left';
+      archiveRight.id = 'right';
+    }
+    const main = document.querySelector('main');
+    main.classList.remove('directory-open');
+    main.classList.add('archive-closed');
+    await resetBookFocus('directory');
+    $('#open-rank-directory').focus({preventScroll: true});
+  } catch (cause) {
+    console.error('Unable to restore the Rank Directory overview', cause);
+    setRankStatus('Unable to restore the book overview. Please try again.');
+  } finally {
+    closingDirectory = false;
   }
-  document.querySelector('main').classList.remove('directory-open');
-  closingDirectory = false;
-  $('#open-rank-directory').focus({preventScroll: true});
 };
 
 function initialize() {
@@ -109,9 +154,10 @@ function initialize() {
   });
   $('#rank-previous').addEventListener('click', () => engine.turn(-1));
   $('#rank-next').addEventListener('click', () => engine.turn(1));
-  document.querySelectorAll('.rank-category-list button').forEach(button => button.addEventListener('click', () => {
-    showCategory(Number(button.dataset.categoryIndex));
-  }));
+  $('#rank-category-list').addEventListener('click', event => {
+    const button = event.target.closest('[data-category-index]');
+    if (button) showCategory(Number(button.dataset.categoryIndex));
+  });
   rankBook.addEventListener('click', event => {
     const button = event.target.closest('[data-person-page]');
     if (!button || button.disabled || switchingCategory || engine.animating || engine.drag) return;
@@ -120,7 +166,7 @@ function initialize() {
     const next = (personnelPages[index] || 0) + (button.dataset.personPage === 'next' ? 1 : -1);
     if (next < 0 || next >= pages) return;
     personnelPages[index] = next;
-  const page = rankBook.querySelector('.page-slot.left .rank-page');
+    const page = rankBook.querySelector('.page-slot.left .rank-page');
     const rows = page?.querySelector('.rank-person-rows');
     const oldPager = page?.querySelector('.rank-person-pagination');
     if (!rows) return;

@@ -2,6 +2,7 @@ import {FlipEngine} from './flip-engine.js';
 import {pages, pageFiles, prepareSpread, prepareNearby} from './page-content.js';
 import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
+import {focusBook, isBookFocused, setBookFocused, setBookOpen, setBookOpening, resetBookFocus} from './book-focus.js';
 const $ = selector => document.querySelector(selector);
 const discord = $('.discord-link');
 const discordUrl = discord?.dataset.discordUrl || 'https://discord.gg/YOUR-SERVER';
@@ -75,10 +76,20 @@ $('#read-spread').onclick = () => {
 };
 $('#close-read').onclick = () => readDialog.close();
 readDialog.addEventListener('click', e => { if (e.target === readDialog) readDialog.close(); });
-$('#open-archive').onclick = async () => {
+async function openArchive() {
   if (coverOpening) return;
+  if (!isBookFocused('archive')) {
+    try { await focusBook('archive'); }
+    catch (cause) {
+      console.error('Unable to focus the Armory cover', cause);
+      status('Unable to focus the archive cover. Please try again.');
+    }
+    return;
+  }
+  if (!setBookOpening('archive')) return;
   coverOpening = true; $('#open-archive').disabled = true;
   let pageDataUnavailable = false;
+  let opened = false;
   try {
     await prepareSpread(engine.spread);
     void prepareNearby(engine.spread, 1);
@@ -94,14 +105,31 @@ $('#open-archive').onclick = async () => {
     const stamp = $('#access-stamp'); stamp.hidden = false;
     clearTimeout(stampTimer);
     stampTimer = setTimeout(() => { stamp.hidden = true; }, 1100);
-  } catch { status('Unable to load the archive pages. Please try again.'); }
-  finally { cover.classList.remove('opening'); coverOpening = false; $('#open-archive').disabled = false; controls(engine.spread); }
-};
-$('#close-archive').onclick = () => {
+    opened = true;
+  } catch (cause) {
+    console.error('Unable to open the archive', cause);
+    status('Unable to load the archive pages. Please try again.');
+  } finally {
+    cover.classList.remove('opening');
+    coverOpening = false;
+    $('#open-archive').disabled = false;
+    if (opened) setBookOpen('archive');
+    else setBookFocused('archive');
+    controls(engine.spread);
+  }
+}
+$('#open-archive').addEventListener('click', openArchive);
+$('#close-archive').onclick = async () => {
   if (busy() || engine.pending) return;
   clearTimeout(stampTimer); $('#access-stamp').hidden = true;
   main.classList.add('archive-closed');
-  $('#open-archive').focus({preventScroll:true});
+  try { await resetBookFocus('archive'); }
+  catch (cause) {
+    console.error('Unable to restore the book overview', cause);
+    status('Unable to restore the archive covers. Please try again.');
+  } finally {
+    $('#open-archive').focus({preventScroll:true});
+  }
 };
 const fullscreen = $('#fullscreen');
 function syncFullscreen() {
@@ -120,7 +148,28 @@ document.addEventListener('fullscreenchange', syncFullscreen);
 syncFullscreen();
 
 $('#open-rank-directory').addEventListener('click', async () => {
-  const {openRankDirectory} = await import('./rank-directory.js');
-  main.classList.add('directory-open');
-  openRankDirectory();
+  if (!isBookFocused('directory')) {
+    try { await focusBook('directory'); }
+    catch (cause) {
+      console.error('Unable to focus the Rank Directory cover', cause);
+      status('Unable to focus the Rank Directory cover. Please try again.');
+    }
+    return;
+  }
+  if (!setBookOpening('directory')) return;
+  try {
+    const {openRankDirectory} = await import('./rank-directory.js');
+    main.classList.remove('archive-closed');
+    main.classList.add('directory-open');
+    openRankDirectory();
+    setBookOpen('directory');
+  } catch (cause) {
+    console.error('Unable to open the Rank Directory', cause);
+    main.classList.remove('directory-open');
+    main.classList.add('archive-closed');
+    $('#rank-directory').hidden = true;
+    $('#rank-directory').inert = true;
+    setBookFocused('directory');
+    status('Unable to open the Rank Directory. Please try again.');
+  }
 });
