@@ -4,6 +4,9 @@ import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
 import {focusBook, isBookFocused, setBookFocused, setBookOpen, setBookOpening, resetBookFocus} from './book-focus.js';
 const $ = selector => document.querySelector(selector);
+const setTheme = theme => { document.documentElement.dataset.theme = theme; };
+setTheme('overview');
+document.addEventListener('archive-overview', () => setTheme('overview'));
 const discord = $('.discord-link');
 const discordUrl = discord?.dataset.discordUrl || 'https://discord.gg/YOUR-SERVER';
 if (discord) discord.href = discordUrl;
@@ -231,6 +234,7 @@ async function openArchive() {
     cover.classList.add('opening');
     await new Promise(resolve => setTimeout(resolve, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650));
     main.classList.remove('archive-closed');
+    setTheme('armory');
     status(pageDataUnavailable ? 'PAGE DATA UNAVAILABLE' : ''); book.focus({preventScroll:true});
     const stamp = $('#access-stamp'); stamp.hidden = false;
     clearTimeout(stampTimer);
@@ -253,6 +257,7 @@ $('#close-archive').onclick = async () => {
   if (busy() || engine.pending) return;
   clearTimeout(stampTimer); $('#access-stamp').hidden = true;
   main.classList.add('archive-closed');
+  setTheme('overview');
   try { await resetBookFocus('archive'); }
   catch (cause) {
     console.error('Unable to restore the book overview', cause);
@@ -291,12 +296,14 @@ $('#open-rank-directory').addEventListener('click', async () => {
     rankDirectoryModule = await import('./rank-directory.js');
     main.classList.remove('archive-closed');
     main.classList.add('directory-open');
+    setTheme('directory');
     rankDirectoryModule.openRankDirectory();
     setBookOpen('directory');
   } catch (cause) {
     console.error('Unable to open the Rank Directory', cause);
     main.classList.remove('directory-open');
     main.classList.add('archive-closed');
+    setTheme('overview');
     $('#rank-directory').hidden = true;
     $('#rank-directory').inert = true;
     setBookFocused('directory');

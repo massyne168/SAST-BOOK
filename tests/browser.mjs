@@ -62,6 +62,7 @@ async function open() {
   assert.equal(await page.locator('main').evaluate(el=>el.classList.contains('archive-closed')),true);
   await page.locator('#open-archive').click();
   await page.waitForFunction(()=>!document.querySelector('main').classList.contains('archive-closed'));
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'armory');
   await idle();
 }
 async function drag(from,to) {
@@ -78,6 +79,7 @@ try {
   await page.waitForFunction(()=>document.querySelector('#maintenance-screen').hidden);
   await idle();
   assert.equal(await page.locator('main').evaluate(el=>el.classList.contains('archive-closed')),true);
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'overview');
   assert.equal(await page.evaluate(()=>document.body.classList.contains('is-maintenance')),false);
   assert.notEqual(await page.evaluate(()=>getComputedStyle(document.body).overflow),'hidden');
   const discord=await page.locator('.discord-link').evaluate(element=>({
@@ -147,6 +149,7 @@ try {
   await page.locator('#fullscreen').click(); await page.waitForFunction(()=>!document.fullscreenElement); report('keyboard fullscreen entry and exit label');
   await page.locator('#close-archive').click();
   await page.waitForFunction(()=>document.querySelector('main').classList.contains('archive-closed'));
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'overview');
   const overviewSizes=await page.evaluate(()=>[document.querySelector('#archive-cover'),document.querySelector('#rank-cover')].map(cover=>getComputedStyle(cover).width));
   assert.equal(overviewSizes[0],overviewSizes[1]);
   assert.equal(await page.locator('#rank-cover').isVisible(),true);
@@ -157,6 +160,13 @@ try {
   assert.equal(await page.locator('#rank-directory').isVisible(),false);
   await page.locator('#open-rank-directory').click();
   await page.waitForFunction(()=>document.querySelector('main').classList.contains('directory-open'));
+  const directoryTheme=await page.evaluate(()=>({
+    name:document.documentElement.dataset.theme,
+    accent:getComputedStyle(document.documentElement).getPropertyValue('--theme-accent').trim(),
+    background:getComputedStyle(document.documentElement).getPropertyValue('--theme-bg').trim(),
+    discordGlow:getComputedStyle(document.querySelector('.discord-link'),'::after').getPropertyValue('--control-glow-border').trim()
+  }));
+  assert.deepEqual(directoryTheme,{name:'directory',accent:'#b92c43',background:'#170a0e',discordGlow:'#ed647588'});
   const palette=await page.evaluate(()=>({
     background:getComputedStyle(document.querySelector('#rank-directory')).getPropertyValue('--rd-bg').trim(),
     panels:getComputedStyle(document.querySelector('#rank-directory')).getPropertyValue('--rd-panel').trim(),
@@ -237,13 +247,14 @@ try {
   assert.deepEqual(directoryReading.people,await page.locator('#rank-book .page-slot.left .rank-person-row:not(.rank-person-head)').allTextContents().then(rows=>rows.map(row=>row.trim())));
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#read-dialog').isVisible(),false);
-  assert.match(armoryReadingStyle,/rgb\(16, 35, 51\)/);
+  assert.match(armoryReadingStyle,/rgb\(16, 43, 61\)/);
   await page.locator('#rank-directory [data-reader-action="read"]').click();
   await page.locator('#read-dialog').waitFor({state:'visible'});
   assert.equal(await page.locator('#read-dialog').evaluate(el=>el.classList.contains('directory-reading')),true);
   await page.keyboard.press('Escape');
   await page.locator('#rank-close').click();
   await page.waitForFunction(()=>!document.querySelector('main').classList.contains('directory-open')&&document.querySelector('#rank-directory').hidden);
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'overview');
   const restoredSizes=await page.evaluate(()=>[document.querySelector('#archive-cover'),document.querySelector('#rank-cover')].map(cover=>getComputedStyle(cover).width));
   assert.equal(restoredSizes[0],restoredSizes[1]);
   assert.equal(await page.locator('#rank-cover').isVisible(),true);
@@ -261,10 +272,18 @@ try {
   await page.waitForFunction(()=>document.querySelector('#archive-cover').dataset.bookState==='book-focused');
   await page.locator('#open-archive').click();
   await page.waitForFunction(()=>!document.querySelector('main').classList.contains('archive-closed'));
+  const armoryTheme=await page.evaluate(()=>({
+    name:document.documentElement.dataset.theme,
+    accent:getComputedStyle(document.documentElement).getPropertyValue('--theme-accent').trim(),
+    background:getComputedStyle(document.documentElement).getPropertyValue('--theme-bg').trim(),
+    discordGlow:getComputedStyle(document.querySelector('.discord-link'),'::after').getPropertyValue('--control-glow-border').trim(),
+    directoryOpen:document.querySelector('main').classList.contains('directory-open')
+  }));
+  assert.deepEqual(armoryTheme,{name:'armory',accent:'#6fd5f5',background:'#07131f',discordGlow:'#6fd5f588',directoryOpen:false});
   await page.locator('#read-spread').click();
   await page.locator('#read-dialog').waitFor({state:'visible'});
   assert.equal(await page.locator('#read-dialog').evaluate(el=>el.classList.contains('directory-reading')),false);
-  assert.match(await page.locator('#read-dialog').evaluate(el=>getComputedStyle(el).backgroundImage),/rgb\(16, 35, 51\)/);
+  assert.match(await page.locator('#read-dialog').evaluate(el=>getComputedStyle(el).backgroundImage),/rgb\(16, 43, 61\)/);
   await page.keyboard.press('Escape');
   await page.locator('#close-archive').click();
   await page.waitForFunction(()=>document.querySelector('main.archive-closed'));

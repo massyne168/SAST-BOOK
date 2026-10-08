@@ -118,6 +118,7 @@ const closeDirectory = async () => {
     const main = document.querySelector('main');
     main.classList.remove('directory-open');
     main.classList.add('archive-closed');
+    document.dispatchEvent(new Event('archive-overview'));
     await resetBookFocus('directory');
     $('#open-rank-directory').focus({preventScroll: true});
   } catch (cause) {

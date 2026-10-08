@@ -1179,6 +1179,176 @@ body:has(#read-dialog[open]) #rank-directory .rank-controls [data-reader-action=
   main.archive-closed .book-pair[data-carousel-transitioning="true"]>.rank-cover-stage-teaser{will-change:auto}
 }
 
+/* Shared site chrome follows the open book; maintenance and loading retain their own palettes. */
+html[data-theme="overview"]{
+  --theme-bg:#07131f;--theme-panel:#0b1b28;--theme-panel-raised:#10283a;
+  --theme-border:#29485d;--theme-border-strong:#456b82;--theme-accent:#62c6e5;
+  --theme-highlight:#91e2f7;--theme-text:#e0eaf0;--theme-muted:#9ab1be;
+  --theme-glow:#38bdf844;--theme-glow-border:#62c6e588;--theme-depth:#203a4b
+}
+html[data-theme="armory"]{
+  --theme-bg:#07131f;--theme-panel:#0b1b28;--theme-panel-raised:#102b3d;
+  --theme-border:#294d64;--theme-border-strong:#4fbeda;--theme-accent:#6fd5f5;
+  --theme-highlight:#a1eaff;--theme-text:#e5f1f7;--theme-muted:#9bb8c6;
+  --theme-glow:#38bdf855;--theme-glow-border:#6fd5f588;--theme-depth:#174664
+}
+html[data-theme="directory"]{
+  --theme-bg:#170a0e;--theme-panel:#281016;--theme-panel-raised:#35131c;
+  --theme-border:#5c202c;--theme-border-strong:#8e2a3a;--theme-accent:#b92c43;
+  --theme-highlight:#ed6475;--theme-text:#f0e3e6;--theme-muted:#bc939c;
+  --theme-glow:#b92c4355;--theme-glow-border:#ed647588;--theme-depth:#721e2c
+}
+body:not(.is-maintenance):not(.is-loading){
+  background-color:var(--theme-bg);
+  background-image:radial-gradient(ellipse at 50% 38%,var(--theme-glow),transparent 68%);
+  color:var(--theme-text);
+  transition:background-color .22s ease,color .22s ease,background-image .22s ease
+}
+body:not(.is-maintenance):not(.is-loading) :is(button,a,.book):focus-visible{
+  outline-color:var(--theme-highlight)
+}
+body:not(.is-maintenance):not(.is-loading) .masthead,
+body:not(.is-maintenance):not(.is-loading) footer,
+body:not(.is-maintenance):not(.is-loading) .brand,
+body:not(.is-maintenance):not(.is-loading) .archive-label,
+body:not(.is-maintenance):not(.is-loading) .header-note,
+body:not(.is-maintenance):not(.is-loading) .edition,
+body:not(.is-maintenance):not(.is-loading) .eyebrow,
+body:not(.is-maintenance):not(.is-loading) .access,
+body:not(.is-maintenance):not(.is-loading) .gesture-hint,
+body:not(.is-maintenance):not(.is-loading) .page-indicator,
+body:not(.is-maintenance):not(.is-loading) .reader-progress,
+body:not(.is-maintenance):not(.is-loading) #reader-status,
+body:not(.is-maintenance):not(.is-loading) .control-divider{
+  transition:color .22s ease,background-color .22s ease,border-color .22s ease
+}
+body:not(.is-maintenance):not(.is-loading) .masthead{
+  border-color:var(--theme-border)
+}
+body:not(.is-maintenance):not(.is-loading) .brand,
+body:not(.is-maintenance):not(.is-loading) h1,
+body:not(.is-maintenance):not(.is-loading) .record-heading{color:var(--theme-text)}
+body:not(.is-maintenance):not(.is-loading) .brand-line{background:var(--theme-accent)}
+body:not(.is-maintenance):not(.is-loading) .archive-label,
+body:not(.is-maintenance):not(.is-loading) .header-note,
+body:not(.is-maintenance):not(.is-loading) .edition,
+body:not(.is-maintenance):not(.is-loading) .eyebrow,
+body:not(.is-maintenance):not(.is-loading) .access,
+body:not(.is-maintenance):not(.is-loading) .gesture-hint,
+body:not(.is-maintenance):not(.is-loading) .total{color:var(--theme-muted)}
+body:not(.is-maintenance):not(.is-loading) .header-note b,
+body:not(.is-maintenance):not(.is-loading) .edition i,
+body:not(.is-maintenance):not(.is-loading) .access span{color:var(--theme-accent)}
+body:not(.is-maintenance):not(.is-loading) footer{
+  border-color:var(--theme-border);color:var(--theme-muted)
+}
+body:not(.is-maintenance):not(.is-loading) footer b{color:var(--theme-accent)}
+body:not(.is-maintenance):not(.is-loading) .reader-controls button,
+body:not(.is-maintenance):not(.is-loading) .carousel-controls button,
+body:not(.is-maintenance):not(.is-loading) .reading-access button,
+body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-controls button{
+  border-color:var(--theme-border-strong);
+  background:linear-gradient(145deg,var(--theme-panel-raised),var(--theme-panel));
+  color:var(--theme-text);
+  transition:background-color .22s ease,border-color .22s ease,color .22s ease,transform .18s ease,opacity .18s ease
+}
+body:not(.is-maintenance):not(.is-loading) .reader-controls button:hover:not(:disabled),
+body:not(.is-maintenance):not(.is-loading) .reader-controls button:focus-visible,
+body:not(.is-maintenance):not(.is-loading) .carousel-controls button:hover:not(:disabled),
+body:not(.is-maintenance):not(.is-loading) .carousel-controls button:focus-visible,
+body:not(.is-maintenance):not(.is-loading) .reading-access button:hover,
+body:not(.is-maintenance):not(.is-loading) .reading-access button:focus-visible,
+body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-controls button:hover:not(:disabled),
+body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-controls button:focus-visible{
+  border-color:var(--theme-highlight);background:var(--theme-panel-raised);color:#fff
+}
+body:not(.is-maintenance):not(.is-loading) .reader-controls button:focus-visible,
+body:not(.is-maintenance):not(.is-loading) .carousel-controls button:focus-visible,
+body:not(.is-maintenance):not(.is-loading) .reading-access button:focus-visible,
+body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-controls button:focus-visible{
+  outline-color:var(--theme-highlight)
+}
+body:not(.is-maintenance):not(.is-loading) .page-indicator,
+body:not(.is-maintenance):not(.is-loading) .carousel-controls,
+body:not(.is-maintenance):not(.is-loading) .carousel-controls span,
+body:not(.is-maintenance):not(.is-loading) .reader-progress,
+body:not(.is-maintenance):not(.is-loading) #reader-status{color:var(--theme-text)}
+body:not(.is-maintenance):not(.is-loading) .control-divider{background:var(--theme-border-strong)}
+body:not(.is-maintenance):not(.is-loading) #spread-progress{
+  accent-color:var(--theme-accent);background:var(--theme-panel);color:var(--theme-accent);
+  box-shadow:0 0 8px var(--theme-glow)
+}
+body:not(.is-maintenance):not(.is-loading) #spread-progress::-webkit-progress-bar{background:var(--theme-panel)}
+body:not(.is-maintenance):not(.is-loading) #spread-progress::-webkit-progress-value{background:var(--theme-accent);box-shadow:0 0 8px var(--theme-glow)}
+body:not(.is-maintenance):not(.is-loading) #spread-progress::-moz-progress-bar{background:var(--theme-accent)}
+body:not(.is-maintenance):not(.is-loading) .discord-link{
+  border-color:var(--theme-border-strong);background:var(--theme-panel);color:var(--theme-highlight);
+  --control-glow-border:var(--theme-glow-border);
+  --control-glow-shadow:var(--theme-glow);
+  transition:background-color .22s ease,border-color .22s ease,color .22s ease
+}
+body:not(.is-maintenance):not(.is-loading) .discord-link::after{
+  --control-glow-border:var(--theme-glow-border);--control-glow-shadow:var(--theme-glow)
+}
+body:not(.is-maintenance):not(.is-loading) .discord-link:hover,
+body:not(.is-maintenance):not(.is-loading) .discord-link:focus-visible{
+  border-color:var(--theme-highlight);background:var(--theme-panel-raised);color:#fff
+}
+body:not(.is-maintenance):not(.is-loading) .discord-link:focus-visible{outline-color:var(--theme-highlight)}
+body:not(.is-maintenance):not(.is-loading) .book-opening-tab:focus-visible{outline-color:var(--theme-highlight)}
+body:not(.is-maintenance):not(.is-loading) #book .board{
+  background:var(--theme-panel);border-color:var(--theme-border-strong);
+  box-shadow:0 3px 0 #0a0c0a,0 7px 0 var(--theme-depth),0 10px 1px #080b08,0 30px 36px #0009,0 60px 90px #0007;
+  transition:background-color .22s ease,border-color .22s ease
+}
+body:not(.is-maintenance):not(.is-loading) #book .ribbon{background:var(--theme-accent)}
+body:not(.is-maintenance):not(.is-loading) #read-dialog{
+  border-color:var(--theme-border-strong);background:linear-gradient(145deg,var(--theme-panel-raised),var(--theme-bg));
+  color:var(--theme-text);scrollbar-color:var(--theme-accent) var(--theme-bg);
+  transition:background-color .22s ease,border-color .22s ease,color .22s ease
+}
+body:not(.is-maintenance):not(.is-loading) #read-dialog .dialog-head button{
+  border-color:var(--theme-border-strong);background:var(--theme-panel);color:var(--theme-text)
+}
+body:not(.is-maintenance):not(.is-loading) #read-dialog .dialog-head button:hover,
+body:not(.is-maintenance):not(.is-loading) #read-dialog .dialog-head button:focus-visible{
+  border-color:var(--theme-highlight);color:#fff;outline-color:var(--theme-highlight)
+}
+html[data-theme="directory"] body:not(.is-maintenance):not(.is-loading) #read-dialog.directory-reading{
+  border-color:var(--theme-border-strong);background:var(--theme-bg);color:var(--theme-text);
+  scrollbar-color:var(--theme-accent) var(--theme-bg)
+}
+html[data-theme="directory"] body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-directory-heading,
+html[data-theme="directory"] body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-controls,
+html[data-theme="directory"] body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-position,
+html[data-theme="directory"] body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-status{color:var(--theme-text)}
+html[data-theme="directory"] body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-directory-heading span,
+html[data-theme="directory"] body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-directory-heading p{color:var(--theme-muted)}
+html[data-theme="directory"] body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-close{
+  border-color:var(--theme-border-strong);background:var(--theme-panel);color:var(--theme-text);
+  transition:background-color .22s ease,border-color .22s ease,color .22s ease
+}
+html[data-theme="directory"] body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-close:hover,
+html[data-theme="directory"] body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-close:focus-visible{
+  border-color:var(--theme-highlight);color:#fff;outline-color:var(--theme-highlight)
+}
+html[data-theme="directory"] body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-controls [data-reader-action="read"]{
+  --control-glow-border:#ed647588;--control-glow-shadow:#b92c4355
+}
+@media(prefers-reduced-motion:reduce){
+  body:not(.is-maintenance):not(.is-loading),
+  body:not(.is-maintenance):not(.is-loading) .reader-controls button,
+  body:not(.is-maintenance):not(.is-loading) .carousel-controls button,
+  body:not(.is-maintenance):not(.is-loading) .reading-access button,
+  body:not(.is-maintenance):not(.is-loading) .discord-link,
+  body:not(.is-maintenance):not(.is-loading) #read-dialog,
+  body:not(.is-maintenance):not(.is-loading) .masthead,
+  body:not(.is-maintenance):not(.is-loading) footer,
+  body:not(.is-maintenance):not(.is-loading) .brand,
+  body:not(.is-maintenance):not(.is-loading) #book .board,
+  html[data-theme="directory"] body:not(.is-maintenance):not(.is-loading) #rank-directory .rank-close{transition:none}
+}
+
 /* Opening controls only: retain their existing IDs and two-step handlers. */
 #open-archive.book-opening-tab,#open-rank-directory.book-opening-tab{
   position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;
