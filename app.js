@@ -26,11 +26,12 @@ function changed(spread) {
   $('#progress-text').textContent = `SPREAD ${String(spread + 1).padStart(2, '0')} / 15`;
   book.setAttribute('aria-label', `Pages ${spread * 2 + 1} and ${spread * 2 + 2} of 30. Drag across the spine or use arrow keys. Double-click a page to zoom.`);
   saveSpread(storage, spread); controls(spread);
-  if (matchMedia('(any-pointer: coarse)').matches) void prepareNearby(spread);
+  if (!main.classList.contains('archive-closed')) void prepareNearby(spread, 1);
 }
 const engine = new FlipEngine(book, {
   spreadCount: 15, initialSpread: loadSpread(storage), render: i => pages[i], blocked,
   onChange: changed,
+  onPrepareTurn: (direction, spread) => { void prepareNearby(spread, direction); },
   onBusyChange: value => { turning = value; if(value) lastTap = null; controls(engine.spread); },
   onSelect: (index, event) => {
     if (busy() || blocked()) return;
@@ -69,6 +70,7 @@ $('#open-archive').onclick = async () => {
   coverOpening = true; $('#open-archive').disabled = true;
   try {
     await prepareSpread(engine.spread);
+    void prepareNearby(engine.spread, 1);
     cover.classList.add('opening');
     await new Promise(resolve => setTimeout(resolve, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650));
     main.classList.remove('archive-closed');
@@ -99,3 +101,8 @@ fullscreen.onclick = async () => {
 };
 document.addEventListener('fullscreenchange', syncFullscreen);
 syncFullscreen();
+
+$('#open-rank-directory').addEventListener('click', async () => {
+  const {openRankDirectory} = await import('./rank-directory.js');
+  openRankDirectory();
+});

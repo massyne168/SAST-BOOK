@@ -1,18 +1,17 @@
-// EDITABLE RANK DIRECTORY DATA
-// Add or remove personnel objects in each rank's personnel array. Portraits may be relative asset paths or URLs.
-const placeholder = (rank, categoryNumber) => ({
-  fullName: 'PLACEHOLDER PERSONNEL', rank, badgeNumber: `TBD-${String(categoryNumber).padStart(2, '0')}`,
-  departmentUnit: 'San Andreas State Troopers / Unassigned', callSign: 'TBD', status: 'UNASSIGNED',
-  joinDate: 'YYYY-MM-DD', profile: 'Replace this placeholder with an approved personnel profile or notes.',
-  portrait: '', signature: 'Pending authorization'
-});
-
+﻿// EDITABLE RANK DIRECTORY DATA
+// Add or remove people inside each rank's people array. These are placeholder records.
 export const rankDirectoryData = [
-  'Officer 1', 'Officer 2', 'Officer 3', 'Senior Lead Officer', 'Sergeant 1', 'Sergeant 2',
-  'Master Sergeant', 'Lieutenant', 'Captain', 'Major / Commander', 'Chief of Police',
-  'Assistant Commissioner', 'Commissioner'
-].map((title, index) => ({
-  title,
-  categoryNumber: index + 1,
-  personnel: [placeholder(title, index + 1)]
-}));
+  { rank: 'Officer 1', people: [{ name: 'PERSON NAME', badge: '0001' }, { name: 'PERSON NAME', badge: '0002' }] },
+  { rank: 'Officer 2', people: [{ name: 'PERSON NAME', badge: '0101' }] },
+  { rank: 'Officer 3', people: [{ name: 'PERSON NAME', badge: '0201' }] },
+  { rank: 'Senior Lead Officer', people: [{ name: 'PERSON NAME', badge: '0301' }] },
+  { rank: 'Sergeant 1', people: [{ name: 'PERSON NAME', badge: '0401' }] },
+  { rank: 'Sergeant 2', people: [{ name: 'PERSON NAME', badge: '0501' }] },
+  { rank: 'Master Sergeant', people: [{ name: 'PERSON NAME', badge: '0601' }] },
+  { rank: 'Lieutenant', people: [{ name: 'PERSON NAME', badge: '0701' }] },
+  { rank: 'Captain', people: [{ name: 'PERSON NAME', badge: '0801' }] },
+  { rank: 'Major / Commander', people: [{ name: 'PERSON NAME', badge: '0901' }] },
+  { rank: 'Chief of Police', people: [{ name: 'PERSON NAME', badge: '1001' }] },
+  { rank: 'Assistant Commissioner', people: [{ name: 'PERSON NAME', badge: '1101' }] },
+  { rank: 'Commissioner', people: [{ name: 'PERSON NAME', badge: '1201' }] }
+];

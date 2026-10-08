@@ -301,7 +301,7 @@ body.is-loading>*:not(.site-loader){visibility:hidden;pointer-events:none}
 /* Rank Directory refinements: compact pair, right-side record tabs, low-cost transitions. */
 .book-pair{gap:clamp(8px,.9vw,16px);width:100%;max-width:1800px;padding-inline:clamp(8px,1.3vw,22px);overflow-x:clip}
 .rank-cover-stage{align-items:center;gap:12px;padding:10px 0 26px}
-.rank-book-shell{flex:1 1 0;width:auto;min-width:0;filter:drop-shadow(0 20px 24px #0008)}
+.rank-book-shell{flex:1 1 0;width:auto;min-width:0;filter:none}
 .rank-category-list{flex:0 0 clamp(148px,14vw,205px);display:flex;flex-direction:column;gap:5px;max-height:min(570px,64vh);overflow:auto;margin:0;padding:8px;border:1px solid #516b7a;background:linear-gradient(155deg,#111f2b,#172731 62%,#211f26);box-shadow:inset 1px 0 #b7c4ca30}
 .rank-category-list button{position:relative;display:flex;align-items:center;gap:8px;width:100%;min-height:37px;padding:6px 8px;text-align:left;border:1px solid #536d7b;background:linear-gradient(105deg,#273b49,#1b2a35 70%,#20232b);color:#c5d3d8;font:600 10px var(--mono);letter-spacing:.025em;transition:background .16s,border-color .16s,color .16s,transform .16s}
 .rank-category-list button::before{content:"";width:3px;align-self:stretch;flex:0 0 3px;background:#637a86}
@@ -320,3 +320,43 @@ body.is-loading>*:not(.site-loader){visibility:hidden;pointer-events:none}
 @media(max-width:600px){.rank-directory{padding:18px 8px 34px}.rank-cover-stage{flex-direction:column;align-items:stretch;padding:8px 0 18px}.rank-book-shell{width:100%;flex:0 0 auto}.rank-category-list{width:100%;flex:0 0 auto;max-height:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:6px}.rank-category-list button{min-width:0;min-height:36px;font-size:clamp(8px,2.3vw,10px);gap:5px}.rank-category-list button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rank-category-list button::after{width:4px;height:4px}}
 @media(prefers-reduced-motion:reduce){.rank-category-list button,.rank-book{transition:none}.rank-category-list button:hover{transform:none}}@media(min-width:1000px){body:has(.rank-directory:not([hidden])) .rank-directory{grid-column:1 / -1}}
 @media(max-width:600px){.rank-cover{box-shadow:2px 3px 0 #c0c8cb,4px 5px 0 #394956,6px 8px 0 #101821,12px 18px 28px #0009,inset 4px 0 8px #000a}}
+/* Flip performance: persistent mesh, one shadow surface, and gesture-scoped scroll lock. */
+.book{touch-action:pan-y}
+body.book-drag-active{overflow:hidden;overscroll-behavior:none}
+#turn-layer{visibility:hidden}
+.book.turning #turn-layer{visibility:visible}
+#turn-layer::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--turn-shadow,0);background:linear-gradient(90deg,transparent 43%,#0005 50%,transparent 57%)}
+#turn-layer .leaf-strip{visibility:hidden;backface-visibility:hidden}
+.book.turning #turn-layer .leaf-strip{visibility:visible;will-change:transform}
+.book.turning .page-slot{box-shadow:none}
+.book.turning .page-slot::after,.book.turning .leaf-face::after{display:none}
+.book.turning-touch{touch-action:none}
+.book.turning-touch #turn-layer::before{display:none}
+.book.turning-touch .leaf-strip{will-change:transform}
+.book.turning-touch .leaf-face,.book.turning-touch .leaf-content,.book.turning-touch .page{filter:none;box-shadow:none;animation:none}
+.book.turning-touch .leaf-face:after,.book.turning-touch .page:before{display:none}
+.book.turning-touch .page-slot{box-shadow:none}
+@media(max-width:600px),(pointer:coarse){
+ .rank-book-shell{filter:none}
+ .rank-book .board{box-shadow:inset 0 0 0 3px #25313a,0 3px 0 #080d12,0 6px 0 #71838a,0 9px 0 #080d12,0 18px 26px #0008}
+ body.is-loading .loader-logo{animation:none;filter:drop-shadow(0 0 12px #45baff30)}
+ body.is-loading .discord-icon-wrap::before{animation:none}
+}
+@media(prefers-reduced-motion:reduce){.book,.rank-book-shell>.rank-book{scroll-behavior:auto}.rank-book{transition:none}}
+.rank-portrait{background-size:cover;background-position:center}
+.book.turning .page:before,.book.turning .rank-page:before{display:none}
+.rank-book-shell:has(.rank-book.turning){filter:none}/* Compact single-page personnel list used by the Rank Directory. */
+.rank-personnel-list-page{display:flex;flex-direction:column;gap:7%;}
+.rank-list-heading{position:relative;z-index:1;border-bottom:2px solid #536c78;padding:0 0 5%;color:#405965;font:1.15cqw var(--mono);letter-spacing:.12em}
+.rank-list-heading::after{content:"";display:block;width:22%;height:3px;margin-top:4%;background:linear-gradient(90deg,#3f879f,#9bb7c0 70%,#b55260)}
+.rank-list-heading h2{font:700 4.1cqw/1.08 var(--display);letter-spacing:.025em;color:#1b2d39;margin:5% 0 0}
+.rank-personnel-table{position:relative;z-index:1;border:1px solid #82949a;background:#d8dfe0;box-shadow:inset 3px 0 #4c9ab2;}
+.rank-person-rows{max-height:58%;overflow:auto;overscroll-behavior:contain}
+.rank-person-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(5.2em,.27fr);align-items:center;gap:8px;padding:2.3% 3%;border-bottom:1px solid #9caaad;color:#273a45;font:500 1.75cqw var(--mono);letter-spacing:.035em}
+.rank-person-row:last-child{border-bottom:0}
+.rank-person-head{background:linear-gradient(90deg,#263d4b,#3d5967);color:#edf4f5;font:600 1.2cqw var(--mono);letter-spacing:.12em}
+.rank-person-row span:last-child{text-align:right;white-space:nowrap}
+.rank-list-empty{padding:8% 3%;text-align:center;color:#4b616c;font:600 1.75cqw var(--mono);letter-spacing:.14em}
+.rank-blank{background:linear-gradient(145deg,#d6ddde,#cbd3d5);}
+.rank-blank:before{border-color:#64798325}
+@media(max-width:700px){.rank-personnel-list-page{gap:7%}.rank-list-heading{font-size:1.55cqw}.rank-list-heading h2{font-size:5.3cqw}.rank-person-row{font-size:2.2cqw;padding:2.8% 3%}.rank-person-head{font-size:1.6cqw}.rank-list-empty{font-size:2.2cqw}}
