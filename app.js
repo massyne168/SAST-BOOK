@@ -4,9 +4,61 @@ import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
 import {focusBook, isBookFocused, setBookFocused, setBookOpen, setBookOpening, resetBookFocus} from './book-focus.js';
 const $ = selector => document.querySelector(selector);
+// Temporary client-side preview gate setting; edit this value to change the Directory code.
+const DIRECTORY_PREVIEW_ACCESS_CODE = '2012';
 const setTheme = theme => { document.documentElement.dataset.theme = theme; };
 setTheme('overview');
-document.addEventListener('archive-overview', () => setTheme('overview'));
+document.addEventListener('archive-overview-start', () => {
+  setTheme('overview');
+  hideOpeningButtons();
+});
+document.addEventListener('archive-overview-ready', () => {
+  scheduleOpeningReveal(() => directoryAccessButton.focus({preventScroll: true}));
+});
+document.addEventListener('archive-select-first', () => setCarouselBook(0));
+const directoryAccessDialog = $('#directory-access-dialog');
+const directoryAccessForm = $('#directory-access-form');
+const directoryAccessInput = $('#directory-access-code');
+const directoryAccessError = $('#directory-access-error');
+const directoryAccessButton = $('#open-rank-directory');
+function closeDirectoryAccess() {
+  if (!directoryAccessDialog.open) return;
+  directoryAccessDialog.close();
+  directoryAccessButton.focus({preventScroll: true});
+}
+$('#cancel-directory-access').addEventListener('click', closeDirectoryAccess);
+directoryAccessDialog.addEventListener('cancel', event => {
+  event.preventDefault();
+  closeDirectoryAccess();
+});
+directoryAccessDialog.addEventListener('click', event => {
+  if (event.target === directoryAccessDialog) closeDirectoryAccess();
+});
+directoryAccessDialog.addEventListener('keydown', event => {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeDirectoryAccess();
+    return;
+  }
+  if (event.key !== 'Tab') return;
+  const controls = [...directoryAccessDialog.querySelectorAll('input:not(:disabled),button:not(:disabled)')];
+  const first = controls[0], last = controls[controls.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+});
+function requestDirectoryAccess() {
+  if (directoryAccessDialog.open) return;
+  directoryAccessError.textContent = '';
+  directoryAccessInput.value = '';
+  directoryAccessInput.removeAttribute('aria-invalid');
+  directoryAccessDialog.showModal();
+  directoryAccessInput.focus();
+}
 const discord = $('.discord-link');
 const discordUrl = discord?.dataset.discordUrl || 'https://discord.gg/YOUR-SERVER';
 if (discord) discord.href = discordUrl;
@@ -37,6 +89,56 @@ pair.insertAdjacentElement('afterend', carouselButtons);
 let carouselIndex = pair.dataset.activeBook === 'directory' ? 1 : 0;
 let carouselTimer, carouselTransitioning = false, wheelTotal = 0, wheelIdleTimer, wheelGestureLocked = false;
 const carouselNames = ['ARMORY', 'RANK DIRECTORY'];
+const openingActions = [['archive', $('#open-archive')], ['directory', $('#open-rank-directory')]];
+let openingRevealTimer, openingRevealGeneration = 0;
+function cancelOpeningReveal() {
+  window.clearTimeout(openingRevealTimer);
+  openingRevealGeneration += 1;
+}
+function setOpeningButtonHidden(button, inactive = false) {
+  button.hidden = false;
+  button.disabled = true;
+  button.tabIndex = -1;
+  button.inert = true;
+  button.setAttribute('aria-hidden', 'true');
+  button.classList.remove('opening-button-revealed');
+  button.classList.add(inactive ? 'opening-button-inactive' : 'opening-button-pending');
+}
+function hideOpeningButtons() {
+  cancelOpeningReveal();
+  openingActions.forEach(([, button]) => setOpeningButtonHidden(button));
+}
+function revealOpeningButton(button) {
+  button.classList.remove('opening-button-pending', 'opening-button-inactive');
+  button.classList.add('opening-button-revealed');
+  button.disabled = false;
+  button.tabIndex = 0;
+  button.inert = false;
+  button.removeAttribute('aria-hidden');
+}
+function scheduleOpeningReveal(onReveal) {
+  cancelOpeningReveal();
+  const generation = openingRevealGeneration;
+  const selectedBook = pair.dataset.activeBook;
+  const button = openingActions.find(([kind]) => kind === selectedBook)?.[1];
+  if (!button || !main.classList.contains('archive-closed')) return;
+  openingActions.forEach(([kind, action]) => setOpeningButtonHidden(action, kind !== selectedBook));
+  const reveal = () => {
+    if (generation !== openingRevealGeneration || pair.dataset.activeBook !== selectedBook ||
+        !main.classList.contains('archive-closed') || carouselTransitioning || document.querySelector('dialog[open]')) return;
+    revealOpeningButton(button);
+    onReveal?.();
+  };
+  if (reducedMotion.matches) {
+    reveal();
+    return;
+  }
+  openingRevealTimer = window.setTimeout(reveal, 1000);
+}
+reducedMotion.addEventListener?.('change', event => {
+  if (event.matches && main.classList.contains('archive-closed')) scheduleOpeningReveal();
+});
+document.addEventListener('site-ready', () => scheduleOpeningReveal());
 function syncCarousel() {
   pair.dataset.activeBook = carouselIndex === 0 ? 'archive' : 'directory';
   carouselButtons.querySelector('span').textContent = `${carouselNames[carouselIndex]} / 02`;
@@ -44,27 +146,29 @@ function syncCarousel() {
     button.disabled = (Number(button.dataset.carouselDirection) < 0 && carouselIndex === 0) ||
       (Number(button.dataset.carouselDirection) > 0 && carouselIndex === 1);
   });
-  [['archive', $('#open-archive')], ['directory', $('#open-rank-directory')]].forEach(([bookName, button]) => {
-    const inactive = bookName !== pair.dataset.activeBook;
-    button.hidden = inactive;
-    button.disabled = inactive;
-  });
+  openingActions.forEach(([bookName, button]) => setOpeningButtonHidden(button, bookName !== pair.dataset.activeBook));
 }
 function setCarouselBook(index) {
   if (index < 0 || index > 1 || index === carouselIndex || carouselTransitioning) return false;
+  cancelOpeningReveal();
   carouselIndex = index;
   syncCarousel();
-  if (reducedMotion.matches) return true;
+  if (reducedMotion.matches) {
+    scheduleOpeningReveal();
+    return true;
+  }
   carouselTransitioning = true;
   pair.dataset.carouselTransitioning = 'true';
   clearTimeout(carouselTimer);
   carouselTimer = window.setTimeout(() => {
     carouselTransitioning = false;
     delete pair.dataset.carouselTransitioning;
+    scheduleOpeningReveal();
   }, 520);
   return true;
 }
 syncCarousel();
+if (document.body.classList.contains('site-ready')) scheduleOpeningReveal();
 carouselButtons.addEventListener('click', event => {
   const button = event.target.closest('[data-carousel-direction]');
   if (button && !button.disabled) setCarouselBook(carouselIndex + Number(button.dataset.carouselDirection));
@@ -74,8 +178,7 @@ pair.addEventListener('click', event => {
   if (action) setCarouselBook(action.id === 'open-archive' ? 0 : 1);
 }, true);
 pair.addEventListener('wheel', event => {
-  if (!main.classList.contains('archive-closed') || document.body.classList.contains('is-maintenance') ||
-      !$('#maintenance-screen').hidden || document.querySelector('dialog[open]')) return;
+  if (!main.classList.contains('archive-closed') || document.querySelector('dialog[open]')) return;
   const direction = Math.sign(event.deltaY);
   if (!direction) return;
   const nextIndex = carouselIndex + direction;
@@ -101,6 +204,7 @@ pair.addEventListener('transitionend', event => {
   clearTimeout(carouselTimer);
   carouselTransitioning = false;
   delete pair.dataset.carouselTransitioning;
+  scheduleOpeningReveal();
 });
 function controls(spread) {
   document.querySelectorAll('.reader-controls button,#read-spread').forEach(button => { button.disabled = busy(); });
@@ -257,13 +361,14 @@ $('#close-archive').onclick = async () => {
   if (busy() || engine.pending) return;
   clearTimeout(stampTimer); $('#access-stamp').hidden = true;
   main.classList.add('archive-closed');
+  hideOpeningButtons();
   setTheme('overview');
   try { await resetBookFocus('archive'); }
   catch (cause) {
     console.error('Unable to restore the book overview', cause);
     status('Unable to restore the archive covers. Please try again.');
   } finally {
-    $('#open-archive').focus({preventScroll:true});
+    scheduleOpeningReveal(() => $('#open-archive').focus({preventScroll:true}));
   }
 };
 const fullscreen = $('#fullscreen');
@@ -291,6 +396,20 @@ $('#open-rank-directory').addEventListener('click', async () => {
     }
     return;
   }
+  requestDirectoryAccess();
+});
+directoryAccessForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (directoryAccessInput.value !== DIRECTORY_PREVIEW_ACCESS_CODE) {
+    directoryAccessError.textContent = 'INVALID ACCESS CODE';
+    directoryAccessInput.setAttribute('aria-invalid', 'true');
+    directoryAccessInput.value = '';
+    directoryAccessInput.focus();
+    return;
+  }
+  directoryAccessInput.removeAttribute('aria-invalid');
+  directoryAccessError.textContent = '';
+  directoryAccessDialog.close();
   if (!setBookOpening('directory')) return;
   try {
     rankDirectoryModule = await import('./rank-directory.js');

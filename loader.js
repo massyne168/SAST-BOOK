@@ -6,13 +6,31 @@ if (loader && fill && percent) {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const duration = reducedMotion ? 0 : 4500;
   const start = performance.now();
+  let removalTimer;
+  let removed = false;
+
+  const removeLoader = () => {
+    if (removed) return;
+    removed = true;
+    window.clearTimeout(removalTimer);
+    loader.removeEventListener('transitionend', onTransitionEnd);
+    loader.remove();
+    document.dispatchEvent(new Event('site-ready'));
+  };
+  const onTransitionEnd = event => {
+    if (event.target === loader && event.propertyName === 'opacity') removeLoader();
+  };
 
   const finish = () => {
     document.body.classList.remove('is-loading');
     document.body.classList.add('site-ready');
     loader.setAttribute('aria-hidden', 'true');
-    loader.addEventListener('transitionend', () => loader.remove(), {once: true});
-    if (reducedMotion) loader.remove();
+    if (reducedMotion) {
+      removeLoader();
+      return;
+    }
+    loader.addEventListener('transitionend', onTransitionEnd);
+    removalTimer = window.setTimeout(removeLoader, 600);
   };
 
   const update = now => {

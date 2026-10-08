@@ -14,6 +14,11 @@ const report=label=>console.log(`PASS ${label}`);
 async function spread(value) { await page.waitForFunction(value=>document.querySelector('#progress-text').textContent===`SPREAD ${String(value+1).padStart(2,'0')} / 15`,value); }
 async function idle() { await page.waitForFunction(()=>document.querySelector('#book').getAttribute('aria-busy')==='false'); }
 async function verifyOpeningTabs(layout) {
+  await page.waitForFunction(()=>{
+    const pair=document.querySelector('.book-pair');
+    const selector=pair.dataset.activeBook==='directory'?'#open-rank-directory':'#open-archive';
+    return document.querySelector(selector).classList.contains('opening-button-revealed');
+  });
   const overview=await page.evaluate(()=>({
     active:document.querySelector('.book-pair').dataset.activeBook,
     books:Object.fromEntries([
@@ -22,19 +27,26 @@ async function verifyOpeningTabs(layout) {
     ].map(([name,[coverSelector,buttonSelector]])=>{
       const cover=document.querySelector(coverSelector),button=document.querySelector(buttonSelector);
       const rect=element=>{const {left,right,top,bottom,width,height}=element.getBoundingClientRect();return {left,right,top,bottom,width,height}};
-      return [name,{cover:rect(cover),button:rect(button),hidden:button.hidden,disabled:button.disabled,nested:cover.contains(button),layoutWidth:cover.offsetWidth,layoutHeight:cover.offsetHeight}];
+      return [name,{cover:rect(cover),button:rect(button),hidden:button.hidden,disabled:button.disabled,
+        ariaHidden:button.getAttribute('aria-hidden'),visibility:getComputedStyle(button).visibility,
+        revealed:button.classList.contains('opening-button-revealed'),pending:button.classList.contains('opening-button-pending'),
+        nested:cover.contains(button),layoutWidth:cover.offsetWidth,layoutHeight:cover.offsetHeight}];
     }))
   }));
   const overlaps=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
   for(const name of ['archive','directory']){
-    const {cover,button,hidden,disabled,nested,layoutWidth,layoutHeight}=overview.books[name];
+    const {cover,button,hidden,disabled,ariaHidden,visibility,revealed,pending,nested,layoutWidth,layoutHeight}=overview.books[name];
     const other=overview.books[name==='archive'?'directory':'archive'].cover;
     assert.equal(nested,false,`${name} button is outside its cover`);
     assert.ok(cover.left>=0&&cover.right<=innerWidth,`${name} cover stays inside the viewport`);
     assert.ok(Math.abs(layoutHeight/layoutWidth-1685/1191)<.01,`${name} cover retains its source aspect ratio`);
-    assert.equal(hidden,name!==overview.active,`${name} opening button visibility follows carousel selection`);
-    assert.equal(disabled,name!==overview.active,`${name} opening button is disabled when not selected`);
+    assert.equal(hidden,false,`${name} button retains a reserved layout slot`);
+    assert.equal(disabled,name!==overview.active||!revealed,`${name} opening button is disabled while inactive or delayed`);
+    assert.equal(visibility,name===overview.active&&revealed?'visible':'hidden');
+    assert.equal(ariaHidden,name===overview.active&&revealed?null:'true');
     if(name!==overview.active) continue;
+    assert.equal(revealed,true,`${name} opening button appears after its reveal delay`);
+    assert.equal(pending,false);
     assert.ok(button.left>=0&&button.right<=innerWidth,`${name} button stays inside the viewport`);
     assert.equal(overlaps(button,other),false,`${name} button does not cover the rear book`);
     const control=await page.locator(name==='archive'?'#open-archive':'#open-rank-directory').evaluate(element=>({
@@ -65,6 +77,19 @@ async function open() {
   assert.equal(await page.locator('html').getAttribute('data-theme'),'armory');
   await idle();
 }
+async function openDirectory() {
+  const activeBook=await page.locator('.book-pair').getAttribute('data-active-book');
+  if(activeBook!=='directory') await page.getByRole('button',{name:'Show the next book'}).click();
+  if(await page.locator('#rank-cover').getAttribute('data-book-state')!=='book-focused'){
+    await page.locator('#open-rank-directory').click();
+    await page.waitForFunction(()=>document.querySelector('#rank-cover').dataset.bookState==='book-focused');
+  }
+  await page.locator('#open-rank-directory').click();
+  await page.locator('#directory-access-dialog').waitFor({state:'visible'});
+  await page.locator('#directory-access-code').fill('2012');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(()=>document.querySelector('main').classList.contains('directory-open'));
+}
 async function drag(from,to) {
   const box=await page.locator('#book').boundingBox();
   await page.mouse.move(box.x+box.width*from,box.y+box.height*.5);
@@ -72,15 +97,12 @@ async function drag(from,to) {
 }
 try {
   await page.goto(origin);
-  await page.waitForFunction(()=>document.querySelector('#loader-percent').textContent==='100%');
-  assert.equal(await page.locator('#maintenance-screen').isVisible(),true);
-  await page.locator('#maintenance-code').fill('2012');
-  await page.locator('#maintenance-form button[type="submit"]').click();
-  await page.waitForFunction(()=>document.querySelector('#maintenance-screen').hidden);
+  await page.waitForFunction(()=>!document.querySelector('#site-loader')||document.querySelector('#loader-percent')?.textContent==='100%');
   await idle();
+  assert.equal(await page.locator('#maintenance-screen').count(),0);
+  assert.equal(await page.locator('#directory-access-dialog').isVisible(),false);
   assert.equal(await page.locator('main').evaluate(el=>el.classList.contains('archive-closed')),true);
   assert.equal(await page.locator('html').getAttribute('data-theme'),'overview');
-  assert.equal(await page.evaluate(()=>document.body.classList.contains('is-maintenance')),false);
   assert.notEqual(await page.evaluate(()=>getComputedStyle(document.body).overflow),'hidden');
   const discord=await page.locator('.discord-link').evaluate(element=>({
     href:element.href,width:element.getBoundingClientRect().width,height:element.getBoundingClientRect().height,
@@ -100,8 +122,50 @@ try {
   assert.equal(discordFocus.focused,true);
   assert.equal(discordFocus.animation,'none');
   assert.equal(discordFocus.opacity,'1');
-  report('fresh loader, maintenance password, and unlocked overview');
+  report('public startup shows the overview without an access gate');
   await verifyOpeningTabs('desktop'); report('desktop opening tabs stay beside covers without overlap or clipping');
+  const borderTravel=await page.locator('#open-archive').evaluate(element=>({
+    animation:getComputedStyle(element,'::before').animationName,
+    duration:getComputedStyle(element,'::before').animationDuration,
+    timing:getComputedStyle(element,'::before').animationTimingFunction,
+    background:getComputedStyle(element,'::before').backgroundImage,
+    mask:getComputedStyle(element,'::before').maskComposite,
+    inset:getComputedStyle(element,'::before').inset,
+    overflow:getComputedStyle(element).overflow,
+    pointerEvents:getComputedStyle(element,'::before').pointerEvents
+  }));
+  const {background,...travelMetrics}=borderTravel;
+  assert.match(background,/^conic-gradient\(/);
+  assert.deepEqual(travelMetrics,{animation:'opening-border-travel',duration:'3s',timing:'linear',
+    mask:'exclude, exclude',inset:'0px',overflow:'hidden',pointerEvents:'none'});
+  const circuit=await page.locator('#open-archive').evaluate(async element=>{
+    const samples=[];
+    for(let index=0;index<=10;index++){
+      const style=getComputedStyle(element,'::before');
+      samples.push({angle:parseFloat(style.getPropertyValue('--opening-angle')),transform:style.transform});
+      await new Promise(resolve=>setTimeout(resolve,300));
+    }
+    return samples;
+  });
+  const circuitDegrees=circuit.slice(1).reduce((total,sample,index)=>
+    total+((sample.angle-circuit[index].angle+540)%360-180),0);
+  assert.ok(circuitDegrees>340&&circuitDegrees<380,`border gradient completes one circuit (${circuitDegrees} degrees)`);
+  assert.ok(circuit.every(sample=>sample.transform==='none'),'the masked ring itself remains fixed');
+  await page.getByRole('button',{name:'Show the next book'}).click();
+  await page.waitForFunction(()=>!document.querySelector('.book-pair').dataset.carouselTransitioning);
+  await page.waitForTimeout(450);
+  await page.getByRole('button',{name:'Show the previous book'}).click();
+  await page.waitForFunction(()=>!document.querySelector('.book-pair').dataset.carouselTransitioning);
+  await page.waitForTimeout(500);
+  const delayedReveal=await page.locator('#open-archive').evaluate(element=>({
+    revealed:element.classList.contains('opening-button-revealed'),
+    pending:element.classList.contains('opening-button-pending'),
+    disabled:element.disabled,
+    visibility:getComputedStyle(element).visibility
+  }));
+  assert.deepEqual(delayedReveal,{revealed:false,pending:true,disabled:true,visibility:'hidden'});
+  await verifyOpeningTabs('desktop');
+  report('rapid carousel changes cancel stale reveal timers and restart the delay');
   await open(); await spread(0);
   assert.equal(await page.locator('#access-stamp').isVisible(),true);
   await page.waitForFunction(()=>document.querySelector('#access-stamp').hidden); report('cover opening and automatic stamp removal');
@@ -150,6 +214,7 @@ try {
   await page.locator('#close-archive').click();
   await page.waitForFunction(()=>document.querySelector('main').classList.contains('archive-closed'));
   assert.equal(await page.locator('html').getAttribute('data-theme'),'overview');
+  assert.equal(await page.locator('#open-archive').evaluate(el=>el.classList.contains('opening-button-pending')&&el.disabled),true);
   const overviewSizes=await page.evaluate(()=>[document.querySelector('#archive-cover'),document.querySelector('#rank-cover')].map(cover=>getComputedStyle(cover).width));
   assert.equal(overviewSizes[0],overviewSizes[1]);
   assert.equal(await page.locator('#rank-cover').isVisible(),true);
@@ -159,7 +224,26 @@ try {
   await page.waitForFunction(()=>document.querySelector('#rank-cover').dataset.bookState==='book-focused');
   assert.equal(await page.locator('#rank-directory').isVisible(),false);
   await page.locator('#open-rank-directory').click();
-  await page.waitForFunction(()=>document.querySelector('main').classList.contains('directory-open'));
+  await page.locator('#directory-access-dialog').waitFor({state:'visible'});
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'overview');
+  assert.equal(await page.locator('#directory-access-code').evaluate(el=>el.matches(':focus')),true);
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(await page.locator('#cancel-directory-access').evaluate(el=>el.matches(':focus')),true);
+  await page.keyboard.press('Tab');
+  assert.equal(await page.locator('#directory-access-code').evaluate(el=>el.matches(':focus')),true);
+  await page.locator('#directory-access-code').fill('wrong');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#directory-access-error').textContent(),'INVALID ACCESS CODE');
+  assert.equal(await page.locator('#directory-access-dialog').isVisible(),true);
+  await page.locator('#cancel-directory-access').click();
+  assert.equal(await page.locator('#directory-access-dialog').isVisible(),false);
+  assert.equal(await page.locator('#open-rank-directory').evaluate(el=>el.matches(':focus')),true);
+  assert.equal(await page.locator('main').evaluate(el=>el.classList.contains('archive-closed')),true);
+  await page.locator('#open-rank-directory').click();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#directory-access-dialog').isVisible(),false);
+  assert.equal(await page.locator('#open-rank-directory').evaluate(el=>el.matches(':focus')),true);
+  await openDirectory();
   const directoryTheme=await page.evaluate(()=>({
     name:document.documentElement.dataset.theme,
     accent:getComputedStyle(document.documentElement).getPropertyValue('--theme-accent').trim(),
@@ -255,15 +339,13 @@ try {
   await page.locator('#rank-close').click();
   await page.waitForFunction(()=>!document.querySelector('main').classList.contains('directory-open')&&document.querySelector('#rank-directory').hidden);
   assert.equal(await page.locator('html').getAttribute('data-theme'),'overview');
+  assert.equal(await page.locator('#open-rank-directory').evaluate(el=>el.classList.contains('opening-button-pending')&&el.disabled),true);
   const restoredSizes=await page.evaluate(()=>[document.querySelector('#archive-cover'),document.querySelector('#rank-cover')].map(cover=>getComputedStyle(cover).width));
   assert.equal(restoredSizes[0],restoredSizes[1]);
   assert.equal(await page.locator('#rank-cover').isVisible(),true);
   await page.setViewportSize({width:390,height:844});
   await verifyOpeningTabs('mobile'); report('mobile opening tabs sit below their covers without overlap or clipping');
-  await page.locator('#open-rank-directory').click();
-  await page.waitForFunction(()=>document.querySelector('#rank-cover').dataset.bookState==='book-focused');
-  await page.locator('#open-rank-directory').click();
-  await page.waitForFunction(()=>document.querySelector('main').classList.contains('directory-open'));
+  await openDirectory();
   await page.locator('#rank-close').click();
   await page.waitForFunction(()=>!document.querySelector('main').classList.contains('directory-open'));
   await page.getByRole('button',{name:'Show the previous book'}).click();
@@ -289,10 +371,7 @@ try {
   await page.waitForFunction(()=>document.querySelector('main.archive-closed'));
   await page.getByRole('button',{name:'Show the next book'}).click();
   await page.waitForFunction(()=>document.querySelector('.book-pair').dataset.activeBook==='directory');
-  await page.locator('#open-rank-directory').click();
-  await page.waitForFunction(()=>document.querySelector('#rank-cover').dataset.bookState==='book-focused');
-  await page.locator('#open-rank-directory').click();
-  await page.waitForFunction(()=>document.querySelector('main').classList.contains('directory-open'));
+  await openDirectory();
   await page.locator('#rank-directory [data-reader-action="read"]').click();
   await page.locator('#read-dialog').waitFor({state:'visible'});
   assert.equal(await page.locator('#read-dialog').evaluate(el=>el.classList.contains('directory-reading')),true);
@@ -307,10 +386,10 @@ try {
   report('mobile Armory and Rank Directory two-step opening controls');
   await open(); report('Rank Directory cover, category switching, fields, and return overview');
   await page.reload();
-  await page.waitForFunction(()=>document.querySelector('#maintenance-screen').hidden);
-  await open(); await spread(1); report('existing unlocked session initializes and restores position');
+  await page.waitForFunction(()=>document.querySelector('#book').getAttribute('aria-busy')==='false');
+  await open(); await spread(1); report('public reload initializes and restores the saved spread');
   await page.evaluate(()=>localStorage.setItem('armory-book.spread','999')); await page.reload();
-  await page.waitForFunction(()=>document.querySelector('#maintenance-screen').hidden);
+  await page.waitForFunction(()=>document.querySelector('#book').getAttribute('aria-busy')==='false');
   await open(); await spread(14);
   assert.equal(await page.locator('#next').isDisabled(),true); await page.locator('#book').focus(); await page.keyboard.press('ArrowRight'); await spread(14); report('clamped saved position and final boundary');
   await page.waitForFunction(()=>document.querySelector('#access-stamp').hidden);
@@ -318,32 +397,13 @@ try {
   const fallback=await context.newPage();
   await fallback.addInitScript(()=>Object.defineProperty(document,'fullscreenEnabled',{value:false}));
   await fallback.goto(origin);
-  await fallback.waitForFunction(()=>document.querySelector('#loader-percent').textContent==='100%');
-  await fallback.locator('#maintenance-code').fill('2012');
-  await fallback.locator('#maintenance-form button[type="submit"]').click();
-  await fallback.waitForFunction(()=>document.querySelector('#maintenance-screen').hidden);
+  await fallback.waitForFunction(()=>!document.querySelector('#site-loader')||document.querySelector('#loader-percent')?.textContent==='100%');
   await fallback.waitForFunction(()=>document.querySelector('#book').getAttribute('aria-busy')==='false');
   assert.equal(await fallback.locator('#fullscreen').evaluate(el=>el.hidden),true); await fallback.close(); report('unsupported fullscreen fallback');
-  const failure=await context.newPage();
-  let failInitialization=true;
-  await failure.route('**/app.js',route=>failInitialization?(failInitialization=false,route.abort()):route.continue());
-  await failure.goto(origin);
-  await failure.waitForFunction(()=>document.querySelector('#loader-percent').textContent==='100%');
-  await failure.addStyleTag({content:'#maintenance-screen{transition:none!important}'});
-  await failure.locator('#maintenance-code').fill('2012');
-  await failure.locator('#maintenance-form button[type="submit"]').click();
-  await failure.locator('#maintenance-retry').waitFor({state:'visible'});
-  assert.match(await failure.locator('#maintenance-error').textContent(),/INITIALIZATION FAILED/);
-  await failure.locator('#maintenance-retry').click();
-  await failure.waitForFunction(()=>document.querySelector('#maintenance-screen').hidden);
-  await failure.waitForFunction(()=>document.querySelector('#book').getAttribute('aria-busy')==='false');
-  await failure.close(); report('zero-duration unlock fallback and visible initialization retry');
+  report('public startup initializes without maintenance or session access state');
   const mobile=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
   const phone=await mobile.newPage(); phone.on('pageerror',error=>errors.push(error.message)); await phone.goto(origin);
-  await phone.waitForFunction(()=>document.querySelector('#loader-percent').textContent==='100%');
-  await phone.locator('#maintenance-code').fill('2012');
-  await phone.locator('#maintenance-form button[type="submit"]').tap();
-  await phone.waitForFunction(()=>document.querySelector('#maintenance-screen').hidden);
+  await phone.waitForFunction(()=>!document.querySelector('#site-loader')||document.querySelector('#loader-percent')?.textContent==='100%');
   await phone.waitForFunction(()=>document.querySelector('#book').getAttribute('aria-busy')==='false');
   await phone.locator('#open-archive').tap();
   await phone.waitForFunction(()=>document.querySelector('#archive-cover').dataset.bookState==='book-focused');

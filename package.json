@@ -6,6 +6,6 @@
     "start": "node server.js",
     "test": "node --test tests/reader.test.js",
     "test:browser": "node tests/browser.mjs",
-    "check": "node --check app.js && node --check book-focus.js && node --check crosshair.js && node --check flip-engine.js && node --check loader.js && node --check maintenance.js && node --check page-content.js && node --check rank-directory.js && node --check rank-directory-data.js && node --check reader-state.js && node --check zoom.js && node --check server.js"
+    "check": "node --check app.js && node --check book-focus.js && node --check crosshair.js && node --check flip-engine.js && node --check loader.js && node --check page-content.js && node --check rank-directory.js && node --check rank-directory-data.js && node --check reader-state.js && node --check zoom.js && node --check server.js"
   }
 }

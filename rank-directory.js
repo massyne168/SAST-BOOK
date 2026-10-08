@@ -118,14 +118,14 @@ const closeDirectory = async () => {
     const main = document.querySelector('main');
     main.classList.remove('directory-open');
     main.classList.add('archive-closed');
-    document.dispatchEvent(new Event('archive-overview'));
+    document.dispatchEvent(new Event('archive-overview-start'));
     await resetBookFocus('directory');
-    $('#open-rank-directory').focus({preventScroll: true});
   } catch (cause) {
     console.error('Unable to restore the Rank Directory overview', cause);
     setRankStatus('Unable to restore the book overview. Please try again.');
   } finally {
     closingDirectory = false;
+    document.dispatchEvent(new Event('archive-overview-ready'));
   }
 };
 
@@ -156,9 +156,7 @@ function initialize() {
   });
   $('#rank-close').addEventListener('click', closeDirectory);
   $('#rank-return-first').addEventListener('click', () => {
-    closeDirectory();
-    const target = document.querySelector('main').classList.contains('archive-closed') ? $('#open-archive') : $('#book');
-    target.focus({preventScroll: true});
+    void closeDirectory().then(() => document.dispatchEvent(new Event('archive-select-first')));
   });
   $('#rank-previous').addEventListener('click', () => engine.turn(-1));
   $('#rank-next').addEventListener('click', () => engine.turn(1));
