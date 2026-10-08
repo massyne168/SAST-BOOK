@@ -1,6 +1,5 @@
 import {FlipEngine} from './flip-engine.js';
 import {rankDirectoryData} from './rank-directory-data.js';
-import {resetBookFocus, centerOverview, centerBook} from './book-focus.js';
 
 const $ = selector => document.querySelector(selector);
 const categoryCount = rankDirectoryData.length;
@@ -49,7 +48,6 @@ const showCategory = index => {
   if (switchingCategory || index === engine.spread || engine.drag || engine.animating) return false;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
     const moved = engine.goTo(index);
-    if (moved) centerBook('directory', true);
     return moved;
   }
   switchingCategory = true;
@@ -57,23 +55,19 @@ const showCategory = index => {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     const moved = engine.goTo(index);
     if (!moved) { rankBook.classList.remove('rank-fade-out'); switchingCategory = false; return; }
-    centerBook('directory', true);
     rankBook.classList.remove('rank-fade-out');
     rankBook.classList.add('rank-fade-in');
     requestAnimationFrame(() => { rankBook.classList.remove('rank-fade-in'); switchingCategory = false; });
   }));
   return true;
 };
-const closeDirectory = async ({restoreScroll = true} = {}) => {
+const closeDirectory = () => {
   if (directory.hidden || closingDirectory) return;
   closingDirectory = true;
   directory.inert = true;
-  directory.classList.add('book-directory-closing');
-  await resetBookFocus('directory', 360);
   directory.hidden = true;
-  directory.classList.remove('book-directory-closing');
+  document.querySelector('main').classList.remove('directory-open');
   closingDirectory = false;
-  if (restoreScroll) await centerOverview();
   $('#open-rank-directory').focus({preventScroll: true});
 };
 
@@ -93,10 +87,9 @@ function initialize() {
     }
   });
   $('#rank-close').addEventListener('click', closeDirectory);
-  $('#rank-return-first').addEventListener('click', async () => {
-    await closeDirectory({restoreScroll: false});
+  $('#rank-return-first').addEventListener('click', () => {
+    closeDirectory();
     const target = document.querySelector('main').classList.contains('archive-closed') ? $('#open-archive') : $('#book');
-    target.scrollIntoView({block: 'center', behavior: 'smooth'});
     target.focus({preventScroll: true});
   });
   $('#rank-previous').addEventListener('click', () => engine.turn(-1));
@@ -124,10 +117,10 @@ function initialize() {
   initialized = true;
 }
 
-export function openRankDirectory({deferFocus = false} = {}) {
+export function openRankDirectory() {
   if (!initialized) initialize();
-  directory.inert = deferFocus;
+  directory.inert = false;
   directory.hidden = false;
   updateCategory(engine.spread);
-  if (!deferFocus) rankBook.focus({preventScroll: true});
+  rankBook.focus({preventScroll: true});
 }

@@ -2,7 +2,6 @@ import {FlipEngine} from './flip-engine.js';
 import {pages, pageFiles, prepareSpread, prepareNearby} from './page-content.js';
 import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
-import {focusBook, isBookFocused, setBookOpening, setBookFocused, setBookOpen, resetBookFocus, bookTransitioning, centerBook, centerOverview} from './book-focus.js';
 const $ = selector => document.querySelector(selector);
 const discord = $('.discord-link');
 const discordUrl = discord?.dataset.discordUrl || 'https://discord.gg/YOUR-SERVER';
@@ -67,9 +66,7 @@ $('#read-spread').onclick = () => {
 $('#close-read').onclick = () => readDialog.close();
 readDialog.addEventListener('click', e => { if (e.target === readDialog) readDialog.close(); });
 $('#open-archive').onclick = async () => {
-  if (coverOpening || bookTransitioning()) return;
-  if (!isBookFocused('archive')) { await focusBook('archive'); return; }
-  if (!setBookOpening('archive')) return;
+  if (coverOpening) return;
   coverOpening = true; $('#open-archive').disabled = true;
   try {
     await prepareSpread(engine.spread);
@@ -77,21 +74,17 @@ $('#open-archive').onclick = async () => {
     cover.classList.add('opening');
     await new Promise(resolve => setTimeout(resolve, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650));
     main.classList.remove('archive-closed');
-    await centerBook('archive', true);
-    setBookOpen('archive');
     status(''); book.focus({preventScroll:true});
     const stamp = $('#access-stamp'); stamp.hidden = false;
     clearTimeout(stampTimer);
     stampTimer = setTimeout(() => { stamp.hidden = true; }, 1100);
-  } catch { setBookFocused('archive'); status('Unable to load the archive pages. Please try again.'); }
+  } catch { status('Unable to load the archive pages. Please try again.'); }
   finally { cover.classList.remove('opening'); coverOpening = false; $('#open-archive').disabled = false; controls(engine.spread); }
 };
-$('#close-archive').onclick = async () => {
+$('#close-archive').onclick = () => {
   if (busy() || engine.pending) return;
   clearTimeout(stampTimer); $('#access-stamp').hidden = true;
   main.classList.add('archive-closed');
-  await resetBookFocus('archive');
-  await centerOverview();
   $('#open-archive').focus({preventScroll:true});
 };
 const fullscreen = $('#fullscreen');
@@ -110,31 +103,8 @@ fullscreen.onclick = async () => {
 document.addEventListener('fullscreenchange', syncFullscreen);
 syncFullscreen();
 
-let directoryOpening = false;
-const rankCover = $('#rank-cover');
-const enterDirectory = async () => {
-  if (directoryOpening || bookTransitioning()) return;
-  if (!isBookFocused('directory')) { await focusBook('directory'); return; }
-  if (!setBookOpening('directory')) return;
-  directoryOpening = true;
-  try {
-    const {openRankDirectory} = await import('./rank-directory.js');
-    openRankDirectory({deferFocus: true});
-    await centerBook('directory', true);
-    $('#rank-directory').inert = false;
-    $('#rank-book').focus({preventScroll: true});
-    setBookOpen('directory');
-  } catch { $('#rank-directory').inert = false; setBookFocused('directory'); }
-  finally { directoryOpening = false; }
-};
-$('#open-rank-directory').addEventListener('click', enterDirectory);
-rankCover.addEventListener('click', event => {
-  if (event.target.closest('button')) return;
-  if (isBookFocused('directory')) $('#open-rank-directory').click();
-  else void focusBook('directory');
-});
-cover.addEventListener('click', event => {
-  if (event.target.closest('button')) return;
-  if (isBookFocused('archive')) $('#open-archive').click();
-  else void focusBook('archive');
+$('#open-rank-directory').addEventListener('click', async () => {
+  const {openRankDirectory} = await import('./rank-directory.js');
+  main.classList.add('directory-open');
+  openRankDirectory();
 });
