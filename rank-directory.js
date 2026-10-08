@@ -1,27 +1,42 @@
 import {FlipEngine} from './flip-engine.js';
 import {rankDirectoryData} from './rank-directory-data.js';
-import {resetBookFocus} from './book-focus.js';
+import {resetBookFocus, centerOverview, centerBook} from './book-focus.js';
 
 const $ = selector => document.querySelector(selector);
 const categoryCount = rankDirectoryData.length;
 let engine, rankBook, directory, initialized = false, switchingCategory = false;
 let closingDirectory = false;
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const peoplePerPage = 8;
+const personnelPages = rankDirectoryData.map(() => 0);
+const personRows = (categoryIndex, pageIndex = 0) => {
+  const people = Array.isArray(rankDirectoryData[categoryIndex]?.people) ? rankDirectoryData[categoryIndex].people : [];
+  if (!people.length) return '<div class="rank-list-empty">NO PERSONNEL ASSIGNED</div>';
+  return people.slice(pageIndex * peoplePerPage, (pageIndex + 1) * peoplePerPage)
+    .map(person => `<div class="rank-person-row" role="row"><span>${escapeHtml(person.name || 'PERSON NAME')}</span><span>${escapeHtml(person.badge || '0000')}</span></div>`).join('');
+};
+const pagination = categoryIndex => {
+  const count = Array.isArray(rankDirectoryData[categoryIndex]?.people) ? rankDirectoryData[categoryIndex].people.length : 0;
+  const pages = Math.ceil(count / peoplePerPage);
+  if (pages < 2) return '';
+  const page = personnelPages[categoryIndex] || 0;
+  return `<nav class="rank-person-pagination" aria-label="Personnel list pages"><button type="button" data-person-page="prev" ${page === 0 ? 'disabled' : ''}>&#8592; PREV</button><span>PAGE ${String(page + 1).padStart(2, '0')} / ${String(pages).padStart(2, '0')}</span><button type="button" data-person-page="next" ${page >= pages - 1 ? 'disabled' : ''}>NEXT &#8594;</button></nav>`;
+};
 const renderCategory = pageIndex => {
   const index = Math.floor(pageIndex / 2), category = rankDirectoryData[index];
-  // One content page per category. The paired leaf face remains blank.
-  if (pageIndex % 2 === 1 || !category) return '<article class="rank-page rank-blank" aria-hidden="true"></article>';
+  if (!category) return '<article class="rank-page rank-selection-back"><span>RANK DIRECTORY</span><strong>SELECT A RANK TO VIEW PERSONNEL</strong><i>CONTROLLED RECORDS / SAST</i></article>';
+  // The verso remains useful and intentional while the personnel list occupies one page.
+  if (pageIndex % 2 === 1) return '<article class="rank-page rank-selection-back"><span>RANK DIRECTORY</span><strong>SELECT A RANK TO VIEW PERSONNEL</strong><i>CONTROLLED RECORDS / SAST</i></article>';
   const people = Array.isArray(category.people) ? category.people : [];
   const title = `${category.rank} / PERSONNEL LIST`;
-  const rows = people.length
-    ? people.map(person => `<div class="rank-person-row"><span>${escapeHtml(person.name || 'PERSON NAME')}</span><span>${escapeHtml(person.badge || '0000')}</span></div>`).join('')
-    : '<div class="rank-list-empty">NO PERSONNEL ASSIGNED</div>';
+  const page = personnelPages[index] || 0;
   return `<article class="rank-page rank-personnel-list-page">
     <header class="rank-list-heading"><span>SAN ANDREAS STATE TROOPERS / OFFICIAL RECORD</span><h2>${escapeHtml(title).toUpperCase()}</h2></header>
     <div class="rank-personnel-table" role="table" aria-label="${escapeHtml(title)}">
       <div class="rank-person-row rank-person-head" role="row"><span role="columnheader">FULL NAME</span><span role="columnheader">BADGE NO.</span></div>
-      <div class="rank-person-rows">${rows}</div>
+      <div class="rank-person-rows">${personRows(index, page)}</div>
     </div>
+    ${pagination(index)}
   </article>`;
 };
 const updateCategory = index => {
@@ -32,19 +47,24 @@ const updateCategory = index => {
 };
 const showCategory = index => {
   if (switchingCategory || index === engine.spread || engine.drag || engine.animating) return false;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return engine.goTo(index);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const moved = engine.goTo(index);
+    if (moved) centerBook('directory', true);
+    return moved;
+  }
   switchingCategory = true;
   rankBook.classList.add('rank-fade-out');
   requestAnimationFrame(() => requestAnimationFrame(() => {
     const moved = engine.goTo(index);
     if (!moved) { rankBook.classList.remove('rank-fade-out'); switchingCategory = false; return; }
+    centerBook('directory', true);
     rankBook.classList.remove('rank-fade-out');
     rankBook.classList.add('rank-fade-in');
     requestAnimationFrame(() => { rankBook.classList.remove('rank-fade-in'); switchingCategory = false; });
   }));
   return true;
 };
-const closeDirectory = async () => {
+const closeDirectory = async ({restoreScroll = true} = {}) => {
   if (directory.hidden || closingDirectory) return;
   closingDirectory = true;
   directory.inert = true;
@@ -53,6 +73,7 @@ const closeDirectory = async () => {
   directory.hidden = true;
   directory.classList.remove('book-directory-closing');
   closingDirectory = false;
+  if (restoreScroll) await centerOverview();
   $('#open-rank-directory').focus({preventScroll: true});
 };
 
@@ -73,7 +94,7 @@ function initialize() {
   });
   $('#rank-close').addEventListener('click', closeDirectory);
   $('#rank-return-first').addEventListener('click', async () => {
-    await closeDirectory();
+    await closeDirectory({restoreScroll: false});
     const target = document.querySelector('main').classList.contains('archive-closed') ? $('#open-archive') : $('#book');
     target.scrollIntoView({block: 'center', behavior: 'smooth'});
     target.focus({preventScroll: true});
@@ -83,13 +104,30 @@ function initialize() {
   document.querySelectorAll('.rank-category-list button').forEach(button => button.addEventListener('click', () => {
     showCategory(Number(button.dataset.categoryIndex));
   }));
+  rankBook.addEventListener('click', event => {
+    const button = event.target.closest('[data-person-page]');
+    if (!button || button.disabled || switchingCategory || engine.animating || engine.drag) return;
+    const index = engine.spread;
+    const pages = Math.ceil((rankDirectoryData[index]?.people?.length || 0) / peoplePerPage);
+    const next = (personnelPages[index] || 0) + (button.dataset.personPage === 'next' ? 1 : -1);
+    if (next < 0 || next >= pages) return;
+    personnelPages[index] = next;
+  const page = rankBook.querySelector('.page-slot.left .rank-page');
+    const rows = page?.querySelector('.rank-person-rows');
+    const oldPager = page?.querySelector('.rank-person-pagination');
+    if (!rows) return;
+    rows.innerHTML = personRows(index, next);
+    const newPager = document.createElement('div');
+    newPager.innerHTML = pagination(index);
+    if (oldPager) oldPager.replaceWith(newPager.firstElementChild);
+  });
   initialized = true;
 }
 
-export function openRankDirectory() {
+export function openRankDirectory({deferFocus = false} = {}) {
   if (!initialized) initialize();
-  directory.inert = false;
+  directory.inert = deferFocus;
   directory.hidden = false;
   updateCategory(engine.spread);
-  rankBook.focus({preventScroll: true});
+  if (!deferFocus) rankBook.focus({preventScroll: true});
 }

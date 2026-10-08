@@ -2,7 +2,7 @@ import {FlipEngine} from './flip-engine.js';
 import {pages, pageFiles, prepareSpread, prepareNearby} from './page-content.js';
 import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
-import {focusBook, isBookFocused, setBookOpening, setBookFocused, setBookOpen, resetBookFocus, bookTransitioning} from './book-focus.js';
+import {focusBook, isBookFocused, setBookOpening, setBookFocused, setBookOpen, resetBookFocus, bookTransitioning, centerBook, centerOverview} from './book-focus.js';
 const $ = selector => document.querySelector(selector);
 const discord = $('.discord-link');
 const discordUrl = discord?.dataset.discordUrl || 'https://discord.gg/YOUR-SERVER';
@@ -77,6 +77,7 @@ $('#open-archive').onclick = async () => {
     cover.classList.add('opening');
     await new Promise(resolve => setTimeout(resolve, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650));
     main.classList.remove('archive-closed');
+    await centerBook('archive', true);
     setBookOpen('archive');
     status(''); book.focus({preventScroll:true});
     const stamp = $('#access-stamp'); stamp.hidden = false;
@@ -90,6 +91,7 @@ $('#close-archive').onclick = async () => {
   clearTimeout(stampTimer); $('#access-stamp').hidden = true;
   main.classList.add('archive-closed');
   await resetBookFocus('archive');
+  await centerOverview();
   $('#open-archive').focus({preventScroll:true});
 };
 const fullscreen = $('#fullscreen');
@@ -117,9 +119,12 @@ const enterDirectory = async () => {
   directoryOpening = true;
   try {
     const {openRankDirectory} = await import('./rank-directory.js');
-    openRankDirectory();
+    openRankDirectory({deferFocus: true});
+    await centerBook('directory', true);
+    $('#rank-directory').inert = false;
+    $('#rank-book').focus({preventScroll: true});
     setBookOpen('directory');
-  } catch { setBookFocused('directory'); }
+  } catch { $('#rank-directory').inert = false; setBookFocused('directory'); }
   finally { directoryOpening = false; }
 };
 $('#open-rank-directory').addEventListener('click', enterDirectory);
