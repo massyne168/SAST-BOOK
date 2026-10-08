@@ -27,13 +27,10 @@ const renderCategory = pageIndex => {
     <div class="rank-tactical-rule"><i></i><span>CONTROLLED PERSONNEL RECORD</span><i></i></div>${body}
     <div class="rank-page-foot"><span>SAN ANDREAS STATE TROOPERS</span><span>DOCUMENT REF. RD-${number}-SAST</span><span>PAGE ${String(index + 1).padStart(2, '0')}</span></div></article>`;
 };
-let currentCategory = 0;
 const updateCategory = index => {
-  currentCategory = index;
   $('#rank-position').textContent = `${String(index + 1).padStart(2, '0')} / ${String(categoryCount).padStart(2, '0')}`;
   $('#rank-previous').disabled = index === 0;
   $('#rank-next').disabled = index === categoryCount - 1;
-  $('#rank-open-category').disabled = directory.hidden;
   document.querySelectorAll('.rank-category-list button').forEach((button, buttonIndex) => button.setAttribute('aria-current', buttonIndex === index ? 'page' : 'false'));
 };
 const engine = new FlipEngine(rankBook, {
@@ -44,16 +41,22 @@ const engine = new FlipEngine(rankBook, {
   onChange: updateCategory,
   onBusyChange: () => { $('#rank-previous').disabled = engine.spread === 0 || engine.animating; $('#rank-next').disabled = engine.spread === categoryCount - 1 || engine.animating; }
 });
+let switchingCategory = false;
 const showCategory = index => {
-  directory.hidden = false;
-  if (index !== engine.spread) engine.goTo(index);
-  updateCategory(index);
-  rankBook.focus({preventScroll: true});
+  if (switchingCategory || index === engine.spread || engine.drag || engine.animating) return false;
+  switchingCategory = true;
+  rankBook.classList.add('rank-fade-out');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const moved = engine.goTo(index);
+    if (!moved) { rankBook.classList.remove('rank-fade-out'); switchingCategory = false; return; }
+    rankBook.classList.remove('rank-fade-out');
+    rankBook.classList.add('rank-fade-in');
+    requestAnimationFrame(() => { rankBook.classList.remove('rank-fade-in'); switchingCategory = false; });
+  }));
+  return true;
 };
 const closeDirectory = () => {
   directory.hidden = true;
-  $('#rank-category-list').hidden = true;
-  $('#rank-open-category').setAttribute('aria-expanded', 'false');
   $('#open-rank-directory').focus({preventScroll: true});
 };
 $('#open-rank-directory').addEventListener('click', () => { directory.hidden = false; updateCategory(engine.spread); rankBook.focus({preventScroll: true}); });
@@ -66,12 +69,6 @@ $('#rank-return-first').addEventListener('click', () => {
 });
 $('#rank-previous').addEventListener('click', () => engine.turn(-1));
 $('#rank-next').addEventListener('click', () => engine.turn(1));
-$('#rank-open-category').addEventListener('click', () => {
-  const list = $('#rank-category-list');
-  list.hidden = !list.hidden;
-  $('#rank-open-category').setAttribute('aria-expanded', String(!list.hidden));
-});
 document.querySelectorAll('.rank-category-list button').forEach(button => button.addEventListener('click', () => {
-  const index = Number(button.dataset.categoryIndex);
-  if (engine.goTo(index)) { updateCategory(index); $('#rank-category-list').hidden = true; }
+  showCategory(Number(button.dataset.categoryIndex));
 }));

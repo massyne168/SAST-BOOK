@@ -297,3 +297,26 @@ body.is-loading>*:not(.site-loader){visibility:hidden;pointer-events:none}
 @media(max-width:420px){.rank-cover{width:min(290px,82vw)}.rank-directory-heading{display:block}.rank-close{margin-top:12px}.rank-record-grid{max-height:65%}.rank-page-foot{font-size:1.05cqw}}
 @media(prefers-reduced-motion:reduce){.rank-cover{transition:none}}
 @media(min-width:1000px){body:has(.rank-directory:not([hidden])) .primary-book,body:has(.rank-directory:not([hidden])) .rank-cover-stage-teaser{display:none}body:has(.rank-directory:not([hidden])) .rank-directory{flex:1 1 100%;width:100%}}
+
+/* Rank Directory refinements: compact pair, right-side record tabs, low-cost transitions. */
+.book-pair{gap:clamp(8px,.9vw,16px);width:100%;max-width:1800px;padding-inline:clamp(8px,1.3vw,22px);overflow-x:clip}
+.rank-cover-stage{align-items:center;gap:12px;padding:10px 0 26px}
+.rank-book-shell{flex:1 1 0;width:auto;min-width:0;filter:drop-shadow(0 20px 24px #0008)}
+.rank-category-list{flex:0 0 clamp(148px,14vw,205px);display:flex;flex-direction:column;gap:5px;max-height:min(570px,64vh);overflow:auto;margin:0;padding:8px;border:1px solid #516b7a;background:linear-gradient(155deg,#111f2b,#172731 62%,#211f26);box-shadow:inset 1px 0 #b7c4ca30}
+.rank-category-list button{position:relative;display:flex;align-items:center;gap:8px;width:100%;min-height:37px;padding:6px 8px;text-align:left;border:1px solid #536d7b;background:linear-gradient(105deg,#273b49,#1b2a35 70%,#20232b);color:#c5d3d8;font:600 10px var(--mono);letter-spacing:.025em;transition:background .16s,border-color .16s,color .16s,transform .16s}
+.rank-category-list button::before{content:"";width:3px;align-self:stretch;flex:0 0 3px;background:#637a86}
+.rank-category-list button::after{content:"";width:5px;height:5px;margin-left:auto;border:1px solid #9b626c;transform:rotate(45deg);opacity:.55}
+.rank-category-list button:hover{border-color:#7fc5df;background:linear-gradient(105deg,#34586a,#203846);color:#e7f7fc;transform:translateX(-2px)}
+.rank-category-list button[aria-current="page"]{border-color:#69c8e7;background:linear-gradient(105deg,#27556c,#1c394b 72%,#2e2932);color:#f0fbff;box-shadow:inset 0 0 0 1px #70c9e533,0 0 12px #42b9e31c}
+.rank-category-list button[aria-current="page"]::before{background:linear-gradient(#66d6f5 0 72%,#cf5965 72%)}
+.rank-category-list button[aria-current="page"]::after{background:#d96a75;border-color:#f0a2a8;opacity:1;box-shadow:0 0 7px #e15363}
+.rank-category-list button:focus-visible{outline:2px solid #80d8f4;outline-offset:2px;z-index:1}
+.rank-book{transition:opacity .14s ease}
+.rank-book.rank-fade-out{opacity:.18;will-change:opacity}
+.rank-book.rank-fade-in{opacity:1;will-change:opacity}
+@media(min-width:1000px){.book-pair{grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);column-gap:clamp(8px,.9vw,16px);max-width:1740px}.book-pair .rank-cover-stage-teaser{padding:24px 8px}.rank-cover{width:min(100%,380px)}}
+@media(max-width:999px){.book-pair{gap:14px;padding-inline:12px}.rank-cover-stage{width:100%;max-width:900px}.rank-directory{width:100%;max-width:100%}}
+@media(max-width:700px){.book-pair{gap:12px;padding-inline:6px}.book-pair .rank-cover-stage-teaser{padding:8px 10px 24px}.rank-cover-stage{padding:10px 0 20px;gap:9px}.rank-book-shell{filter:none}.rank-category-list{flex-basis:clamp(142px,36vw,180px);gap:4px;padding:6px;max-height:min(560px,68vh);box-shadow:none}.rank-category-list button{min-height:34px;padding:5px 6px;font-size:9px;gap:5px}.rank-book .board{box-shadow:inset 0 0 0 3px #25313a,0 3px 0 #080d12,0 6px 0 #71838a,0 9px 0 #080d12,0 18px 26px #0008}.rank-book .page-slot{box-shadow:none}}
+@media(max-width:600px){.rank-directory{padding:18px 8px 34px}.rank-cover-stage{flex-direction:column;align-items:stretch;padding:8px 0 18px}.rank-book-shell{width:100%;flex:0 0 auto}.rank-category-list{width:100%;flex:0 0 auto;max-height:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:6px}.rank-category-list button{min-width:0;min-height:36px;font-size:clamp(8px,2.3vw,10px);gap:5px}.rank-category-list button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rank-category-list button::after{width:4px;height:4px}}
+@media(prefers-reduced-motion:reduce){.rank-category-list button,.rank-book{transition:none}.rank-category-list button:hover{transform:none}}@media(min-width:1000px){body:has(.rank-directory:not([hidden])) .rank-directory{grid-column:1 / -1}}
+@media(max-width:600px){.rank-cover{box-shadow:2px 3px 0 #c0c8cb,4px 5px 0 #394956,6px 8px 0 #101821,12px 18px 28px #0009,inset 4px 0 8px #000a}}
