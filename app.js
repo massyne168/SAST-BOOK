@@ -7,7 +7,7 @@ const $ = selector => document.querySelector(selector);
 const discord = $('.discord-link');
 const discordUrl = discord?.dataset.discordUrl || 'https://discord.gg/YOUR-SERVER';
 if (discord) discord.href = discordUrl;
-const book = $('#book'), main = $('main'), cover = $('#archive-cover');
+const book = $('#book'), main = $('main'), cover = $('#archive-cover'), pair = $('.book-pair');
 let selected = null, preparing = false, coverOpening = false, turning = false, lastTap = null, stampTimer;
 book.addEventListener('error', event => {
   const image = event.target;
@@ -24,6 +24,81 @@ try { storage = window.localStorage; } catch { /* Storage is optional. */ }
 const status = message => { $('#reader-status').textContent = message; };
 const busy = () => preparing || coverOpening || turning;
 const blocked = () => preparing || coverOpening || main.classList.contains('archive-closed') || !!document.querySelector('dialog[open]');
+
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const carouselButtons = document.createElement('nav');
+carouselButtons.className = 'carousel-controls';
+carouselButtons.setAttribute('aria-label', 'Choose a book');
+carouselButtons.innerHTML = '<button type="button" data-carousel-direction="-1" aria-label="Show the previous book">PREVIOUS BOOK</button><span aria-live="polite"></span><button type="button" data-carousel-direction="1" aria-label="Show the next book">NEXT BOOK</button>';
+pair.insertAdjacentElement('afterend', carouselButtons);
+let carouselIndex = pair.dataset.activeBook === 'directory' ? 1 : 0;
+let carouselTimer, carouselTransitioning = false, wheelTotal = 0, wheelIdleTimer, wheelGestureLocked = false;
+const carouselNames = ['ARMORY', 'RANK DIRECTORY'];
+function syncCarousel() {
+  pair.dataset.activeBook = carouselIndex === 0 ? 'archive' : 'directory';
+  carouselButtons.querySelector('span').textContent = `${carouselNames[carouselIndex]} / 02`;
+  carouselButtons.querySelectorAll('button').forEach(button => {
+    button.disabled = (Number(button.dataset.carouselDirection) < 0 && carouselIndex === 0) ||
+      (Number(button.dataset.carouselDirection) > 0 && carouselIndex === 1);
+  });
+  [['archive', $('#open-archive')], ['directory', $('#open-rank-directory')]].forEach(([bookName, button]) => {
+    const inactive = bookName !== pair.dataset.activeBook;
+    button.hidden = inactive;
+    button.disabled = inactive;
+  });
+}
+function setCarouselBook(index) {
+  if (index < 0 || index > 1 || index === carouselIndex || carouselTransitioning) return false;
+  carouselIndex = index;
+  syncCarousel();
+  if (reducedMotion.matches) return true;
+  carouselTransitioning = true;
+  pair.dataset.carouselTransitioning = 'true';
+  clearTimeout(carouselTimer);
+  carouselTimer = window.setTimeout(() => {
+    carouselTransitioning = false;
+    delete pair.dataset.carouselTransitioning;
+  }, 520);
+  return true;
+}
+syncCarousel();
+carouselButtons.addEventListener('click', event => {
+  const button = event.target.closest('[data-carousel-direction]');
+  if (button && !button.disabled) setCarouselBook(carouselIndex + Number(button.dataset.carouselDirection));
+});
+pair.addEventListener('click', event => {
+  const action = event.target.closest('#open-archive,#open-rank-directory');
+  if (action) setCarouselBook(action.id === 'open-archive' ? 0 : 1);
+}, true);
+pair.addEventListener('wheel', event => {
+  if (!main.classList.contains('archive-closed') || document.body.classList.contains('is-maintenance') ||
+      !$('#maintenance-screen').hidden || document.querySelector('dialog[open]')) return;
+  const direction = Math.sign(event.deltaY);
+  if (!direction) return;
+  const nextIndex = carouselIndex + direction;
+  if (nextIndex < 0 || nextIndex > 1) {
+    wheelTotal = 0;
+    return;
+  }
+  event.preventDefault();
+  clearTimeout(wheelIdleTimer);
+  wheelIdleTimer = window.setTimeout(() => {
+    wheelGestureLocked = false;
+    wheelTotal = 0;
+  }, 220);
+  if (wheelGestureLocked || carouselTransitioning) return;
+  wheelTotal += event.deltaY;
+  if (Math.abs(wheelTotal) < 75) return;
+  wheelGestureLocked = true;
+  wheelTotal = 0;
+  setCarouselBook(nextIndex);
+}, {passive: false});
+pair.addEventListener('transitionend', event => {
+  if (event.target !== pair || event.propertyName !== 'opacity') return;
+  clearTimeout(carouselTimer);
+  carouselTransitioning = false;
+  delete pair.dataset.carouselTransitioning;
+});
 function controls(spread) {
   document.querySelectorAll('.reader-controls button,#read-spread').forEach(button => { button.disabled = busy(); });
   $('#previous').disabled = busy() || spread === 0;
@@ -60,22 +135,77 @@ book.addEventListener('dblclick', () => {
 });
 $('#previous').onclick = () => engine.turn(-1);
 $('#next').onclick = () => engine.turn(1);
-$('#zoom-page').onclick = () => { if (!busy()) zoom.open(selected ?? engine.spread * 2 + 1); };
+$('#previous').textContent = '← PREVIOUS';
+$('#next').textContent = 'NEXT →';
+$('#close-archive').textContent = 'RETURN TO BOOKS';
+const readDialog = $('#read-dialog');
+let rankDirectoryModule;
+function currentDirectoryPage() {
+  return rankDirectoryModule?.getCurrentSpread?.() || null;
+}
+function showReadSpread() {
+  const directoryOpen = main.classList.contains('directory-open');
+  if (directoryOpen) {
+    const spread = currentDirectoryPage();
+    if (!spread) return;
+    $('#read-content').innerHTML = spread.pages.map((markup, index) => `<div class="reading-page" aria-label="Directory page ${index + 1}">${markup}</div>`).join('');
+    $('#read-dialog h2').textContent = `${spread.title} — READING VIEW`;
+  } else {
+    if (busy()) return;
+    const firstPage = engine.spread * 2;
+    $('#read-content').innerHTML = [pages[firstPage], pages[firstPage + 1]].map((markup, index) => `<div class="reading-page" aria-label="Armory page ${firstPage + index + 1}">${markup}</div>`).join('');
+    $('#read-dialog h2').textContent = `ARMORY SPREAD ${String(engine.spread + 1).padStart(2, '0')} — READING VIEW`;
+  }
+  readDialog.classList.toggle('directory-reading', directoryOpen);
+  readDialog.showModal();
+  $('#close-read').focus();
+}
+function zoomCurrentDirectoryPage() {
+  const spread = currentDirectoryPage();
+  if (spread) zoom.openContent(spread.pages[0], spread.title);
+}
+function downloadCurrentDirectoryPage() {
+  const spread = currentDirectoryPage();
+  if (!spread) return;
+  const content = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${spread.title}</title><link rel="stylesheet" href="${new URL('styles.css', location.href).href}"><style>body{margin:24px;background:#170a0e}.downloaded-rank-page{width:min(100%,720px);aspect-ratio:1191/1685;margin:auto}.downloaded-rank-page>.rank-page{width:100%;height:100%}</style></head><body><main class="downloaded-rank-page">${spread.pages[0]}</main></body></html>`;
+  const url = URL.createObjectURL(new Blob([content], {type: 'text/html'}));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${spread.fileName}.html`;
+  document.body.append(link); link.click(); link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$('#read-spread').onclick = showReadSpread;
+$('#rank-directory .rank-controls').addEventListener('click', event => {
+  const action = event.target.closest('[data-reader-action]');
+  if (!action || action.disabled) return;
+  if (action.dataset.readerAction === 'read') showReadSpread();
+  if (action.dataset.readerAction === 'zoom') zoomCurrentDirectoryPage();
+  if (action.dataset.readerAction === 'download') downloadCurrentDirectoryPage();
+});
+$('#zoom-page').onclick = () => {
+  if (busy()) return;
+  if (main.classList.contains('directory-open')) zoomCurrentDirectoryPage();
+  else zoom.open(selected ?? engine.spread * 2 + 1);
+};
 $('#download-page').onclick = () => {
   if (busy()) return;
+  if (main.classList.contains('directory-open')) {
+    downloadCurrentDirectoryPage();
+    return;
+  }
   const link = document.createElement('a');
   link.href = pageFiles[selected ?? engine.spread * 2 + 1];
   link.download = link.href.split('/').pop();
   document.body.append(link); link.click(); link.remove();
 };
-const readDialog = $('#read-dialog');
-$('#read-spread').onclick = () => {
-  if (busy()) return;
-  $('#read-content').innerHTML = pages[engine.spread * 2] + pages[engine.spread * 2 + 1];
-  readDialog.showModal();
-};
 $('#close-read').onclick = () => readDialog.close();
 readDialog.addEventListener('click', e => { if (e.target === readDialog) readDialog.close(); });
+readDialog.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+  event.preventDefault();
+  readDialog.close();
+});
 async function openArchive() {
   if (coverOpening) return;
   if (!isBookFocused('archive')) {
@@ -158,10 +288,10 @@ $('#open-rank-directory').addEventListener('click', async () => {
   }
   if (!setBookOpening('directory')) return;
   try {
-    const {openRankDirectory} = await import('./rank-directory.js');
+    rankDirectoryModule = await import('./rank-directory.js');
     main.classList.remove('archive-closed');
     main.classList.add('directory-open');
-    openRankDirectory();
+    rankDirectoryModule.openRankDirectory();
     setBookOpen('directory');
   } catch (cause) {
     console.error('Unable to open the Rank Directory', cause);

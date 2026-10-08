@@ -46,6 +46,9 @@ const updateCategory = index => {
   $('#rank-next').disabled = index === categoryCount - 1;
   document.querySelectorAll('.rank-category-list button').forEach((button, buttonIndex) => button.setAttribute('aria-current', buttonIndex === index ? 'page' : 'false'));
 };
+const setReaderActionsDisabled = disabled => {
+  document.querySelectorAll('.rank-controls [data-reader-action]').forEach(button => { button.disabled = disabled; });
+};
 const setRankStatus = message => { $('#rank-status').textContent = message; };
 const showCategory = index => {
   if (!Number.isInteger(index) || index < 0 || index >= categoryCount || switchingCategory || index === engine.spread || engine.drag || engine.animating) return false;
@@ -61,6 +64,7 @@ const showCategory = index => {
     }
   }
   switchingCategory = true;
+  setReaderActionsDisabled(true);
   rankBook.classList.add('rank-fade-out');
   let executed = false;
   let released = false;
@@ -71,6 +75,7 @@ const showCategory = index => {
     window.clearTimeout(releaseTimer);
     rankBook.classList.remove('rank-fade-out', 'rank-fade-in');
     switchingCategory = false;
+    setReaderActionsDisabled(Boolean(engine.animating || engine.drag));
   };
   const execute = () => {
     if (executed) return;
@@ -126,6 +131,7 @@ const closeDirectory = async () => {
 function initialize() {
   directory = $('#rank-directory');
   rankBook = $('#rank-book');
+  const rankControls = $('.rank-controls');
   archiveLeft = $('#book .page-slot.left');
   archiveRight = $('#book .page-slot.right');
   directoryLeft = rankBook.querySelector('.page-slot.left');
@@ -144,6 +150,7 @@ function initialize() {
     onBusyChange: () => {
       $('#rank-previous').disabled = engine.spread === 0 || engine.animating;
       $('#rank-next').disabled = engine.spread === categoryCount - 1 || engine.animating;
+      setReaderActionsDisabled(engine.animating || Boolean(engine.drag) || switchingCategory);
     }
   });
   $('#rank-close').addEventListener('click', closeDirectory);
@@ -154,6 +161,18 @@ function initialize() {
   });
   $('#rank-previous').addEventListener('click', () => engine.turn(-1));
   $('#rank-next').addEventListener('click', () => engine.turn(1));
+  const readerActions = [
+    ['read', 'READ THIS SPREAD'],
+    ['zoom', 'ZOOM PAGE'],
+    ['download', 'DOWNLOAD PAGE']
+  ];
+  for (const [action, label] of readerActions) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.readerAction = action;
+    button.textContent = label;
+    rankControls.append(button);
+  }
   $('#rank-category-list').addEventListener('click', event => {
     const button = event.target.closest('[data-category-index]');
     if (button) showCategory(Number(button.dataset.categoryIndex));
@@ -190,4 +209,18 @@ export function openRankDirectory() {
   directory.hidden = false;
   updateCategory(engine.spread);
   rankBook.focus({preventScroll: true});
+}
+
+export function getCurrentSpread() {
+  if (!initialized || directory.hidden || switchingCategory || engine.animating || engine.drag) return null;
+  const index = engine.spread;
+  const category = rankDirectoryData[index];
+  if (!category) return null;
+  const slug = String(category.rank || `rank-${index + 1}`).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const personnelPage = (personnelPages[index] || 0) + 1;
+  return {
+    pages: [renderCategory(index * 2), renderCategory(index * 2 + 1)],
+    title: `${category.rank} — PERSONNEL PAGE ${personnelPage}`,
+    fileName: `rank-directory-${slug}-page-${personnelPage}`
+  };
 }

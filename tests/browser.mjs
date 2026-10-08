@@ -14,40 +14,44 @@ const report=label=>console.log(`PASS ${label}`);
 async function spread(value) { await page.waitForFunction(value=>document.querySelector('#progress-text').textContent===`SPREAD ${String(value+1).padStart(2,'0')} / 15`,value); }
 async function idle() { await page.waitForFunction(()=>document.querySelector('#book').getAttribute('aria-busy')==='false'); }
 async function verifyOpeningTabs(layout) {
-  const boxes=await page.evaluate(()=>Object.fromEntries([
-    ['archive',['#archive-cover','#open-archive']],
-    ['directory',['#rank-cover','#open-rank-directory']]
-  ].map(([name,[coverSelector,buttonSelector]])=>{
-    const cover=document.querySelector(coverSelector),button=document.querySelector(buttonSelector);
-    const rect=element=>{const {left,right,top,bottom,width,height}=element.getBoundingClientRect();return {left,right,top,bottom,width,height}};
-    return [name,{cover:rect(cover),button:rect(button),nested:cover.contains(button)}];
-  })));
+  const overview=await page.evaluate(()=>({
+    active:document.querySelector('.book-pair').dataset.activeBook,
+    books:Object.fromEntries([
+      ['archive',['#archive-cover','#open-archive']],
+      ['directory',['#rank-cover','#open-rank-directory']]
+    ].map(([name,[coverSelector,buttonSelector]])=>{
+      const cover=document.querySelector(coverSelector),button=document.querySelector(buttonSelector);
+      const rect=element=>{const {left,right,top,bottom,width,height}=element.getBoundingClientRect();return {left,right,top,bottom,width,height}};
+      return [name,{cover:rect(cover),button:rect(button),hidden:button.hidden,disabled:button.disabled,nested:cover.contains(button),layoutWidth:cover.offsetWidth,layoutHeight:cover.offsetHeight}];
+    }))
+  }));
   const overlaps=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
   for(const name of ['archive','directory']){
-    const {cover,button,nested}=boxes[name];
-    const other=boxes[name==='archive'?'directory':'archive'].cover;
+    const {cover,button,hidden,disabled,nested,layoutWidth,layoutHeight}=overview.books[name];
+    const other=overview.books[name==='archive'?'directory':'archive'].cover;
     assert.equal(nested,false,`${name} button is outside its cover`);
+    assert.ok(cover.left>=0&&cover.right<=innerWidth,`${name} cover stays inside the viewport`);
+    assert.ok(Math.abs(layoutHeight/layoutWidth-1685/1191)<.01,`${name} cover retains its source aspect ratio`);
+    assert.equal(hidden,name!==overview.active,`${name} opening button visibility follows carousel selection`);
+    assert.equal(disabled,name!==overview.active,`${name} opening button is disabled when not selected`);
+    if(name!==overview.active) continue;
     assert.ok(button.left>=0&&button.right<=innerWidth,`${name} button stays inside the viewport`);
-    assert.equal(overlaps(button,other),false,`${name} button does not overlap the other book`);
+    assert.equal(overlaps(button,other),false,`${name} button does not cover the rear book`);
     const control=await page.locator(name==='archive'?'#open-archive':'#open-rank-directory').evaluate(element=>({
       label:element.querySelector('.opening-tab-label').textContent.trim(),
-      lock:!!element.querySelector('.opening-tab-lock'),
-      documentId:element.querySelector('.opening-tab-id').textContent.trim(),
-      clipPath:getComputedStyle(element).clipPath,
       width:element.getBoundingClientRect().width,
       height:element.getBoundingClientRect().height
     }));
-    assert.equal(control.lock,true,`${name} latch has an inline lock icon`);
-    assert.match(control.clipPath,/polygon/);
-    assert.ok(control.documentId.length>0);
+    assert.equal(control.label,name==='archive'?'OPEN ARCHIVE':'ENTER DIRECTORY');
     if(layout==='desktop'){
       assert.ok(button.left>=cover.right-2,`${name} button is beside the cover`);
       assert.ok(button.top>cover.top+cover.height*.45&&button.bottom<cover.bottom,`${name} button sits around the lower-middle`);
-      assert.ok(control.width>=180,`${name} action plate is wide enough for its label`);
+      assert.equal(layoutWidth,331,`${name} closed cover is enlarged by about 20%`);
+      assert.ok(control.width>=180&&control.height>=44,`${name} opening button remains accessible`);
     }else{
       assert.ok(button.top>=cover.bottom-2&&button.top-cover.bottom<30,`${name} button sits directly below the cover`);
       assert.ok(Math.abs((button.left+button.right-cover.left-cover.right)/2)<3,`${name} button is centered below the cover`);
-      assert.ok(control.height>=64,`${name} mobile action plate is a comfortable touch target`);
+      assert.ok(control.height>=44,`${name} mobile opening button is a comfortable touch target`);
     }
   }
 }
@@ -76,6 +80,24 @@ try {
   assert.equal(await page.locator('main').evaluate(el=>el.classList.contains('archive-closed')),true);
   assert.equal(await page.evaluate(()=>document.body.classList.contains('is-maintenance')),false);
   assert.notEqual(await page.evaluate(()=>getComputedStyle(document.body).overflow),'hidden');
+  const discord=await page.locator('.discord-link').evaluate(element=>({
+    href:element.href,width:element.getBoundingClientRect().width,height:element.getBoundingClientRect().height,
+    animation:getComputedStyle(element,'::after').animationName,
+    pointerEvents:getComputedStyle(element,'::after').pointerEvents
+  }));
+  assert.equal(discord.href,'https://discord.gg/YaFDtFusrt');
+  assert.equal(discord.width,discord.height);
+  assert.equal(discord.animation,'archive-control-glow');
+  assert.equal(discord.pointerEvents,'none');
+  await page.locator('.brand').focus();
+  await page.keyboard.press('Tab');
+  const discordFocus=await page.locator('.discord-link').evaluate(element=>({
+    focused:element.matches(':focus-visible'),animation:getComputedStyle(element,'::after').animationName,
+    opacity:getComputedStyle(element,'::after').opacity
+  }));
+  assert.equal(discordFocus.focused,true);
+  assert.equal(discordFocus.animation,'none');
+  assert.equal(discordFocus.opacity,'1');
   report('fresh loader, maintenance password, and unlocked overview');
   await verifyOpeningTabs('desktop'); report('desktop opening tabs stay beside covers without overlap or clipping');
   await open(); await spread(0);
@@ -108,7 +130,18 @@ try {
   await page.locator('#zoom-close').focus(); await page.keyboard.press('Tab'); assert.equal(await page.evaluate(()=>document.activeElement.id),'zoom-in');
   await page.keyboard.press('Shift+Tab'); assert.equal(await page.evaluate(()=>document.activeElement.id),'zoom-close');
   await page.keyboard.press('Escape'); assert.equal(await page.locator('#zoom-dialog').isVisible(),false); report('double-click zoom, buttons, wheel, focus trap and Escape');
-  await page.locator('#read-spread').click(); assert.equal(await page.locator('#read-content img').count(),2); await page.keyboard.press('Escape'); report('existing read-spread dialog');
+  await page.locator('#read-spread').click(); assert.equal(await page.locator('#read-content img').count(),2);
+  assert.equal(await page.locator('#read-dialog').evaluate(el=>el.classList.contains('directory-reading')),false);
+  const armoryReadingStyle=await page.locator('#read-dialog').evaluate(el=>getComputedStyle(el).backgroundImage);
+  const armoryGlow=await page.locator('#read-spread').evaluate(element=>({
+    buttonAnimation:getComputedStyle(element).animationName,
+    animation:getComputedStyle(element,'::after').animationName,
+    duration:getComputedStyle(element,'::after').animationDuration,
+    pointerEvents:getComputedStyle(element,'::after').pointerEvents,
+    playState:getComputedStyle(element,'::after').animationPlayState
+  }));
+  assert.deepEqual(armoryGlow,{buttonAnimation:'none',animation:'archive-control-glow',duration:'3s',pointerEvents:'none',playState:'paused'});
+  await page.keyboard.press('Escape'); report('Armory reading view retains its blue theme');
   await page.locator('#fullscreen').focus(); await page.keyboard.press('Enter');
   await page.waitForFunction(()=>!!document.fullscreenElement); assert.equal(await page.locator('#fullscreen').textContent(),'EXIT FULLSCREEN');
   await page.locator('#fullscreen').click(); await page.waitForFunction(()=>!document.fullscreenElement); report('keyboard fullscreen entry and exit label');
@@ -117,6 +150,8 @@ try {
   const overviewSizes=await page.evaluate(()=>[document.querySelector('#archive-cover'),document.querySelector('#rank-cover')].map(cover=>getComputedStyle(cover).width));
   assert.equal(overviewSizes[0],overviewSizes[1]);
   assert.equal(await page.locator('#rank-cover').isVisible(),true);
+  await page.getByRole('button',{name:'Show the next book'}).click();
+  await page.waitForFunction(()=>document.querySelector('.book-pair').dataset.activeBook==='directory');
   await page.locator('#open-rank-directory').click();
   await page.waitForFunction(()=>document.querySelector('#rank-cover').dataset.bookState==='book-focused');
   assert.equal(await page.locator('#rank-directory').isVisible(),false);
@@ -145,10 +180,68 @@ try {
     assert.equal(await page.locator('#rank-book .page-slot.left .rank-personnel-list-page').count(),1);
     assert.deepEqual((await page.locator('#rank-book .rank-person-head [role="columnheader"]').allTextContents()).map(text=>text.trim()),['FULL NAME','BADGE NO.']);
   }
+  const rankGlow=await page.locator('[data-category-index="10"]').evaluate(element=>({
+    selected:element.getAttribute('aria-current')==='page',
+    animation:getComputedStyle(element,'::before').animationName,
+    duration:getComputedStyle(element,'::before').animationDuration,
+    pointerEvents:getComputedStyle(element,'::before').pointerEvents
+  }));
+  assert.deepEqual(rankGlow,{selected:true,animation:'archive-control-glow',duration:'3s',pointerEvents:'none'});
+  await page.locator('[data-category-index="10"]').evaluate(element=>element.focus({focusVisible:true}));
+  await page.keyboard.press('Tab');
+  await page.waitForTimeout(220);
+  const rankFocus=await page.locator('[data-category-index="11"]').evaluate(element=>({
+    focused:element.matches(':focus-visible'),
+    animation:getComputedStyle(element,'::before').animationName,
+    opacity:getComputedStyle(element,'::before').opacity,
+    readable:getComputedStyle(element).color
+  }));
+  assert.equal(rankFocus.focused,true);
+  assert.equal(rankFocus.animation,'none');
+  assert.equal(rankFocus.opacity,'1');
+  assert.notEqual(rankFocus.readable,'rgba(0, 0, 0, 0)');
   await page.locator('#rank-next').click();
   await page.waitForFunction(()=>document.querySelector('#rank-position').textContent==='12 / 13');
   await page.locator('#rank-previous').click();
   await page.waitForFunction(()=>document.querySelector('#rank-position').textContent==='11 / 13');
+  await page.locator('#rank-directory [data-reader-action="read"]').click();
+  await page.locator('#read-dialog').waitFor({state:'visible'});
+  const directoryGlow=await page.locator('#rank-directory [data-reader-action="read"]').evaluate(element=>({
+    buttonAnimation:getComputedStyle(element).animationName,
+    animation:getComputedStyle(element,'::after').animationName,
+    duration:getComputedStyle(element,'::after').animationDuration,
+    pointerEvents:getComputedStyle(element,'::after').pointerEvents,
+    playState:getComputedStyle(element,'::after').animationPlayState
+  }));
+  assert.deepEqual(directoryGlow,{buttonAnimation:'none',animation:'archive-control-glow',duration:'3s',pointerEvents:'none',playState:'paused'});
+  const directoryReading=await page.evaluate(()=>({
+    themed:document.querySelector('#read-dialog').classList.contains('directory-reading'),
+    background:getComputedStyle(document.querySelector('#read-dialog')).backgroundColor,
+    border:getComputedStyle(document.querySelector('#read-dialog')).borderTopColor,
+    closeBorder:getComputedStyle(document.querySelector('#close-read')).borderTopColor,
+    badge:getComputedStyle(document.querySelector('#read-content .rank-person-row:not(.rank-person-head) span:last-child')).color,
+    scrollbar:getComputedStyle(document.querySelector('#read-content')).scrollbarColor,
+    title:document.querySelector('#read-content .rank-list-heading h2')?.textContent,
+    headers:[...document.querySelectorAll('#read-content .rank-person-head [role="columnheader"]')].map(header=>header.textContent.trim()),
+    people:[...document.querySelectorAll('#read-content .rank-person-row:not(.rank-person-head)')].map(row=>row.textContent.trim())
+  }));
+  assert.equal(directoryReading.themed,true);
+  assert.equal(directoryReading.background,'rgb(23, 10, 14)');
+  assert.equal(directoryReading.border,'rgb(142, 42, 58)');
+  assert.equal(directoryReading.closeBorder,'rgb(142, 42, 58)');
+  assert.equal(directoryReading.badge,'rgb(237, 100, 117)');
+  assert.match(directoryReading.scrollbar,/rgb\(185, 44, 67\)/);
+  assert.match(directoryReading.title,/ASSISTANT COMMISSIONER/);
+  assert.deepEqual(directoryReading.headers,['FULL NAME','BADGE NO.']);
+  assert.ok(directoryReading.people.length>0,'Directory reading view contains personnel');
+  assert.deepEqual(directoryReading.people,await page.locator('#rank-book .page-slot.left .rank-person-row:not(.rank-person-head)').allTextContents().then(rows=>rows.map(row=>row.trim())));
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#read-dialog').isVisible(),false);
+  assert.match(armoryReadingStyle,/rgb\(16, 35, 51\)/);
+  await page.locator('#rank-directory [data-reader-action="read"]').click();
+  await page.locator('#read-dialog').waitFor({state:'visible'});
+  assert.equal(await page.locator('#read-dialog').evaluate(el=>el.classList.contains('directory-reading')),true);
+  await page.keyboard.press('Escape');
   await page.locator('#rank-close').click();
   await page.waitForFunction(()=>!document.querySelector('main').classList.contains('directory-open')&&document.querySelector('#rank-directory').hidden);
   const restoredSizes=await page.evaluate(()=>[document.querySelector('#archive-cover'),document.querySelector('#rank-cover')].map(cover=>getComputedStyle(cover).width));
@@ -162,10 +255,33 @@ try {
   await page.waitForFunction(()=>document.querySelector('main').classList.contains('directory-open'));
   await page.locator('#rank-close').click();
   await page.waitForFunction(()=>!document.querySelector('main').classList.contains('directory-open'));
+  await page.getByRole('button',{name:'Show the previous book'}).click();
+  await page.waitForFunction(()=>document.querySelector('.book-pair').dataset.activeBook==='archive');
   await page.locator('#open-archive').click();
   await page.waitForFunction(()=>document.querySelector('#archive-cover').dataset.bookState==='book-focused');
   await page.locator('#open-archive').click();
   await page.waitForFunction(()=>!document.querySelector('main').classList.contains('archive-closed'));
+  await page.locator('#read-spread').click();
+  await page.locator('#read-dialog').waitFor({state:'visible'});
+  assert.equal(await page.locator('#read-dialog').evaluate(el=>el.classList.contains('directory-reading')),false);
+  assert.match(await page.locator('#read-dialog').evaluate(el=>getComputedStyle(el).backgroundImage),/rgb\(16, 35, 51\)/);
+  await page.keyboard.press('Escape');
+  await page.locator('#close-archive').click();
+  await page.waitForFunction(()=>document.querySelector('main.archive-closed'));
+  await page.getByRole('button',{name:'Show the next book'}).click();
+  await page.waitForFunction(()=>document.querySelector('.book-pair').dataset.activeBook==='directory');
+  await page.locator('#open-rank-directory').click();
+  await page.waitForFunction(()=>document.querySelector('#rank-cover').dataset.bookState==='book-focused');
+  await page.locator('#open-rank-directory').click();
+  await page.waitForFunction(()=>document.querySelector('main').classList.contains('directory-open'));
+  await page.locator('#rank-directory [data-reader-action="read"]').click();
+  await page.locator('#read-dialog').waitFor({state:'visible'});
+  assert.equal(await page.locator('#read-dialog').evaluate(el=>el.classList.contains('directory-reading')),true);
+  await page.keyboard.press('Escape');
+  await page.locator('#rank-close').click();
+  await page.waitForFunction(()=>document.querySelector('main.archive-closed'));
+  await page.getByRole('button',{name:'Show the previous book'}).click();
+  await page.waitForFunction(()=>document.querySelector('.book-pair').dataset.activeBook==='archive');
   await page.locator('#close-archive').click();
   await page.waitForFunction(()=>document.querySelector('main').classList.contains('archive-closed'));
   await page.setViewportSize({width:1440,height:1000});
@@ -216,6 +332,12 @@ try {
   await phone.waitForFunction(()=>!document.querySelector('main').classList.contains('archive-closed'));
   assert.equal(await phone.locator('.section-tabs').count(),0);
   assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  const reducedGlow=await phone.evaluate(()=>({
+    discord:getComputedStyle(document.querySelector('.discord-link'),'::after').animationName,
+    reading:getComputedStyle(document.querySelector('#read-spread'),'::after').animationName,
+    selectedRank:getComputedStyle(document.querySelector('#rank-directory .rank-category-list button[aria-current="page"]'),'::before').animationName
+  }));
+  assert.deepEqual(reducedGlow,{discord:'none',reading:'none',selectedRank:'none'});
   await phone.locator('#right').tap(); await phone.locator('#right').tap(); await phone.locator('#zoom-dialog').waitFor({state:'visible'});
   const cdp=await mobile.newCDPSession(phone);
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:160,y:400,id:1},{x:230,y:400,id:2}]});

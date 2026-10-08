@@ -2,14 +2,20 @@ export function setupZoom({pageFiles, onError}) {
   const dialog = document.querySelector('#zoom-dialog');
   const viewport = document.querySelector('#zoom-viewport');
   const image = document.querySelector('#zoom-image');
+  const content = document.createElement('div');
+  content.id = 'zoom-content';
+  content.className = 'zoom-content';
+  content.hidden = true;
+  viewport.append(content);
   const level = document.querySelector('#zoom-level');
   const pointers = new Map();
-  let scale = 1, x = 0, y = 0, previousFocus, gesture;
+  let scale = 1, x = 0, y = 0, previousFocus, gesture, contentMode = false;
   function paint() {
-    const maxX = Math.max(0, (image.clientWidth * scale - viewport.clientWidth) / 2);
-    const maxY = Math.max(0, (image.clientHeight * scale - viewport.clientHeight) / 2);
+    const target = contentMode ? content : image;
+    const maxX = Math.max(0, (target.clientWidth * scale - viewport.clientWidth) / 2);
+    const maxY = Math.max(0, (target.clientHeight * scale - viewport.clientHeight) / 2);
     x = Math.min(maxX, Math.max(-maxX, x)); y = Math.min(maxY, Math.max(-maxY, y));
-    image.style.transform = `translate(${x}px,${y}px) scale(${scale})`;
+    target.style.transform = `translate(${x}px,${y}px) scale(${scale})`;
     level.value = `${Math.round(scale * 100)}%`;
     document.querySelector('#zoom-out').disabled = scale <= 1;
     document.querySelector('#zoom-in').disabled = scale >= 5;
@@ -47,15 +53,37 @@ export function setupZoom({pageFiles, onError}) {
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   });
-  dialog.addEventListener('close', () => { pointers.clear(); gesture = null; previousFocus?.focus({preventScroll:true}); });
+  dialog.addEventListener('close', () => {
+    pointers.clear(); gesture = null; contentMode = false;
+    content.replaceChildren(); content.hidden = true; image.hidden = false;
+    previousFocus?.focus({preventScroll:true});
+  });
   image.onload = paint;
-  image.onerror = () => { dialog.close(); onError('Unable to load the selected page. Please try again.'); };
+  image.onerror = () => { if (!contentMode) { dialog.close(); onError('Unable to load the selected page. Please try again.'); } };
   new ResizeObserver(() => { if (dialog.open) paint(); }).observe(viewport);
-  return {open(index) {
+  function show() {
     if (dialog.open) return;
     previousFocus = document.activeElement;
-    image.src = pageFiles[index]; image.alt = `ELYSIUM record — page ${index + 1}`;
-    document.querySelector('#zoom-title').textContent = `PAGE ${String(index + 1).padStart(2,'0')}`;
-    dialog.showModal(); reset(); document.querySelector('#zoom-close').focus();
-  }};
+    dialog.showModal();
+    reset();
+    document.querySelector('#zoom-close').focus();
+  }
+  return {
+    open(index) {
+      contentMode = false;
+      content.hidden = true;
+      image.hidden = false;
+      image.src = pageFiles[index];
+      image.alt = `ELYSIUM record — page ${index + 1}`;
+      document.querySelector('#zoom-title').textContent = `PAGE ${String(index + 1).padStart(2,'0')}`;
+      show();
+    },
+    openContent(markup, title) {
+      contentMode = true;
+      image.hidden = true;
+      content.innerHTML = markup;
+      document.querySelector('#zoom-title').textContent = title;
+      show();
+    }
+  };
 }

@@ -8,7 +8,7 @@ Use Node.js 20 or newer and run `npm start` (or `node server.js`). Open **http:/
 
 ## Controls
 
-- Activate either book cover once to select and center it, then activate it again to open it. **COVER** returns to the two-cover overview without losing your place. The Rank Directory keeps its printed cover artwork and lists the selected rank's personnel by Full Name and Badge Number.
+- In the closed-book overview, use **PREVIOUS BOOK** or **NEXT BOOK** to select and center a cover; only the selected book's opening button is enabled. Activate that button once to focus the book, then again to open it. **COVER** returns to the overview without losing your place. The Rank Directory keeps its printed cover artwork and lists the selected rank's personnel by Full Name and Badge Number.
 - Drag the right page toward the left to go forward; drag the left page toward the right to go backward. Release before or exactly at the midpoint to return, or beyond it to finish. The arrow buttons and Left/Right arrow keys while the book is focused also navigate.
 - The blue bar and **SPREAD 04 / 15** indicator update when navigation finishes. The browser stores the zero-based spread under `armory-book.spread`. Reopening the archive restores it. Numbers are truncated and clamped to 0–14; missing or non-finite values become 0. Reading still works when storage is denied.
 - **FULLSCREEN**, beside COVER, toggles browser fullscreen. Its label reflects changes, including browser-controlled exits. Unsupported browsers hide the button; rejected requests show a short status message. All controls work with Tab and Enter/Space.
