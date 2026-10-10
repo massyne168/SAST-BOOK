@@ -1,29 +1,29 @@
 import {FlipEngine} from './flip-engine.js';
-import {directoryPages, directoryPageCount} from './rank-directory-data.js';
+import {directoryPages, directoryPageCount, directoryRanks} from './rank-directory-data.js';
 import {resetBookFocus} from './book-focus.js';
 
 const $ = selector => document.querySelector(selector);
-const categoryCount = directoryPageCount / 2;
+const categoryCount = Math.ceil(directoryPageCount / 2);
 let engine, rankBook, directory, initialized = false, switchingCategory = false;
 let closingDirectory = false;
 let archiveLeft, archiveRight, directoryLeft, directoryRight;
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const renderCategory = pageIndex => {
-  const people = directoryPages[pageIndex];
-  return `<article class="rank-page rank-personnel-list-page officer-directory-page">
-    <header class="rank-list-heading"><span>ELYSIUM / OFFICIAL PERSONNEL RECORD</span><h2>RANK DIRECTORY</h2></header>
-    <div class="officer-cards">${people.map(person => `<section class="officer-card">
-      <svg class="officer-avatar" viewBox="0 0 48 56" aria-hidden="true"><circle cx="24" cy="17" r="9" fill="currentColor"/><path d="M7 49v-7a17 17 0 0 1 34 0v7Z" fill="currentColor"/></svg>
-      <div class="officer-details"><h3>${escapeHtml(person.name)}</h3><p>Rank: <span>${escapeHtml(person.rank)}</span></p><p>Badge: <span class="officer-badge">${escapeHtml(person.badge)}</span></p></div>
-    </section>`).join('')}</div>
-    <footer class="officer-page-footer"><span>PERSONNEL / A–Z</span><span>${String(pageIndex + 1).padStart(2, '0')} / ${directoryPageCount}</span></footer>
+  const page = directoryPages[pageIndex];
+  if (!page) return '<article class="rank-page" aria-label="End of directory"></article>';
+  return `<article class="rank-page rank-personnel-list-page rank-roster-page">
+    <header class="rank-list-heading"><span>RANK DIRECTORY</span><h2>${escapeHtml(page.rank)}${page.continued ? ' <small>(CONTINUED)</small>' : ''}</h2></header>
+    <table class="rank-roster-table"><thead><tr><th scope="col">OFFICER NAME</th><th scope="col">BADGE NUMBER</th></tr></thead>
+    <tbody>${page.people.map(person => `<tr><td>${escapeHtml(person.name)}</td><td>${escapeHtml(person.badge)}</td></tr>`).join('')}</tbody></table>
+    <footer class="rank-roster-footer"><span>RANK DIRECTORY</span><span>${String(pageIndex + 1).padStart(2, '0')} / ${directoryPageCount}</span></footer>
   </article>`;
 };
+
 const updateCategory = index => {
   $('#rank-position').textContent = `${String(index * 2 + 1).padStart(2, '0')} — ${String(index * 2 + 2).padStart(2, '0')} / ${directoryPageCount}`;
   $('#rank-previous').disabled = index === 0;
   $('#rank-next').disabled = index === categoryCount - 1;
-  document.querySelectorAll('.rank-category-list button').forEach((button, buttonIndex) => button.setAttribute('aria-current', buttonIndex === index ? 'page' : 'false'));
+  document.querySelectorAll('.rank-category-list button').forEach((button, buttonIndex) => button.setAttribute('aria-current', directoryPages.slice(index * 2, index * 2 + 2).some(page => page.rank === directoryRanks[buttonIndex]) ? 'page' : 'false'));
 };
 const setReaderActionsDisabled = disabled => {
   document.querySelectorAll('.rank-controls [data-reader-action]').forEach(button => { button.disabled = disabled; });
@@ -121,8 +121,8 @@ function initialize() {
   directoryLeft.id = 'left';
   directoryRight.id = 'right';
   directory.hidden = false;
-  $('#rank-category-list').innerHTML = Array.from({length: categoryCount}, (_, index) =>
-    `<button type="button" data-category-index="${index}">${String(index * 2 + 1).padStart(2, '0')}–${String(index * 2 + 2).padStart(2, '0')} <span>${escapeHtml(directoryPages[index * 2][0].name.split(' ')[0])} – ${escapeHtml(directoryPages[index * 2 + 1].at(-1).name.split(' ')[0])}</span></button>`
+  $('#rank-category-list').innerHTML = directoryRanks.map((rank, index) =>
+    `<button type="button" data-category-index="${Math.floor(directoryPages.findIndex(page => page.rank === rank) / 2)}">${String(index + 1).padStart(2, '0')} <span>${escapeHtml(rank)}</span></button>`
   ).join('');
   engine = new FlipEngine(rankBook, {
     spreadCount: categoryCount,

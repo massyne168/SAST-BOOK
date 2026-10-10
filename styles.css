@@ -1479,15 +1479,18 @@ main:not(.archive-closed):not(.directory-open) #book>.ribbon{pointer-events:none
   }
 }
 
-/* Alphabetical roster: scoped content styles, preserving book geometry and controls. */
-.officer-directory-page{display:flex;flex-direction:column;gap:4%;container-type:inline-size}
-.officer-directory-page .rank-list-heading{flex:0 0 auto;font-size:2.4cqw}
-.officer-directory-page .rank-list-heading h2{font-size:7cqw;margin-top:3%}
-.officer-cards{display:flex;flex-direction:column;gap:3cqw;min-height:0}
-.officer-card{display:flex;align-items:center;gap:3cqw;padding:3cqw;border:1px solid #71303b;background:#281016;color:#f3e5e8;min-width:0}
-.officer-avatar{flex:0 0 11cqw;width:11cqw;height:13cqw;color:#ad8d95;background:#35131c;border:1px solid #71303b;padding:1cqw}
-.officer-details{min-width:0;flex:1}
-.officer-details h3{margin:0 0 2cqw;font:700 4.1cqw/1.15 var(--display);overflow-wrap:anywhere;letter-spacing:.015em;color:#f3e5e8}
-.officer-details p{margin:1cqw 0 0;font:500 3cqw/1.35 var(--mono);color:#d4b6bd;overflow-wrap:anywhere}
-.officer-badge{color:#ed6475;font-variant-numeric:tabular-nums}
-.officer-page-footer{display:flex;justify-content:space-between;gap:2cqw;margin-top:auto;padding-top:2cqw;border-top:1px solid #71303b;font:2.3cqw var(--mono);color:#d4b6bd}
+/* Rank lists: content only; existing book geometry and interactions are unchanged. */
+.rank-roster-page{display:flex;flex-direction:column;gap:4%;container-type:inline-size}
+.rank-roster-page .rank-list-heading{flex:0 0 auto;font-size:2.6cqw}
+.rank-roster-page .rank-list-heading h2{font-size:6.5cqw;line-height:1.12;margin-top:3%;overflow-wrap:normal}
+.rank-roster-page .rank-list-heading h2 small{display:block;font:500 2.8cqw/1.4 var(--mono);margin-top:2cqw}
+.rank-roster-table{width:100%;border-collapse:collapse;table-layout:fixed;color:#f3e5e8;font:500 3.2cqw/1.4 var(--mono)}
+.rank-roster-table th{font-size:2.5cqw;font-weight:600;color:#d4b6bd;border-bottom:1px solid #8e2a3a;padding:2.5cqw 0}
+.rank-roster-table th:first-child{width:72%}
+.rank-roster-table th,.rank-roster-table td{text-align:left;vertical-align:middle}
+.rank-roster-table td{padding:2cqw 0;border-bottom:1px solid #71303b80;overflow-wrap:anywhere}
+.rank-roster-table th:last-child,.rank-roster-table td:last-child{text-align:right}
+.rank-roster-table td:last-child{color:#ed6475;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rank-roster-table td:first-child{padding-right:2cqw}
+.rank-roster-table tr{break-inside:avoid}
+.rank-roster-footer{display:flex;justify-content:space-between;gap:2cqw;margin-top:auto;padding-top:2cqw;border-top:1px solid #71303b;font:2.3cqw var(--mono);color:#d4b6bd}

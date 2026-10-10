@@ -397,12 +397,28 @@ export const rankDirectoryData = [
   }
 ];
 
-export const directoryPageCount = 30;
-const alphabeticalOfficers = [...rankDirectoryData].sort((a, b) => a.name.localeCompare(b.name, "en"));
-// Evenly interleave two- and three-profile pages without splitting or duplicating records.
-export const directoryPages = Array.from({length: directoryPageCount}, (_, index) =>
-  alphabeticalOfficers.slice(
-    Math.floor(index * alphabeticalOfficers.length / directoryPageCount),
-    Math.floor((index + 1) * alphabeticalOfficers.length / directoryPageCount)
-  )
-);
+// Rank order and page capacity are kept with the editable roster.
+export const directoryRanks = [
+  "COMMISSIONER",
+  "CHIEF OF POLICE",
+  "ASSISTANT CHIEF OF POLICE",
+  "CAPTAIN",
+  "LIEUTENANT",
+  "SERGEANT 3",
+  "SERGEANT 1",
+  "SENIOR OFFICER",
+  "OFFICER 2",
+  "OFFICER 1",
+  "CADET"
+];
+export const officersPerPage = 7;
+export const directoryPages = directoryRanks.flatMap(rank => {
+  const people = rankDirectoryData.filter(person => person.rank === rank)
+    .sort((a, b) => a.name.localeCompare(b.name, 'en'));
+  return Array.from({length: Math.ceil(people.length / officersPerPage)}, (_, index) => ({
+    rank,
+    continued: index > 0,
+    people: people.slice(index * officersPerPage, (index + 1) * officersPerPage)
+  }));
+});
+export const directoryPageCount = directoryPages.length;
