@@ -4,8 +4,6 @@ import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
 import {focusBook, isBookFocused, setBookFocused, setBookOpen, setBookOpening, resetBookFocus} from './book-focus.js';
 const $ = selector => document.querySelector(selector);
-// Temporary client-side preview gate setting; edit this value to change the Directory code.
-const DIRECTORY_PREVIEW_ACCESS_CODE = '2012';
 const setTheme = theme => { document.documentElement.dataset.theme = theme; };
 setTheme('overview');
 document.addEventListener('archive-overview-start', () => {
@@ -13,52 +11,10 @@ document.addEventListener('archive-overview-start', () => {
   hideOpeningButtons();
 });
 document.addEventListener('archive-overview-ready', () => {
-  scheduleOpeningReveal(() => directoryAccessButton.focus({preventScroll: true}));
+  scheduleOpeningReveal(() => directoryOpeningButton.focus({preventScroll: true}));
 });
 document.addEventListener('archive-select-first', () => setCarouselBook(0));
-const directoryAccessDialog = $('#directory-access-dialog');
-const directoryAccessForm = $('#directory-access-form');
-const directoryAccessInput = $('#directory-access-code');
-const directoryAccessError = $('#directory-access-error');
-const directoryAccessButton = $('#open-rank-directory');
-function closeDirectoryAccess() {
-  if (!directoryAccessDialog.open) return;
-  directoryAccessDialog.close();
-  directoryAccessButton.focus({preventScroll: true});
-}
-$('#cancel-directory-access').addEventListener('click', closeDirectoryAccess);
-directoryAccessDialog.addEventListener('cancel', event => {
-  event.preventDefault();
-  closeDirectoryAccess();
-});
-directoryAccessDialog.addEventListener('click', event => {
-  if (event.target === directoryAccessDialog) closeDirectoryAccess();
-});
-directoryAccessDialog.addEventListener('keydown', event => {
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    closeDirectoryAccess();
-    return;
-  }
-  if (event.key !== 'Tab') return;
-  const controls = [...directoryAccessDialog.querySelectorAll('input:not(:disabled),button:not(:disabled)')];
-  const first = controls[0], last = controls[controls.length - 1];
-  if (event.shiftKey && document.activeElement === first) {
-    event.preventDefault();
-    last.focus();
-  } else if (!event.shiftKey && document.activeElement === last) {
-    event.preventDefault();
-    first.focus();
-  }
-});
-function requestDirectoryAccess() {
-  if (directoryAccessDialog.open) return;
-  directoryAccessError.textContent = '';
-  directoryAccessInput.value = '';
-  directoryAccessInput.removeAttribute('aria-invalid');
-  directoryAccessDialog.showModal();
-  directoryAccessInput.focus();
-}
+const directoryOpeningButton = $('#open-rank-directory');
 const discord = $('.discord-link');
 const discordUrl = discord?.dataset.discordUrl || 'https://discord.gg/YOUR-SERVER';
 if (discord) discord.href = discordUrl;
@@ -320,8 +276,8 @@ async function openArchive() {
     catch (cause) {
       console.error('Unable to focus the Armory cover', cause);
       status('Unable to focus the archive cover. Please try again.');
+      return;
     }
-    return;
   }
   if (!setBookOpening('archive')) return;
   coverOpening = true; $('#open-archive').disabled = true;
@@ -393,23 +349,9 @@ $('#open-rank-directory').addEventListener('click', async () => {
     catch (cause) {
       console.error('Unable to focus the Rank Directory cover', cause);
       status('Unable to focus the Rank Directory cover. Please try again.');
+      return;
     }
-    return;
   }
-  requestDirectoryAccess();
-});
-directoryAccessForm.addEventListener('submit', async event => {
-  event.preventDefault();
-  if (directoryAccessInput.value !== DIRECTORY_PREVIEW_ACCESS_CODE) {
-    directoryAccessError.textContent = 'INVALID ACCESS CODE';
-    directoryAccessInput.setAttribute('aria-invalid', 'true');
-    directoryAccessInput.value = '';
-    directoryAccessInput.focus();
-    return;
-  }
-  directoryAccessInput.removeAttribute('aria-invalid');
-  directoryAccessError.textContent = '';
-  directoryAccessDialog.close();
   if (!setBookOpening('directory')) return;
   try {
     rankDirectoryModule = await import('./rank-directory.js');
