@@ -29,61 +29,53 @@ const setReaderActionsDisabled = disabled => {
   document.querySelectorAll('.rank-controls [data-reader-action]').forEach(button => { button.disabled = disabled; });
 };
 const setRankStatus = message => { $('#rank-status').textContent = message; };
+let navigationTarget = null, navigationFrame = 0, sequenceStep = false;
+let lastSpread = null;
+const stopNavigation = () => {
+  cancelAnimationFrame(navigationFrame);
+  navigationFrame = 0;
+  navigationTarget = null;
+  switchingCategory = false;
+  setReaderActionsDisabled(false);
+};
+const advanceNavigation = () => {
+  navigationFrame = 0;
+  if (directory.hidden || navigationTarget === null) { stopNavigation(); return; }
+  if (engine.spread === navigationTarget) { stopNavigation(); updateCategory(engine.spread); return; }
+  if (engine.drag || engine.animating || engine.pending) { stopNavigation(); return; }
+  sequenceStep = true;
+  try { engine.turn(Math.sign(navigationTarget - engine.spread)); }
+  catch (cause) { stopNavigation(); setRankStatus('Unable to turn to the selected rank. Please try again.'); console.error(cause); }
+  finally { sequenceStep = false; }
+};
 const showCategory = index => {
-  if (!Number.isInteger(index) || index < 0 || index >= categoryCount || switchingCategory || index === engine.spread || engine.drag || engine.animating) return false;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    try {
-      const moved = engine.goTo(index);
-      setRankStatus(moved ? '' : 'Unable to display the selected pages. Please try again.');
-      return moved;
-    } catch (cause) {
-      console.error('Unable to switch Rank Directory pages', cause);
-      setRankStatus('Unable to display the selected pages. Please try again.');
-      return false;
-    }
-  }
+  if (!Number.isInteger(index) || index < 0 || index >= categoryCount || switchingCategory || engine.drag || engine.pending || engine.animating) return false;
+  $('#rank-category-list').classList.remove('rank-index-expanded');
+  $('#rank-index-toggle').setAttribute('aria-expanded', 'false');
+  if (index === engine.spread) return true;
+  navigationTarget = index;
   switchingCategory = true;
   setReaderActionsDisabled(true);
-  rankBook.classList.add('rank-fade-out');
-  let executed = false;
-  let released = false;
-  let releaseTimer;
-  const release = () => {
-    if (released) return;
-    released = true;
-    window.clearTimeout(releaseTimer);
-    rankBook.classList.remove('rank-fade-out', 'rank-fade-in');
-    switchingCategory = false;
-    setReaderActionsDisabled(Boolean(engine.animating || engine.drag));
-  };
-  const execute = () => {
-    if (executed) return;
-    executed = true;
-    window.clearTimeout(fallbackTimer);
-    try {
-      const moved = engine.goTo(index);
-      if (!moved) {
-        setRankStatus('Unable to display the selected pages. Please try again.');
-        release();
-        return;
-      }
-      setRankStatus('');
-      rankBook.classList.remove('rank-fade-out');
-      rankBook.classList.add('rank-fade-in');
-      requestAnimationFrame(release);
-      releaseTimer = window.setTimeout(release, 500);
-    } catch (cause) {
-      console.error('Unable to switch Rank Directory pages', cause);
-      setRankStatus('Unable to display the selected pages. Please try again.');
-      release();
-    }
-  };
-  const fallbackTimer = window.setTimeout(execute, 120);
-  requestAnimationFrame(execute);
+  navigationFrame = requestAnimationFrame(advanceNavigation);
   return true;
+};
+const reflectCompletedTurn = index => {
+  updateCategory(index);
+  if (lastSpread !== null && lastSpread !== index && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    rankBook.querySelectorAll('.page-slot').forEach(slot => {
+      slot.querySelector('.rank-paper-reflection')?.remove();
+      const reflection = document.createElement('span');
+      reflection.className = 'rank-paper-reflection';
+      reflection.setAttribute('aria-hidden', 'true');
+      reflection.addEventListener('animationend', () => reflection.remove(), {once:true});
+      slot.append(reflection);
+    });
+  }
+  lastSpread = index;
 };
 const closeDirectory = async () => {
   if (directory.hidden || closingDirectory) return;
+  stopNavigation();
   closingDirectory = true;
   try {
     directory.inert = true;
@@ -121,18 +113,38 @@ function initialize() {
   directoryLeft.id = 'left';
   directoryRight.id = 'right';
   directory.hidden = false;
+  const indexToggle = document.createElement('button');
+  indexToggle.id = 'rank-index-toggle';
+  indexToggle.type = 'button';
+  indexToggle.textContent = 'RANK INDEX';
+  indexToggle.setAttribute('aria-expanded', 'false');
+  indexToggle.setAttribute('aria-controls', 'rank-category-list');
+  $('#rank-category-list').before(indexToggle);
+  indexToggle.addEventListener('click', () => {
+    const expanded = $('#rank-category-list').classList.toggle('rank-index-expanded');
+    indexToggle.setAttribute('aria-expanded', String(expanded));
+  });
+  $('#rank-category-list').addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      $('#rank-category-list').classList.remove('rank-index-expanded');
+      indexToggle.setAttribute('aria-expanded', 'false');
+      indexToggle.focus();
+    }
+  });
   $('#rank-category-list').innerHTML = directoryRanks.map((rank, index) =>
-    `<button type="button" data-category-index="${Math.floor(directoryPages.findIndex(page => page.rank === rank) / 2)}">${String(index + 1).padStart(2, '0')} <span>${escapeHtml(rank)}</span></button>`
+    `<button type="button" aria-label="${escapeHtml(rank)}" data-category-index="${Math.floor(directoryPages.findIndex(page => page.rank === rank) / 2)}">${String(index + 1).padStart(2, '0')} <span>${escapeHtml(rank)}</span></button>`
   ).join('');
   engine = new FlipEngine(rankBook, {
     spreadCount: categoryCount,
     initialSpread: 0,
     render: renderCategory,
-    blocked: () => directory.hidden || !!document.querySelector('dialog[open]'),
-    onChange: updateCategory,
-    onBusyChange: () => {
-      $('#rank-previous').disabled = engine.spread === 0 || engine.animating;
-      $('#rank-next').disabled = engine.spread === categoryCount - 1 || engine.animating;
+    blocked: () => directory.hidden || (switchingCategory && !sequenceStep) || !!document.querySelector('dialog[open]'),
+    onChange: reflectCompletedTurn,
+    onBusyChange: busy => {
+      if (busy) rankBook.querySelectorAll('.rank-paper-reflection').forEach(node => node.remove());
+      if (!busy && navigationTarget !== null && !navigationFrame) navigationFrame = requestAnimationFrame(advanceNavigation);
+      $('#rank-previous').disabled = engine.spread === 0 || engine.animating || switchingCategory;
+      $('#rank-next').disabled = engine.spread === categoryCount - 1 || engine.animating || switchingCategory;
       setReaderActionsDisabled(engine.animating || Boolean(engine.drag) || switchingCategory);
     }
   });
