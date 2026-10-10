@@ -1469,3 +1469,20 @@ main:not(.archive-closed):not(.directory-open) #book>.ribbon{pointer-events:none
   --opening-travel:#C0C0C0;--opening-border:#C0C0C0;--opening-glow:#ffffff0d;
   border-color:#C0C0C080;border-radius:8px;box-shadow:inset 0 1px #ffffff0c,0 0 8px #ffffff0d
 }
+
+/* Move each complete name without moving its row or badge. */
+.rank-roster-table .officer-name{
+  display:block;color:#F5F5F5;
+  text-shadow:0 0 3px rgba(255,255,255,.35),0 0 7px rgba(255,255,255,.12);
+  animation:officerNameFloat 4s ease-in-out infinite
+}
+@keyframes officerNameFloat{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-2px)}
+  75%{transform:translateX(2px)}
+}
+/* Avoid animating the many duplicate strips during a page turn. */
+.rank-book.turning .officer-name{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){
+  .rank-roster-table .officer-name{animation:none;transform:none}
+}

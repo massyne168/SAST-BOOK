@@ -14,7 +14,7 @@ const renderCategory = pageIndex => {
   return `<article class="rank-page rank-personnel-list-page rank-roster-page">
     <header class="rank-list-heading"><span>RANK DIRECTORY</span><h2>${escapeHtml(page.rank)}${page.continued ? ' <small>(CONTINUED)</small>' : ''}</h2></header>
     <table class="rank-roster-table"><thead><tr><th scope="col">OFFICER NAME</th><th scope="col">BADGE NUMBER</th></tr></thead>
-    <tbody>${page.people.map(person => `<tr><td>${escapeHtml(person.name)}</td><td>${escapeHtml(person.badge)}</td></tr>`).join('')}</tbody></table>
+    <tbody>${page.people.map(person => `<tr><td><span class="officer-name">${escapeHtml(person.name)}</span></td><td>${escapeHtml(person.badge)}</td></tr>`).join('')}</tbody></table>
     <footer class="rank-roster-footer"><span>RANK DIRECTORY</span><span>${String(pageIndex + 1).padStart(2, '0')} / ${directoryPageCount}</span></footer>
   </article>`;
 };
