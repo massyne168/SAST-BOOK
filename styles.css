@@ -1434,7 +1434,7 @@ main:not(.archive-closed):not(.directory-open) #book>.ribbon{pointer-events:none
   --opening-travel:#b9f2ff
 }
 #open-rank-directory.book-opening-tab{--opening-travel:#ffd1d7}
-#open-archive.book-opening-tab::before,#open-rank-directory.book-opening-tab::before{
+.rank-roster-page .rank-list-heading h2::before{
   position:absolute;z-index:1;inset:0;box-sizing:border-box;border:1px solid var(--opening-travel);
   border-radius:inherit;pointer-events:none;content:"";opacity:.6
 }
@@ -1444,7 +1444,7 @@ main:not(.archive-closed):not(.directory-open) #book>.ribbon{pointer-events:none
   position:relative;z-index:2
 }
 @supports (mask-composite: exclude) or (-webkit-mask-composite: xor){
-  #open-archive.book-opening-tab::before,#open-rank-directory.book-opening-tab::before{
+  .rank-roster-page .rank-list-heading h2::before{
     padding:2px;border-color:transparent;
     background:conic-gradient(from var(--opening-angle),transparent 0deg 318deg,var(--opening-travel) 337deg 351deg,transparent 360deg);
     -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
@@ -1473,7 +1473,7 @@ main:not(.archive-closed):not(.directory-open) #book>.ribbon{pointer-events:none
 @keyframes opening-border-travel{to{--opening-angle:1turn}}
 @media(prefers-reduced-motion:reduce){
   #open-archive.book-opening-tab,#open-rank-directory.book-opening-tab{transition:none}
-  #open-archive.book-opening-tab::before,#open-rank-directory.book-opening-tab::before{
+  .rank-roster-page .rank-list-heading h2::before{
     animation:none;--opening-angle:0deg;padding:0;border-color:var(--opening-travel);
     background:none;mask:none;-webkit-mask:none;opacity:.6
   }
@@ -1494,3 +1494,9 @@ main:not(.archive-closed):not(.directory-open) #book>.ribbon{pointer-events:none
 .rank-roster-table td:first-child{padding-right:2cqw}
 .rank-roster-table tr{break-inside:avoid}
 .rank-roster-footer{display:flex;justify-content:space-between;gap:2cqw;margin-top:auto;padding-top:2cqw;border-top:1px solid #71303b;font:2.3cqw var(--mono);color:#d4b6bd}
+
+/* Reuse the opening-control border light on stationary rank titles. */
+.rank-roster-page .rank-list-heading h2{position:relative;isolation:isolate;--opening-travel:#9defff;border:1px solid #439cbb80;border-radius:8px;padding:2cqw 2.5cqw;box-shadow:0 0 8px #38bdf81a}
+#open-archive.book-opening-tab::before,#open-rank-directory.book-opening-tab::before{content:none;animation:none}
+/* Freeze duplicate leaf-strip lights while the existing page turn is rendering. */
+.rank-book.turning .rank-list-heading h2::before{animation-play-state:paused}
