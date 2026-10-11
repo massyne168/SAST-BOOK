@@ -31,6 +31,13 @@ const setReaderActionsDisabled = disabled => {
 const setRankStatus = message => { $('#rank-status').textContent = message; };
 let navigationTarget = null, navigationFrame = 0, sequenceStep = false;
 let lastSpread = null;
+const mobileIndex = matchMedia('(max-width: 700px)');
+const setIndexExpanded = expanded => {
+  const list = $('#rank-category-list');
+  list.classList.toggle('rank-index-expanded', expanded);
+  list.inert = mobileIndex.matches && !expanded;
+  $('#rank-index-toggle').setAttribute('aria-expanded', String(expanded));
+};
 const stopNavigation = () => {
   cancelAnimationFrame(navigationFrame);
   navigationFrame = 0;
@@ -50,8 +57,8 @@ const advanceNavigation = () => {
 };
 const showCategory = index => {
   if (!Number.isInteger(index) || index < 0 || index >= categoryCount || switchingCategory || engine.drag || engine.pending || engine.animating) return false;
-  $('#rank-category-list').classList.remove('rank-index-expanded');
-  $('#rank-index-toggle').setAttribute('aria-expanded', 'false');
+  if (mobileIndex.matches && $('#rank-category-list').contains(document.activeElement)) $('#rank-index-toggle').focus({preventScroll:true});
+  setIndexExpanded(false);
   if (index === engine.spread) return true;
   navigationTarget = index;
   switchingCategory = true;
@@ -76,6 +83,8 @@ const reflectCompletedTurn = index => {
 const closeDirectory = async () => {
   if (directory.hidden || closingDirectory) return;
   stopNavigation();
+  engine.cancel(true);
+  setIndexExpanded(false);
   closingDirectory = true;
   try {
     directory.inert = true;
@@ -121,13 +130,13 @@ function initialize() {
   indexToggle.setAttribute('aria-controls', 'rank-category-list');
   $('#rank-category-list').before(indexToggle);
   indexToggle.addEventListener('click', () => {
-    const expanded = $('#rank-category-list').classList.toggle('rank-index-expanded');
-    indexToggle.setAttribute('aria-expanded', String(expanded));
+    setIndexExpanded(!$('#rank-category-list').classList.contains('rank-index-expanded'));
   });
+  mobileIndex.addEventListener('change', () => setIndexExpanded(false));
+  setIndexExpanded(false);
   $('#rank-category-list').addEventListener('keydown', event => {
     if (event.key === 'Escape') {
-      $('#rank-category-list').classList.remove('rank-index-expanded');
-      indexToggle.setAttribute('aria-expanded', 'false');
+      setIndexExpanded(false);
       indexToggle.focus();
     }
   });
