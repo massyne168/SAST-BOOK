@@ -1,4 +1,4 @@
-import {officers, weapons, activities, statuses, searchOfficers, filterWeapons, calculateStatistics, filterActivities} from './archive-data.js';
+import {officers, weapons, activities, statuses, searchOfficers, filterWeapons, calculateStatistics, filterActivities, isOfficialRank} from './archive-data.js';
 import {navigateBook} from './app.js';
 const escape = value => String(value ?? 'Not recorded').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const titles = {search:'Trooper search', inventory:'Armory inventory', statistics:'Department statistics', activity:'Archive activity log'};
@@ -71,8 +71,11 @@ async function openBook(kind, id) {
 }
 function searchResults() {
   const results = searchOfficers(value('trooper-query'));
-  content.querySelector('#trooper-count').textContent = `${results.length} troopers found`;
-  content.querySelector('#trooper-results').innerHTML = results.length ? results.map(person => `<li><button type="button" data-officer="${escape(person.id)}"><strong>${escape(person.name)}</strong><span>${escape(person.rank)}</span><small>Badge: ${escape(person.badge)}</small><span class="result-arrow" aria-hidden="true">↗</span></button></li>`).join('') : '<li class="archive-empty">No troopers match your search.</li>';
+  content.querySelector('#trooper-count').textContent = `${results.length} records found`;
+  content.querySelector('#trooper-results').innerHTML = results.length ? results.map(person => isOfficialRank(person.rank)
+    ? `<li><button type="button" data-officer="${escape(person.id)}"><strong>${escape(person.name)}</strong><span>${escape(person.rank)}</span><small>Badge: ${escape(person.badge)}</small><span class="result-arrow" aria-hidden="true">↗</span></button></li>`
+    : `<li><div class="trooper-other-record"><strong>${escape(person.name)}</strong><span>OTHER RECORDS · ${escape(person.rank)}</span><small>Badge: ${escape(person.badge)}</small></div></li>`
+  ).join('') : '<li class="archive-empty">No troopers match your search.</li>';
 }
 const summary = items => `<div class="archive-stat-grid">${items.map(([label,count]) => `<div class="archive-stat"><span>${escape(label)}</span><strong>${count}</strong></div>`).join('')}</div>`;
 function inventoryResults() {
@@ -103,7 +106,7 @@ function render(kind) {
   panel = kind;
   dialog.querySelector('h2').textContent = titles[kind];
   if (kind === 'search') {
-    content.innerHTML = `<p class="archive-subtitle">Find a trooper and turn directly to their place in the directory.</p>${field('Name, badge number or rank', searchInput('trooper-query','Search the Rank Directory'))}<p id="trooper-count" role="status"></p><ul id="trooper-results" class="trooper-results"></ul>`;
+    content.innerHTML = `<p class="archive-subtitle">Find a record and turn directly to an active trooper's place in the directory. Other records remain outside the rank index.</p>${field('Name, badge number or rank', searchInput('trooper-query','Search the Rank Directory'))}<p id="trooper-count" role="status"></p><ul id="trooper-results" class="trooper-results"></ul>`;
     searchResults();
   } else if (kind === 'inventory') {
     content.innerHTML = `<p class="archive-subtitle">Equipment as recorded in the original issue forms. Historical names and badges are preserved.</p><button type="button" data-open-armory>OPEN ARCHIVE BOOK ↗</button>${summary([['Registered weapons',stats.totalWeapons],['Currently issued',stats.byStatus.find(s => s.label === 'ISSUED').count],['Available',stats.byStatus.find(s => s.label === 'AVAILABLE').count]])}<div class="archive-filters">${field('Weapon or serial',searchInput('weapon-query','Search weapons, serials or records'))}${field('Equipment status',select('weapon-status','All statuses',statuses))}${field('Assigned trooper',select('weapon-trooper','All troopers',[...new Set(weapons.map(w => w.assignedName))].sort()))}${field('Weapon category',select('weapon-category','All categories',[...new Set(weapons.map(w => w.category ?? 'Not recorded'))]))}</div><p id="inventory-count" role="status"></p><div class="archive-table-wrap"><table class="archive-inventory"><caption class="visually-hidden">Registered equipment</caption><thead><tr><th scope="col">Weapon name</th><th scope="col">Serial</th><th scope="col">Assigned to</th><th scope="col">Status</th></tr></thead><tbody id="weapon-rows"></tbody></table></div><p class="archive-empty" id="inventory-empty" hidden>No weapons match your filters.</p><section id="weapon-details" class="weapon-details" tabindex="-1" aria-label="Weapon details" hidden></section>`;

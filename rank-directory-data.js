@@ -201,8 +201,8 @@ export const rankDirectoryData = [
   {
     "id": "trooper-034",
     "name": "JAXSON REED",
-    "rank": "CADET",
-    "badge": "0120"
+    "rank": "OFFICER 1",
+    "badge": "0220"
   },
   {
     "id": "trooper-035",
@@ -465,7 +465,7 @@ export const rankDirectoryData = [
   {
     "id": "trooper-078",
     "name": "LIONEL PASCAL",
-    "rank": "SENIOR OFFICER",
+    "rank": "FREELANCER",
     "badge": "0706"
   },
   {
@@ -473,6 +473,12 @@ export const rankDirectoryData = [
     "name": "MEDOS KINGO",
     "rank": "OFFICER 2",
     "badge": "0233"
+  },
+  {
+    "id": "trooper-080",
+    "name": "RAY GROSSMAN",
+    "rank": "SENIOR OFFICER",
+    "badge": "0455"
   }
 ];
 

@@ -11,6 +11,7 @@ export function searchOfficers(query, records = officers) {
 export function officerPage(id) {
   return directoryPages.findIndex(page => page.people.some(person => person.id === id));
 }
+export const isOfficialRank = rank => directoryRanks.includes(rank);
 export function filterWeapons(records, {query = '', status = '', assignedName = '', category = ''} = {}) {
   return records.filter(record => matches([record.name, record.serialNumber, record.assignedName, record.assignedBadgeNumber, record.id], query)
     && (!status || record.status === status) && (!assignedName || record.assignedName === assignedName)
@@ -19,10 +20,11 @@ export function filterWeapons(records, {query = '', status = '', assignedName = 
 // Explicit reporting definition, not a change to the department's rank hierarchy.
 export const leadershipRanks = Object.freeze(['COMMISSIONER','CHIEF OF POLICE','ASSISTANT CHIEF OF POLICE','CAPTAIN','LIEUTENANT']);
 export function calculateStatistics(people = officers, inventory = weapons, ranks = directoryRanks) {
+  const officialPeople = people.filter(person => ranks.includes(person.rank));
   return {
-    totalTroopers: people.length, totalRanks: ranks.length,
-    leadership: people.filter(person => leadershipRanks.includes(person.rank)).length,
-    byRank: ranks.map(rank => ({label: rank, count: people.filter(person => person.rank === rank).length})),
+    totalTroopers: officialPeople.length, totalRanks: ranks.length,
+    leadership: officialPeople.filter(person => leadershipRanks.includes(person.rank)).length,
+    byRank: ranks.map(rank => ({label: rank, count: officialPeople.filter(person => person.rank === rank).length})),
     totalWeapons: inventory.length,
     byStatus: statuses.map(status => ({label: status, count: inventory.filter(weapon => weapon.status === status).length})),
     unknownStatus: inventory.filter(weapon => !statuses.includes(weapon.status)).length

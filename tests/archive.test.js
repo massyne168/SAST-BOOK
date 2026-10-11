@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {officers, weapons, activities, searchOfficers, officerPage, filterWeapons, calculateStatistics, filterActivities, statuses} from '../archive-data.js';
+import {officers, weapons, activities, searchOfficers, officerPage, filterWeapons, calculateStatistics, filterActivities, statuses, isOfficialRank} from '../archive-data.js';
 import {directoryPages, directoryRanks} from '../rank-directory-data.js';
 import {validateAssignment, createActivity} from '../archive-management.js';
 
@@ -15,15 +15,26 @@ test('real roster search preserves leading zeros and duplicate badges', () => {
   assert.equal(new Set(officers.map(p => p.id)).size, officers.length);
   for (const person of officers) {
     assert.equal(typeof person.badge, 'string');
-    assert.ok(directoryPages[officerPage(person.id)].people.some(p => p.id === person.id));
+    if (isOfficialRank(person.rank)) assert.ok(directoryPages[officerPage(person.id)].people.some(p => p.id === person.id));
+    else assert.equal(officerPage(person.id), -1);
   }
   assert.equal(officerPage('missing'), -1);
 });
+test('MDT roster update keeps stable records and isolates non-rank records', () => {
+  assert.equal(officers.length,80);
+  assert.deepEqual(searchOfficers('JAXSON REED'), [{id:'trooper-034',name:'JAXSON REED',rank:'OFFICER 1',badge:'0220'}]);
+  assert.deepEqual(searchOfficers('RAY GROSSMAN'), [{id:'trooper-080',name:'RAY GROSSMAN',rank:'SENIOR OFFICER',badge:'0455'}]);
+  assert.deepEqual(searchOfficers('LIONEL PASCAL'), [{id:'trooper-078',name:'LIONEL PASCAL',rank:'FREELANCER',badge:'0706'}]);
+  assert.equal(officerPage('trooper-078'),-1);
+  assert.equal(searchOfficers('ALEX L PARVUS').length,1);
+  for (const name of ['GARCIA ZAK','JAKE MRV','LIL CARTER','MEDOS KINGO','ROBERT PARVUS']) assert.equal(searchOfficers(name).length,1);
+});
 test('statistics derive from input, including empty ranks and unknown statuses', () => {
   const stats = calculateStatistics();
-  assert.equal(stats.totalTroopers, officers.length);
+  assert.equal(stats.totalTroopers, officers.filter(person => isOfficialRank(person.rank)).length);
   assert.equal(stats.totalRanks, directoryRanks.length);
-  assert.equal(stats.byRank.reduce((sum,r) => sum+r.count,0), officers.length);
+  assert.equal(stats.byRank.reduce((sum,r) => sum+r.count,0), stats.totalTroopers);
+  assert.equal(stats.totalTroopers,79);
   assert.equal(stats.totalWeapons, weapons.length);
   assert.equal(stats.byStatus.reduce((sum,r) => sum+r.count,0), weapons.length);
   const changed = calculateStatistics([{id:'test',rank:'CAPTAIN'}],[{status:'LOST'},{status:null}],['CAPTAIN','CADET']);
