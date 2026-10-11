@@ -1541,3 +1541,46 @@ main.archive-closed .book-pair:not([data-carousel-transitioning]) .primary-book:
 
 @media(max-width:700px){.record-heading{margin:22px auto 9px;padding:0 20px}.record-heading h1{font-size:clamp(25px,8vw,31px)}.archive-navigation{width:calc(100% - 20px);gap:4px;margin-bottom:16px;padding:4px}.archive-navigation::before,.archive-navigation::after{display:none}.archive-navigation a{min-height:32px;padding:0 8px;font-size:8px;letter-spacing:.045em}.archive-navigation a:nth-child(4),.archive-navigation a:nth-child(5){flex:1 1 auto}.archive-navigation svg{display:none}}
 @media(prefers-reduced-motion:reduce){.record-heading h1.heading-enter,main.archive-closed .book-pair:not([data-carousel-transitioning]) .primary-book:has(.archive-cover[data-book-state="book-idle"]),main.archive-closed .book-pair:not([data-carousel-transitioning]) .rank-cover-stage-teaser:has(.rank-cover[data-book-state="book-idle"]){animation:none}.archive-navigation a,.archive-navigation a::before,.archive-navigation a::after,main.archive-closed .cover-stage::before,main.archive-closed .rank-cover-stage-teaser::before{transition:none}}
+
+/* Homepage alignment: the cover is centered independently from its adjacent action. */
+main.archive-closed .book-pair{width:min(calc(100% - 32px),880px);max-width:880px;min-height:470px;margin:0 auto 24px}
+main.archive-closed .primary-book .archive-cover-unit,
+main.archive-closed .rank-cover-stage-teaser .rank-cover-unit{display:grid;place-items:center;width:min(100%,560px);transform:none}
+main.archive-closed .book-pair>.primary-book{z-index:2;opacity:1;transform:none}
+main.archive-closed .book-pair>.rank-cover-stage-teaser{z-index:1;opacity:.58;transform:translate(-32px,12px) scale(.93) rotate(-1.5deg)}
+main.archive-closed .book-pair[data-active-book="directory"]>.primary-book{z-index:1;opacity:.58;transform:translate(-32px,12px) scale(.93) rotate(-1.5deg)}
+main.archive-closed .book-pair[data-active-book="directory"]>.rank-cover-stage-teaser{z-index:2;opacity:1;transform:none}
+main.archive-closed .archive-cover-unit>#open-archive.book-opening-tab,
+main.archive-closed .rank-cover-unit>#open-rank-directory.book-opening-tab{position:absolute;left:calc(50% + 176px);top:50%;margin:0;transform:translateY(-50%)}
+main.archive-closed .archive-cover-unit>#open-archive.book-opening-tab:hover,
+main.archive-closed .archive-cover-unit>#open-archive.book-opening-tab:focus-visible,
+main.archive-closed .rank-cover-unit>#open-rank-directory.book-opening-tab:hover,
+main.archive-closed .rank-cover-unit>#open-rank-directory.book-opening-tab:focus-visible{transform:translateY(calc(-50% - 1px))}
+@media(max-width:999px){main.archive-closed .book-pair{width:min(calc(100% - 24px),440px);min-height:0}.book-pair[data-active-book="directory"]>.primary-book{transform:translate(-8px,-8px) scale(.92) rotate(-1.5deg)}main.archive-closed .archive-cover-unit>#open-archive.book-opening-tab,main.archive-closed .rank-cover-unit>#open-rank-directory.book-opening-tab{position:static;transform:none;margin:0}.archive-cover-unit>#open-archive.book-opening-tab:hover,.archive-cover-unit>#open-archive.book-opening-tab:focus-visible,.rank-cover-unit>#open-rank-directory.book-opening-tab:hover,.rank-cover-unit>#open-rank-directory.book-opening-tab:focus-visible{transform:translateY(-1px)}}
+@media(max-width:700px){.record-heading{width:min(calc(100% - 40px),880px);padding:0;margin:22px auto 10px}.record-heading .access{display:none}}
+
+/* Archive 3.0 homepage composition: one centered editorial flow. */
+main.archive-closed{overflow:hidden}
+main.archive-closed .record-heading{width:min(calc(100% - 32px),880px);margin:30px auto 14px;padding:0;text-align:center;display:block}
+main.archive-closed .record-heading .eyebrow{display:block;margin-bottom:7px}
+main.archive-closed .record-heading h1{margin:0;font-size:clamp(29px,3vw,40px)}
+main.archive-closed .record-heading .access{display:block;margin:10px 0 0}
+main.archive-closed .book-pair{width:min(calc(100% - 32px),680px);max-width:680px;min-height:462px;margin:0 auto;overflow:visible}
+main.archive-closed .primary-book .cover-stage,main.archive-closed .rank-cover-stage-teaser{min-height:462px;align-items:center}
+main.archive-closed .primary-book .archive-cover-unit,main.archive-closed .rank-cover-stage-teaser .rank-cover-unit{display:flex;align-items:center;justify-content:center;width:100%;transform:none}
+main.archive-closed .archive-cover-unit::after,main.archive-closed .rank-cover-unit::after{display:none}
+main.archive-closed .book-pair>.primary-book{z-index:2;opacity:1;transform:none}
+main.archive-closed .book-pair>.rank-cover-stage-teaser{z-index:1;opacity:.52;transform:translate(-28px,16px) scale(.9) rotate(-1.4deg)}
+main.archive-closed .book-pair[data-active-book="directory"]>.primary-book{z-index:1;opacity:.52;transform:translate(-28px,16px) scale(.9) rotate(-1.4deg)}
+main.archive-closed .book-pair[data-active-book="directory"]>.rank-cover-stage-teaser{z-index:2;opacity:1;transform:none}
+.book-actions{display:flex;justify-content:center;align-items:center;min-height:58px;margin:6px auto 12px;padding:0 16px}
+main:not(.archive-closed) .book-actions{display:none}
+.book-actions>#open-archive.book-opening-tab,.book-actions>#open-rank-directory.book-opening-tab{position:relative;inset:auto;display:flex;width:210px;min-height:50px;margin:0;transform:none;background:#17191d;border-color:#c0c0c099;color:#f5f5f5;box-shadow:inset 0 1px #ffffff12,0 7px 18px #00000030}
+.book-actions>#open-archive.book-opening-tab:hover,.book-actions>#open-archive.book-opening-tab:focus-visible,.book-actions>#open-rank-directory.book-opening-tab:hover,.book-actions>#open-rank-directory.book-opening-tab:focus-visible{transform:translateY(-1px);background:#23262b;border-color:#e8e8e8;box-shadow:inset 0 1px #ffffff1b,0 0 14px #ffffff18}
+.book-actions>#open-archive.book-opening-tab.opening-button-pending,.book-actions>#open-rank-directory.book-opening-tab.opening-button-pending,.book-actions>#open-archive.book-opening-tab.opening-button-inactive,.book-actions>#open-rank-directory.book-opening-tab.opening-button-inactive{transform:translateY(8px)}
+main.archive-closed .book-actions+.carousel-controls{width:min(calc(100% - 32px),520px);margin:0 auto 24px;padding-top:0}
+.carousel-controls button{min-height:36px;padding:7px 10px;border-color:#c0c0c077;background:#12161b;color:#e8e8e8}
+.carousel-controls span{min-width:132px;color:#c0c0c0}
+@media(max-width:999px){main.archive-closed .book-pair{width:min(calc(100% - 24px),440px);min-height:0}.book-pair[data-active-book="directory"]>.primary-book{transform:translate(-8px,-8px) scale(.92) rotate(-1.5deg)}main.archive-closed .primary-book .cover-stage,main.archive-closed .rank-cover-stage-teaser{min-height:0}.book-actions{margin-top:2px}}
+@media(max-width:700px){main.archive-closed .record-heading{width:calc(100% - 32px);margin:22px auto 12px}.record-heading .access{display:none}.book-actions{min-height:52px;margin:2px auto 10px}.book-actions>#open-archive.book-opening-tab,.book-actions>#open-rank-directory.book-opening-tab{width:min(100%,300px);min-height:48px}.carousel-controls{margin-bottom:18px}}
+@media(prefers-reduced-motion:reduce){.book-actions>#open-archive.book-opening-tab,.book-actions>#open-rank-directory.book-opening-tab{transition:none}}

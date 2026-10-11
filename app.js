@@ -4,6 +4,15 @@ import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
 import {focusBook, isBookFocused, setBookFocused, setBookOpen, setBookOpening, resetBookFocus} from './book-focus.js';
 const $ = selector => document.querySelector(selector);
+const bookActions = document.createElement('div');
+bookActions.className = 'book-actions';
+bookActions.setAttribute('aria-label', 'Open selected archive');
+const overviewPair = $('.book-pair');
+overviewPair?.insertAdjacentElement('afterend', bookActions);
+for (const selector of ['#open-archive', '#open-rank-directory']) {
+  const action = $(selector);
+  if (action) bookActions.append(action);
+}
 const setTheme = theme => { document.documentElement.dataset.theme = theme; };
 setTheme('overview');
 document.addEventListener('archive-overview-start', () => {
@@ -41,7 +50,7 @@ const carouselButtons = document.createElement('nav');
 carouselButtons.className = 'carousel-controls';
 carouselButtons.setAttribute('aria-label', 'Choose a book');
 carouselButtons.innerHTML = '<button type="button" data-carousel-direction="-1" aria-label="Show the previous book">PREVIOUS BOOK</button><span aria-live="polite"></span><button type="button" data-carousel-direction="1" aria-label="Show the next book">NEXT BOOK</button>';
-pair.insertAdjacentElement('afterend', carouselButtons);
+bookActions.insertAdjacentElement('afterend', carouselButtons);
 let carouselIndex = pair.dataset.activeBook === 'directory' ? 1 : 0;
 let carouselTimer, carouselTransitioning = false, wheelTotal = 0, wheelIdleTimer, wheelGestureLocked = false;
 const carouselNames = ['ARMORY', 'RANK DIRECTORY'];
@@ -130,7 +139,7 @@ carouselButtons.addEventListener('click', event => {
   const button = event.target.closest('[data-carousel-direction]');
   if (button && !button.disabled) setCarouselBook(carouselIndex + Number(button.dataset.carouselDirection));
 });
-pair.addEventListener('click', event => {
+document.addEventListener('click', event => {
   const action = event.target.closest('#open-archive,#open-rank-directory');
   if (action) setCarouselBook(action.id === 'open-archive' ? 0 : 1);
 }, true);
