@@ -95,6 +95,7 @@ reducedMotion.addEventListener?.('change', event => {
   if (event.matches && main.classList.contains('archive-closed')) scheduleOpeningReveal();
 });
 document.addEventListener('site-ready', () => scheduleOpeningReveal());
+document.addEventListener('archive-panel-closed', () => scheduleOpeningReveal());
 function syncCarousel() {
   pair.dataset.activeBook = carouselIndex === 0 ? 'archive' : 'directory';
   carouselButtons.querySelector('span').textContent = `${carouselNames[carouselIndex]} / 02`;
@@ -313,7 +314,7 @@ async function openArchive() {
   }
 }
 $('#open-archive').addEventListener('click', openArchive);
-$('#close-archive').onclick = async () => {
+async function closeArchive() {
   if (busy() || engine.pending) return;
   clearTimeout(stampTimer); $('#access-stamp').hidden = true;
   main.classList.add('archive-closed');
@@ -327,6 +328,7 @@ $('#close-archive').onclick = async () => {
     scheduleOpeningReveal(() => $('#open-archive').focus({preventScroll:true}));
   }
 };
+$('#close-archive').onclick = closeArchive;
 const fullscreen = $('#fullscreen');
 function syncFullscreen() {
   fullscreen.hidden = !(document.fullscreenEnabled && document.documentElement.requestFullscreen && document.exitFullscreen);
@@ -343,7 +345,7 @@ fullscreen.onclick = async () => {
 document.addEventListener('fullscreenchange', syncFullscreen);
 syncFullscreen();
 
-$('#open-rank-directory').addEventListener('click', async () => {
+async function openDirectory() {
   if (!isBookFocused('directory')) {
     try { await focusBook('directory'); }
     catch (cause) {
@@ -370,4 +372,31 @@ $('#open-rank-directory').addEventListener('click', async () => {
     setBookFocused('directory');
     status('Unable to open the Rank Directory. Please try again.');
   }
-});
+}
+
+
+$('#open-rank-directory').addEventListener('click', openDirectory);
+// Shared navigation adapter waits for existing animations before switching books.
+let archiveNavigation = Promise.resolve();
+export function navigateBook(kind, officerId) {
+  archiveNavigation = archiveNavigation.catch(() => {}).then(async () => {
+    const deadline = performance.now() + 15000;
+    while ((busy() || engine.drag || engine.pending || carouselTransitioning) && performance.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 40));
+    }
+    if (busy() || engine.drag || engine.pending || carouselTransitioning) throw new Error('Please finish the current page turn and try again.');
+    if (kind === 'directory') {
+      if (!main.classList.contains('directory-open')) {
+        if (!main.classList.contains('archive-closed')) await closeArchive();
+        setCarouselBook(1);
+        await openDirectory();
+      }
+      if (officerId && !await rankDirectoryModule.revealOfficer(officerId)) throw new Error('Unable to locate the officer. Please try again.');
+    } else {
+      if (main.classList.contains('directory-open')) await rankDirectoryModule.closeDirectory();
+      setCarouselBook(0);
+      if (main.classList.contains('archive-closed')) await openArchive();
+    }
+  });
+  return archiveNavigation;
+}

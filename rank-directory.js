@@ -14,7 +14,7 @@ const renderCategory = pageIndex => {
   return `<article class="rank-page rank-personnel-list-page rank-roster-page">
     <header class="rank-list-heading"><span>RANK DIRECTORY</span><h2>${escapeHtml(page.rank)}${page.continued ? ' <small>(CONTINUED)</small>' : ''}</h2></header>
     <table class="rank-roster-table"><thead><tr><th scope="col">OFFICER NAME</th><th scope="col">BADGE NUMBER</th></tr></thead>
-    <tbody>${page.people.map(person => `<tr><td><span class="officer-name">${escapeHtml(person.name)}</span></td><td>${escapeHtml(person.badge)}</td></tr>`).join('')}</tbody></table>
+    <tbody>${page.people.map(person => `<tr data-officer-id="${escapeHtml(person.id)}"><td><span class="officer-name">${escapeHtml(person.name)}</span></td><td>${escapeHtml(person.badge)}</td></tr>`).join('')}</tbody></table>
     <footer class="rank-roster-footer"><span>RANK DIRECTORY</span><span>${String(pageIndex + 1).padStart(2, '0')} / ${directoryPageCount}</span></footer>
   </article>`;
 };
@@ -80,7 +80,7 @@ const reflectCompletedTurn = index => {
   }
   lastSpread = index;
 };
-const closeDirectory = async () => {
+export const closeDirectory = async () => {
   if (directory.hidden || closingDirectory) return;
   stopNavigation();
   engine.cancel(true);
@@ -204,4 +204,34 @@ export function getCurrentSpread() {
     title: `RANK DIRECTORY — PAGES ${index * 2 + 1}–${index * 2 + 2}`,
     fileName: `rank-directory-pages-${index * 2 + 1}-${index * 2 + 2}`
   };
+}
+
+// Wait for an in-flight drag/turn; always use the existing animated rank navigation.
+let searchGeneration = 0, highlightTimer;
+export async function revealOfficer(id) {
+  const generation = ++searchGeneration;
+  const page = directoryPages.findIndex(page => page.people.some(person => person.id === id));
+  if (page < 0 || !initialized) return false;
+  const target = Math.floor(page / 2);
+  const deadline = performance.now() + 15000;
+  while (!directory.hidden && generation === searchGeneration && performance.now() < deadline) {
+    if (!switchingCategory && !engine.drag && !engine.pending && !engine.animating) {
+      if (engine.spread === target) {
+        clearTimeout(highlightTimer);
+        rankBook.querySelectorAll('.officer-search-highlight').forEach(row => row.classList.remove('officer-search-highlight'));
+        const row = rankBook.querySelector(`.page-slot [data-officer-id="${CSS.escape(id)}"]`);
+        if (!row) return false;
+        row.classList.add('officer-search-highlight');
+        row.tabIndex = -1;
+        row.focus({preventScroll: true});
+        row.scrollIntoView({block:'nearest', inline:'nearest', behavior:'instant'});
+        highlightTimer = setTimeout(() => row.classList.remove('officer-search-highlight'), 2000);
+        setRankStatus('Located ' + directoryPages[page].people.find(person => person.id === id).name);
+        return true;
+      }
+      showCategory(target);
+    }
+    await new Promise(resolve => setTimeout(resolve, 40));
+  }
+  return false;
 }

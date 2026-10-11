@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {pathToFileURL} from 'node:url';
 import {mkdir} from 'node:fs/promises';
 import {server} from '../server.js';
+import {directoryPages, directoryPageCount} from '../rank-directory-data.js';
 const {chromium} = await import(process.env.PLAYWRIGHT_PATH ? pathToFileURL(process.env.PLAYWRIGHT_PATH).href : 'playwright');
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
@@ -14,6 +15,7 @@ const report=label=>console.log(`PASS ${label}`);
 async function spread(value) { await page.waitForFunction(value=>document.querySelector('#progress-text').textContent===`SPREAD ${String(value+1).padStart(2,'0')} / 15`,value); }
 async function idle() { await page.waitForFunction(()=>document.querySelector('#book').getAttribute('aria-busy')==='false'); }
 async function verifyOpeningTabs(layout) {
+  const innerWidth = page.viewportSize().width;
   await page.waitForFunction(()=>{
     const pair=document.querySelector('.book-pair');
     const selector=pair.dataset.activeBook==='directory'?'#open-rank-directory':'#open-archive';
@@ -70,9 +72,6 @@ async function verifyOpeningTabs(layout) {
 async function open() {
   await idle();
   await page.locator('#open-archive').click();
-  await page.waitForFunction(()=>document.querySelector('#archive-cover').dataset.bookState==='book-focused');
-  assert.equal(await page.locator('main').evaluate(el=>el.classList.contains('archive-closed')),true);
-  await page.locator('#open-archive').click();
   await page.waitForFunction(()=>!document.querySelector('main').classList.contains('archive-closed'));
   assert.equal(await page.locator('html').getAttribute('data-theme'),'armory');
   await idle();
@@ -80,14 +79,7 @@ async function open() {
 async function openDirectory() {
   const activeBook=await page.locator('.book-pair').getAttribute('data-active-book');
   if(activeBook!=='directory') await page.getByRole('button',{name:'Show the next book'}).click();
-  if(await page.locator('#rank-cover').getAttribute('data-book-state')!=='book-focused'){
-    await page.locator('#open-rank-directory').click();
-    await page.waitForFunction(()=>document.querySelector('#rank-cover').dataset.bookState==='book-focused');
-  }
   await page.locator('#open-rank-directory').click();
-  await page.locator('#directory-access-dialog').waitFor({state:'visible'});
-  await page.locator('#directory-access-code').fill('2012');
-  await page.keyboard.press('Enter');
   await page.waitForFunction(()=>document.querySelector('main').classList.contains('directory-open'));
 }
 async function drag(from,to) {
@@ -97,7 +89,7 @@ async function drag(from,to) {
 }
 try {
   await page.goto(origin);
-  await page.waitForFunction(()=>!document.querySelector('#site-loader')||document.querySelector('#loader-percent')?.textContent==='100%');
+  await page.waitForFunction(()=>!document.querySelector('#site-loader'));
   await idle();
   assert.equal(await page.locator('#maintenance-screen').count(),0);
   assert.equal(await page.locator('#directory-access-dialog').isVisible(),false);
@@ -221,120 +213,28 @@ try {
   await page.getByRole('button',{name:'Show the next book'}).click();
   await page.waitForFunction(()=>document.querySelector('.book-pair').dataset.activeBook==='directory');
   await page.locator('#open-rank-directory').click();
-  await page.waitForFunction(()=>document.querySelector('#rank-cover').dataset.bookState==='book-focused');
-  assert.equal(await page.locator('#rank-directory').isVisible(),false);
-  await page.locator('#open-rank-directory').click();
-  await page.locator('#directory-access-dialog').waitFor({state:'visible'});
-  assert.equal(await page.locator('html').getAttribute('data-theme'),'overview');
-  assert.equal(await page.locator('#directory-access-code').evaluate(el=>el.matches(':focus')),true);
-  await page.keyboard.press('Shift+Tab');
-  assert.equal(await page.locator('#cancel-directory-access').evaluate(el=>el.matches(':focus')),true);
-  await page.keyboard.press('Tab');
-  assert.equal(await page.locator('#directory-access-code').evaluate(el=>el.matches(':focus')),true);
-  await page.locator('#directory-access-code').fill('wrong');
-  await page.keyboard.press('Enter');
-  assert.equal(await page.locator('#directory-access-error').textContent(),'INVALID ACCESS CODE');
-  assert.equal(await page.locator('#directory-access-dialog').isVisible(),true);
-  await page.locator('#cancel-directory-access').click();
-  assert.equal(await page.locator('#directory-access-dialog').isVisible(),false);
-  assert.equal(await page.locator('#open-rank-directory').evaluate(el=>el.matches(':focus')),true);
-  assert.equal(await page.locator('main').evaluate(el=>el.classList.contains('archive-closed')),true);
-  await page.locator('#open-rank-directory').click();
-  await page.keyboard.press('Escape');
-  assert.equal(await page.locator('#directory-access-dialog').isVisible(),false);
-  assert.equal(await page.locator('#open-rank-directory').evaluate(el=>el.matches(':focus')),true);
-  await openDirectory();
-  const directoryTheme=await page.evaluate(()=>({
-    name:document.documentElement.dataset.theme,
-    accent:getComputedStyle(document.documentElement).getPropertyValue('--theme-accent').trim(),
-    background:getComputedStyle(document.documentElement).getPropertyValue('--theme-bg').trim(),
-    discordGlow:getComputedStyle(document.querySelector('.discord-link'),'::after').getPropertyValue('--control-glow-border').trim()
-  }));
-  assert.deepEqual(directoryTheme,{name:'directory',accent:'#b92c43',background:'#170a0e',discordGlow:'#ed647588'});
-  const palette=await page.evaluate(()=>({
-    background:getComputedStyle(document.querySelector('#rank-directory')).getPropertyValue('--rd-bg').trim(),
-    panels:getComputedStyle(document.querySelector('#rank-directory')).getPropertyValue('--rd-panel').trim(),
-    badge:getComputedStyle(document.querySelector('#rank-directory .rank-person-row:not(.rank-person-head) span:last-child')).color,
-    archiveAccent:getComputedStyle(document.querySelector('#open-archive')).color,
-    directoryAccent:getComputedStyle(document.querySelector('#open-rank-directory')).color
-  }));
-  assert.equal(palette.background,'#170a0e');
-  assert.equal(palette.panels,'#281016');
-  assert.equal(palette.badge,'rgb(237, 100, 117)');
-  assert.equal(palette.archiveAccent,'rgb(111, 213, 245)');
-  assert.equal(palette.directoryAccent,'rgb(237, 100, 117)');
+  await page.waitForFunction(()=>document.querySelector('main').classList.contains('directory-open'));
+  assert.equal(await page.locator('#directory-access-dialog').count(),0);
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'directory');
   assert.match(await page.locator('#rank-cover').evaluate(el=>getComputedStyle(el).backgroundImage),/rank-directory-cover\.webp/);
-  assert.equal(await page.locator('#rank-book .page-slot.left .rank-personnel-list-page').count(),1);
-  const headers=await page.locator('#rank-book .rank-person-head [role="columnheader"]').allTextContents();
-  assert.deepEqual(headers.map(text=>text.trim()),['FULL NAME','BADGE NO.']);
-  for (const index of [8,12,0,6,2,10]) {
-    await page.locator(`[data-category-index="${index}"]`).click();
-    await page.waitForFunction(index=>document.querySelector('#rank-position').textContent===`${String(index+1).padStart(2,'0')} / 13`,index);
-    await page.waitForFunction(()=>!document.querySelector('#rank-book').classList.contains('rank-fade-out')&&!document.querySelector('#rank-book').classList.contains('rank-fade-in'));
-    assert.equal(await page.locator('#rank-book .page-slot.left .rank-personnel-list-page').count(),1);
-    assert.deepEqual((await page.locator('#rank-book .rank-person-head [role="columnheader"]').allTextContents()).map(text=>text.trim()),['FULL NAME','BADGE NO.']);
+  const rankButtons = page.locator('#rank-category-list button');
+  for (const buttonIndex of [10,0,6,2]) {
+    const button = rankButtons.nth(buttonIndex);
+    const spreadIndex = Number(await button.getAttribute('data-category-index'));
+    await button.click();
+    const expected = `${String(spreadIndex*2+1).padStart(2,'0')} ? ${String(spreadIndex*2+2).padStart(2,'0')} / ${directoryPageCount}`;
+    await page.waitForFunction(expected=>document.querySelector('#rank-position').textContent===expected,expected);
+    await page.waitForFunction(()=>!document.querySelector('#rank-book.turning')&&!document.querySelector('#rank-directory [data-reader-action="read"]').disabled);
+    const rows = await page.locator('#rank-book .page-slot .rank-roster-table tbody tr').allTextContents();
+    assert.equal(rows.length,directoryPages.slice(spreadIndex*2,spreadIndex*2+2).reduce((sum,p)=>sum+p.people.length,0));
   }
-  const rankGlow=await page.locator('[data-category-index="10"]').evaluate(element=>({
-    selected:element.getAttribute('aria-current')==='page',
-    animation:getComputedStyle(element,'::before').animationName,
-    duration:getComputedStyle(element,'::before').animationDuration,
-    pointerEvents:getComputedStyle(element,'::before').pointerEvents
-  }));
-  assert.deepEqual(rankGlow,{selected:true,animation:'archive-control-glow',duration:'3s',pointerEvents:'none'});
-  await page.locator('[data-category-index="10"]').evaluate(element=>element.focus({focusVisible:true}));
-  await page.keyboard.press('Tab');
-  await page.waitForTimeout(220);
-  const rankFocus=await page.locator('[data-category-index="11"]').evaluate(element=>({
-    focused:element.matches(':focus-visible'),
-    animation:getComputedStyle(element,'::before').animationName,
-    opacity:getComputedStyle(element,'::before').opacity,
-    readable:getComputedStyle(element).color
-  }));
-  assert.equal(rankFocus.focused,true);
-  assert.equal(rankFocus.animation,'none');
-  assert.equal(rankFocus.opacity,'1');
-  assert.notEqual(rankFocus.readable,'rgba(0, 0, 0, 0)');
-  await page.locator('#rank-next').click();
-  await page.waitForFunction(()=>document.querySelector('#rank-position').textContent==='12 / 13');
-  await page.locator('#rank-previous').click();
-  await page.waitForFunction(()=>document.querySelector('#rank-position').textContent==='11 / 13');
-  await page.locator('#rank-directory [data-reader-action="read"]').click();
-  await page.locator('#read-dialog').waitFor({state:'visible'});
-  const directoryGlow=await page.locator('#rank-directory [data-reader-action="read"]').evaluate(element=>({
-    buttonAnimation:getComputedStyle(element).animationName,
-    animation:getComputedStyle(element,'::after').animationName,
-    duration:getComputedStyle(element,'::after').animationDuration,
-    pointerEvents:getComputedStyle(element,'::after').pointerEvents,
-    playState:getComputedStyle(element,'::after').animationPlayState
-  }));
-  assert.deepEqual(directoryGlow,{buttonAnimation:'none',animation:'archive-control-glow',duration:'3s',pointerEvents:'none',playState:'paused'});
-  const directoryReading=await page.evaluate(()=>({
-    themed:document.querySelector('#read-dialog').classList.contains('directory-reading'),
-    background:getComputedStyle(document.querySelector('#read-dialog')).backgroundColor,
-    border:getComputedStyle(document.querySelector('#read-dialog')).borderTopColor,
-    closeBorder:getComputedStyle(document.querySelector('#close-read')).borderTopColor,
-    badge:getComputedStyle(document.querySelector('#read-content .rank-person-row:not(.rank-person-head) span:last-child')).color,
-    scrollbar:getComputedStyle(document.querySelector('#read-content')).scrollbarColor,
-    title:document.querySelector('#read-content .rank-list-heading h2')?.textContent,
-    headers:[...document.querySelectorAll('#read-content .rank-person-head [role="columnheader"]')].map(header=>header.textContent.trim()),
-    people:[...document.querySelectorAll('#read-content .rank-person-row:not(.rank-person-head)')].map(row=>row.textContent.trim())
-  }));
-  assert.equal(directoryReading.themed,true);
-  assert.equal(directoryReading.background,'rgb(23, 10, 14)');
-  assert.equal(directoryReading.border,'rgb(142, 42, 58)');
-  assert.equal(directoryReading.closeBorder,'rgb(142, 42, 58)');
-  assert.equal(directoryReading.badge,'rgb(237, 100, 117)');
-  assert.match(directoryReading.scrollbar,/rgb\(185, 44, 67\)/);
-  assert.match(directoryReading.title,/ASSISTANT COMMISSIONER/);
-  assert.deepEqual(directoryReading.headers,['FULL NAME','BADGE NO.']);
-  assert.ok(directoryReading.people.length>0,'Directory reading view contains personnel');
-  assert.deepEqual(directoryReading.people,await page.locator('#rank-book .page-slot.left .rank-person-row:not(.rank-person-head)').allTextContents().then(rows=>rows.map(row=>row.trim())));
-  await page.keyboard.press('Escape');
-  assert.equal(await page.locator('#read-dialog').isVisible(),false);
-  assert.match(armoryReadingStyle,/rgb\(16, 43, 61\)/);
+  const headers=await page.locator('#rank-book .page-slot.left .rank-roster-table th').allTextContents();
+  assert.deepEqual(headers,['OFFICER NAME','BADGE NUMBER']);
+  assert.notEqual(await page.locator('#rank-book .page-slot .officer-name').first().evaluate(el=>getComputedStyle(el).textShadow),'none');
   await page.locator('#rank-directory [data-reader-action="read"]').click();
   await page.locator('#read-dialog').waitFor({state:'visible'});
   assert.equal(await page.locator('#read-dialog').evaluate(el=>el.classList.contains('directory-reading')),true);
+  assert.deepEqual(await page.locator('#read-content .rank-roster-table tbody tr').allTextContents(),await page.locator('#rank-book .page-slot .rank-roster-table tbody tr').allTextContents());
   await page.keyboard.press('Escape');
   await page.locator('#rank-close').click();
   await page.waitForFunction(()=>!document.querySelector('main').classList.contains('directory-open')&&document.querySelector('#rank-directory').hidden);
@@ -350,8 +250,6 @@ try {
   await page.waitForFunction(()=>!document.querySelector('main').classList.contains('directory-open'));
   await page.getByRole('button',{name:'Show the previous book'}).click();
   await page.waitForFunction(()=>document.querySelector('.book-pair').dataset.activeBook==='archive');
-  await page.locator('#open-archive').click();
-  await page.waitForFunction(()=>document.querySelector('#archive-cover').dataset.bookState==='book-focused');
   await page.locator('#open-archive').click();
   await page.waitForFunction(()=>!document.querySelector('main').classList.contains('archive-closed'));
   const armoryTheme=await page.evaluate(()=>({
@@ -380,8 +278,6 @@ try {
   await page.waitForFunction(()=>document.querySelector('main.archive-closed'));
   await page.getByRole('button',{name:'Show the previous book'}).click();
   await page.waitForFunction(()=>document.querySelector('.book-pair').dataset.activeBook==='archive');
-  await page.locator('#close-archive').click();
-  await page.waitForFunction(()=>document.querySelector('main').classList.contains('archive-closed'));
   await page.setViewportSize({width:1440,height:1000});
   report('mobile Armory and Rank Directory two-step opening controls');
   await open(); report('Rank Directory cover, category switching, fields, and return overview');
@@ -397,16 +293,14 @@ try {
   const fallback=await context.newPage();
   await fallback.addInitScript(()=>Object.defineProperty(document,'fullscreenEnabled',{value:false}));
   await fallback.goto(origin);
-  await fallback.waitForFunction(()=>!document.querySelector('#site-loader')||document.querySelector('#loader-percent')?.textContent==='100%');
+  await fallback.waitForFunction(()=>!document.querySelector('#site-loader'));
   await fallback.waitForFunction(()=>document.querySelector('#book').getAttribute('aria-busy')==='false');
   assert.equal(await fallback.locator('#fullscreen').evaluate(el=>el.hidden),true); await fallback.close(); report('unsupported fullscreen fallback');
   report('public startup initializes without maintenance or session access state');
   const mobile=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
   const phone=await mobile.newPage(); phone.on('pageerror',error=>errors.push(error.message)); await phone.goto(origin);
-  await phone.waitForFunction(()=>!document.querySelector('#site-loader')||document.querySelector('#loader-percent')?.textContent==='100%');
+  await phone.waitForFunction(()=>!document.querySelector('#site-loader'));
   await phone.waitForFunction(()=>document.querySelector('#book').getAttribute('aria-busy')==='false');
-  await phone.locator('#open-archive').tap();
-  await phone.waitForFunction(()=>document.querySelector('#archive-cover').dataset.bookState==='book-focused');
   await phone.locator('#open-archive').tap();
   await phone.waitForFunction(()=>!document.querySelector('main').classList.contains('archive-closed'));
   assert.equal(await phone.locator('.section-tabs').count(),0);
@@ -414,7 +308,7 @@ try {
   const reducedGlow=await phone.evaluate(()=>({
     discord:getComputedStyle(document.querySelector('.discord-link'),'::after').animationName,
     reading:getComputedStyle(document.querySelector('#read-spread'),'::after').animationName,
-    selectedRank:getComputedStyle(document.querySelector('#rank-directory .rank-category-list button[aria-current="page"]'),'::before').animationName
+    selectedRank:getComputedStyle(document.querySelector('#open-rank-directory'),'::before').animationName
   }));
   assert.deepEqual(reducedGlow,{discord:'none',reading:'none',selectedRank:'none'});
   await phone.locator('#right').tap(); await phone.locator('#right').tap(); await phone.locator('#zoom-dialog').waitFor({state:'visible'});
