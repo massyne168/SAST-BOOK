@@ -296,6 +296,7 @@ async function openArchive() {
     await new Promise(resolve => setTimeout(resolve, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650));
     main.classList.remove('archive-closed');
     setTheme('armory');
+    document.dispatchEvent(new CustomEvent('archive-section-selected', {detail:{section:'armory'}}));
     status(pageDataUnavailable ? 'PAGE DATA UNAVAILABLE' : ''); book.focus({preventScroll:true});
     const stamp = $('#access-stamp'); stamp.hidden = false;
     clearTimeout(stampTimer);
@@ -360,6 +361,7 @@ async function openDirectory() {
     main.classList.remove('archive-closed');
     main.classList.add('directory-open');
     setTheme('directory');
+    document.dispatchEvent(new CustomEvent('archive-section-selected', {detail:{section:'directory'}}));
     rankDirectoryModule.openRankDirectory();
     setBookOpen('directory');
   } catch (cause) {

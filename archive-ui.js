@@ -2,6 +2,7 @@ import {officers, weapons, activities, statuses, searchOfficers, filterWeapons, 
 import {navigateBook} from './app.js';
 const escape = value => String(value ?? 'Not recorded').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const titles = {search:'Trooper search', inventory:'Armory inventory', statistics:'Department statistics', activity:'Archive activity log'};
+const homepageHeadings = {directory:'Official Trooper Rank Records', inventory:'Official Armory Records', armory:'Official Armory Records', search:'Trooper Records Database', statistics:'Department Overview', activity:'Official Archive Activity'};
 const nav = document.createElement('nav');
 nav.className = 'archive-navigation'; nav.setAttribute('aria-label','Central archive navigation');
 nav.innerHTML = '<a href="#directory">RANK DIRECTORY</a><a href="#inventory">ARMORY ARCHIVE</a><a href="#search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/></svg>TROOPER SEARCH</a><a href="#statistics">DEPARTMENT STATISTICS</a><a href="#activity">ACTIVITY LOG</a>';
@@ -14,6 +15,20 @@ const content = dialog.querySelector('#archive-panel-content');
 const status = document.createElement('p'); status.className = 'archive-navigation-status'; status.setAttribute('role','status'); nav.after(status);
 let panel = '', returnFocus;
 const stats = calculateStatistics(); // Immutable source snapshot; derive once, not on every keypress.
+const homepageHeading = document.querySelector('.record-heading h1');
+function setHomepageHeading(key = 'inventory') {
+  if (!homepageHeading) return;
+  const next = homepageHeadings[key] || homepageHeadings.inventory;
+  if (homepageHeading.textContent === next) return;
+  homepageHeading.textContent = next;
+  homepageHeading.classList.remove('heading-enter');
+  void homepageHeading.offsetWidth;
+  homepageHeading.classList.add('heading-enter');
+}
+function setActiveNavigation(key) {
+  nav.querySelectorAll('a').forEach(link => link.toggleAttribute('aria-current', link.hash.slice(1) === key));
+  setHomepageHeading(key);
+}
 const field = (label, input) => `<label>${label}${input}</label>`;
 const options = values => values.map(value => `<option value="${escape(value)}">${escape(value)}</option>`).join('');
 const searchInput = (id, placeholder) => `<input id="${id}" type="search" autocomplete="off" placeholder="${placeholder}">`;
@@ -25,7 +40,7 @@ function dismiss() {
     document.dispatchEvent(new Event('archive-panel-closed'));
   }
   panel = '';
-  nav.querySelectorAll('a').forEach(link => link.removeAttribute('aria-current'));
+  setActiveNavigation('inventory');
 }
 function closePanel() {
   if (history.state?.archivePanel) history.back();
@@ -101,8 +116,14 @@ function route() {
     render(key);
     if (!dialog.open) dialog.showModal();
     (content.querySelector('input') ?? dialog.querySelector('button')).focus();
-    nav.querySelectorAll('a').forEach(link => link.setAttribute('aria-current',link.hash === location.hash ? 'page' : 'false'));
-  } else { dismiss(); if(key === 'directory' || key === 'armory') void openBook(key === 'directory' ? 'directory' : 'archive'); }
+    setActiveNavigation(key);
+  } else {
+    dismiss();
+    if(key === 'directory' || key === 'armory') {
+      void openBook(key === 'directory' ? 'directory' : 'archive');
+      setActiveNavigation(key);
+    }
+  }
 }
 nav.addEventListener('click', event => {
   const link = event.target.closest('a');
@@ -111,4 +132,6 @@ nav.addEventListener('click', event => {
 });
 window.addEventListener('popstate',route);
 window.addEventListener('hashchange',() => { if (location.hash.slice(1) !== panel && titles[location.hash.slice(1)]) route(); });
+document.addEventListener('archive-section-selected', event => setActiveNavigation(event.detail?.section));
 if (document.body.classList.contains('site-ready')) route(); else document.addEventListener('site-ready',route,{once:true});
+setHomepageHeading(location.hash.slice(1) || 'inventory');

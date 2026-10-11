@@ -1515,3 +1515,29 @@ main:not(.archive-closed):not(.directory-open) #book>.ribbon{pointer-events:none
   #rank-directory .rank-category-list button[aria-current="page"]::before,#rank-directory .rank-category-list.rank-index-expanded{animation:none}
   .rank-paper-reflection{display:none}
 }
+
+/* Archive showcase 2.0 — compact, centered navigation and restrained cinematic depth. */
+.record-heading{position:relative;max-width:1120px;margin:28px auto 10px;padding:0 clamp(18px,3vw,32px)}
+.record-heading h1{color:#f5f5f5;font-weight:600;letter-spacing:.025em;text-wrap:balance}
+.record-heading h1.heading-enter{animation:archive-heading-enter 250ms ease-out both}
+@keyframes archive-heading-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.archive-navigation{position:relative;z-index:4;display:flex;align-items:stretch;justify-content:center;flex-wrap:wrap;gap:6px;width:min(calc(100% - 32px),920px);margin:0 auto 22px;padding:6px;border:1px solid #c0c0c044;background:linear-gradient(105deg,#080f17e8,#151a21e8 48%,#080f17e8);box-shadow:inset 0 1px #ffffff0b,0 10px 28px #00000024}
+.archive-navigation::before,.archive-navigation::after{content:"";position:absolute;top:50%;width:clamp(18px,5vw,72px);height:1px;background:linear-gradient(90deg,transparent,#c0c0c088);pointer-events:none}
+.archive-navigation::before{right:calc(100% + 9px)}.archive-navigation::after{left:calc(100% + 9px);transform:scaleX(-1)}
+.archive-navigation a{position:relative;isolation:isolate;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 12px;overflow:hidden;border:1px solid transparent;color:#bec7cb;text-decoration:none;font:600 10px/1 var(--mono);letter-spacing:.08em;white-space:nowrap;transition:color 250ms ease,border-color 250ms ease,background-color 250ms ease,box-shadow 250ms ease}
+.archive-navigation a::before{content:"";position:absolute;z-index:-1;inset:0;translate:-120% 0;background:linear-gradient(105deg,transparent 24%,#f5f5f51c 48%,transparent 72%);transition:translate 250ms ease}
+.archive-navigation a::after{content:"";position:absolute;right:10px;bottom:3px;left:10px;height:1px;background:#e8e8e8;box-shadow:0 0 7px #ffffff77;transform:scaleX(0);transform-origin:center;transition:transform 250ms ease}
+.archive-navigation a:hover,.archive-navigation a:focus-visible{border-color:#c0c0c077;color:#f5f5f5;outline:0}.archive-navigation a:hover::before,.archive-navigation a:focus-visible::before{translate:120% 0}
+.archive-navigation a[aria-current]{border-color:#c0c0c055;background:#ffffff08;color:#f5f5f5;box-shadow:inset 0 1px #ffffff0b,0 0 11px #ffffff0a}.archive-navigation a[aria-current]::after{transform:scaleX(1)}
+.archive-navigation svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.7}.archive-navigation-status{min-height:0;margin:0;text-align:center;color:#c0c0c0;font:9px var(--mono);letter-spacing:.08em}
+
+main.archive-closed .cover-stage,main.archive-closed .rank-cover-stage-teaser{position:relative;isolation:isolate}
+main.archive-closed .cover-stage::before,main.archive-closed .rank-cover-stage-teaser::before{content:"";position:absolute;z-index:-1;left:50%;top:42%;width:min(76vw,560px);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#f5f5f51b 0%,#c0c0c00b 34%,transparent 70%);opacity:.56;pointer-events:none;transition:opacity 420ms ease,transform 420ms ease}
+main.archive-closed .book-pair[data-active-book="archive"] .cover-stage::before,main.archive-closed .book-pair[data-active-book="directory"] .rank-cover-stage-teaser::before{opacity:1;transform:translate(-50%,-50%) scale(1.04)}
+main.archive-closed .archive-cover-unit,main.archive-closed .rank-cover-unit{filter:drop-shadow(0 18px 18px #00000066)}
+@media(hover:hover) and (pointer:fine){main.archive-closed .book-pair:not([data-carousel-transitioning]) .archive-cover-unit:hover,main.archive-closed .book-pair:not([data-carousel-transitioning]) .rank-cover-unit:hover{rotate:1.25deg;translate:0 -2px}}
+main.archive-closed .book-pair:not([data-carousel-transitioning]) .primary-book:has(.archive-cover[data-book-state="book-idle"]),main.archive-closed .book-pair:not([data-carousel-transitioning]) .rank-cover-stage-teaser:has(.rank-cover[data-book-state="book-idle"]){animation:showcase-float 6s ease-in-out infinite alternate}
+@keyframes showcase-float{from{translate:0 0}to{translate:0 -3px}}
+
+@media(max-width:700px){.record-heading{margin:22px auto 9px;padding:0 20px}.record-heading h1{font-size:clamp(25px,8vw,31px)}.archive-navigation{width:calc(100% - 20px);gap:4px;margin-bottom:16px;padding:4px}.archive-navigation::before,.archive-navigation::after{display:none}.archive-navigation a{min-height:32px;padding:0 8px;font-size:8px;letter-spacing:.045em}.archive-navigation a:nth-child(4),.archive-navigation a:nth-child(5){flex:1 1 auto}.archive-navigation svg{display:none}}
+@media(prefers-reduced-motion:reduce){.record-heading h1.heading-enter,main.archive-closed .book-pair:not([data-carousel-transitioning]) .primary-book:has(.archive-cover[data-book-state="book-idle"]),main.archive-closed .book-pair:not([data-carousel-transitioning]) .rank-cover-stage-teaser:has(.rank-cover[data-book-state="book-idle"]){animation:none}.archive-navigation a,.archive-navigation a::before,.archive-navigation a::after,main.archive-closed .cover-stage::before,main.archive-closed .rank-cover-stage-teaser::before{transition:none}}
