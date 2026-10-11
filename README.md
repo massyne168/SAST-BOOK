@@ -1,6 +1,6 @@
 # Armory Book
 
-Blue tactical archive with 30 replaceable WebP pages and a physical drag-to-flip engine. No audio, external JavaScript libraries, or runtime dependencies are used.
+Blue tactical archive with 30 source WebP pages plus 10 reserved continuation records (pages 31–40), all in a physical drag-to-flip engine. No audio, external JavaScript libraries, or runtime dependencies are used.
 
 ## Run locally
 

@@ -1,9 +1,10 @@
 import {FlipEngine} from './flip-engine.js';
-import {pages, pageFiles, prepareSpread, prepareNearby} from './page-content.js';
+import {pages, pageFiles, pageCount, sourcePageCount, prepareSpread, prepareNearby} from './page-content.js';
 import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
 import {focusBook, isBookFocused, setBookFocused, setBookOpen, setBookOpening, resetBookFocus} from './book-focus.js';
 const $ = selector => document.querySelector(selector);
+const spreadCount = pageCount / 2;
 const setTheme = theme => { document.documentElement.dataset.theme = theme; };
 setTheme('overview');
 document.addEventListener('archive-overview-start', () => {
@@ -166,20 +167,20 @@ pair.addEventListener('transitionend', event => {
 function controls(spread) {
   document.querySelectorAll('.reader-controls button,#read-spread').forEach(button => { button.disabled = busy(); });
   $('#previous').disabled = busy() || spread === 0;
-  $('#next').disabled = busy() || spread === 14;
+  $('#next').disabled = busy() || spread === spreadCount - 1;
   book.setAttribute('aria-busy', String(busy()));
 }
 function changed(spread) {
   selected = null; lastTap = null;
   $('#position').textContent = `${String(spread * 2 + 1).padStart(2, '0')} — ${String(spread * 2 + 2).padStart(2, '0')}`;
   $('#spread-progress').value = spread + 1;
-  $('#progress-text').textContent = `SPREAD ${String(spread + 1).padStart(2, '0')} / 15`;
-  book.setAttribute('aria-label', `Pages ${spread * 2 + 1} and ${spread * 2 + 2} of 30. Drag across the spine or use arrow keys. Double-click a page to zoom.`);
+  $('#progress-text').textContent = `SPREAD ${String(spread + 1).padStart(2, '0')} / ${String(spreadCount).padStart(2, '0')}`;
+  book.setAttribute('aria-label', `Pages ${spread * 2 + 1} and ${spread * 2 + 2} of ${pageCount}. Drag across the spine or use arrow keys. Double-click a page to zoom.`);
   saveSpread(storage, spread); controls(spread);
   if (!main.classList.contains('archive-closed')) void prepareNearby(spread, 1);
 }
 const engine = new FlipEngine(book, {
-  spreadCount: 15, initialSpread: loadSpread(storage), render: i => pages[i], blocked,
+  spreadCount, initialSpread: loadSpread(storage), render: i => pages[i], blocked,
   onChange: changed,
   onPrepareTurn: (direction, spread) => { void prepareNearby(spread, direction); },
   onBusyChange: value => { turning = value; if(value) lastTap = null; controls(engine.spread); },
@@ -250,7 +251,10 @@ $('#rank-directory .rank-controls').addEventListener('click', event => {
 $('#zoom-page').onclick = () => {
   if (busy()) return;
   if (main.classList.contains('directory-open')) zoomCurrentDirectoryPage();
-  else zoom.open(selected ?? engine.spread * 2 + 1);
+  else {
+    const index = selected ?? engine.spread * 2 + 1;
+    index < sourcePageCount ? zoom.open(index) : zoom.openContent(pages[index], `PAGE ${String(index + 1).padStart(2, '0')}`);
+  }
 };
 $('#download-page').onclick = () => {
   if (busy()) return;
@@ -258,8 +262,18 @@ $('#download-page').onclick = () => {
     downloadCurrentDirectoryPage();
     return;
   }
+  const index = selected ?? engine.spread * 2 + 1;
+  if (index >= sourcePageCount) {
+    const content = `<!doctype html><html lang="en"><meta charset="utf-8"><title>Armory page ${index + 1}</title><link rel="stylesheet" href="${new URL('styles.css', location.href).href}"><main class="downloaded-extension-page">${pages[index]}</main>`;
+    const url = URL.createObjectURL(new Blob([content], {type: 'text/html'}));
+    const link = document.createElement('a');
+    link.href = url; link.download = `page-${String(index + 1).padStart(2, '0')}.html`;
+    document.body.append(link); link.click(); link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return;
+  }
   const link = document.createElement('a');
-  link.href = pageFiles[selected ?? engine.spread * 2 + 1];
+  link.href = pageFiles[index];
   link.download = link.href.split('/').pop();
   document.body.append(link); link.click(); link.remove();
 };

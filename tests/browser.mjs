@@ -12,7 +12,7 @@ const errors=[];
 const context=await browser.newContext({viewport:{width:1440,height:1000},acceptDownloads:true});
 const page=await context.newPage(); page.on('pageerror',error=>errors.push(error.message));
 const report=label=>console.log(`PASS ${label}`);
-async function spread(value) { await page.waitForFunction(value=>document.querySelector('#progress-text').textContent===`SPREAD ${String(value+1).padStart(2,'0')} / 15`,value); }
+async function spread(value) { await page.waitForFunction(value=>document.querySelector('#progress-text').textContent===`SPREAD ${String(value+1).padStart(2,'0')} / 20`,value); }
 async function idle() { await page.waitForFunction(()=>document.querySelector('#book').getAttribute('aria-busy')==='false'); }
 async function verifyOpeningTabs(layout) {
   const innerWidth = page.viewportSize().width;
@@ -286,8 +286,8 @@ try {
   await open(); await spread(1); report('public reload initializes and restores the saved spread');
   await page.evaluate(()=>localStorage.setItem('armory-book.spread','999')); await page.reload();
   await page.waitForFunction(()=>document.querySelector('#book').getAttribute('aria-busy')==='false');
-  await open(); await spread(14);
-  assert.equal(await page.locator('#next').isDisabled(),true); await page.locator('#book').focus(); await page.keyboard.press('ArrowRight'); await spread(14); report('clamped saved position and final boundary');
+  await open(); await spread(19);
+  assert.equal(await page.locator('#next').isDisabled(),true); await page.locator('#book').focus(); await page.keyboard.press('ArrowRight'); await spread(19); report('clamped saved position and final boundary');
   await page.waitForFunction(()=>document.querySelector('#access-stamp').hidden);
   await mkdir('test-results',{recursive:true}); await page.screenshot({path:'test-results/desktop.png',fullPage:true});
   const fallback=await context.newPage();
