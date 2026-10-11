@@ -18,6 +18,7 @@ const stats = calculateStatistics(); // Immutable source snapshot; derive once, 
 const homepageHeading = document.querySelector('.record-heading h1');
 function setHomepageHeading(key = 'inventory') {
   if (!homepageHeading) return;
+  if (homepageHeading.dataset.collectionTitle === 'true') return;
   const next = homepageHeadings[key] || homepageHeadings.inventory;
   if (homepageHeading.textContent === next) return;
   homepageHeading.textContent = next;
