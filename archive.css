@@ -31,3 +31,39 @@
 @keyframes archive-panel-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:600px){.archive-navigation{gap:5px}.archive-navigation a{font-size:10px;padding:8px}.archive-panel{padding:17px;width:calc(100vw - 18px);max-height:90dvh}.archive-panel h2{font-size:21px}.trooper-results,.archive-chart-grid{grid-template-columns:1fr}.archive-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.archive-filters{grid-template-columns:1fr}.archive-inventory th,.archive-inventory td{padding:10px 4px;font-size:11px}.equipment-status{font-size:9px;padding:3px}.weapon-details dl{grid-template-columns:1fr}.archive-panel-head{gap:10px}.archive-panel-head button{flex-shrink:0}}
 @media(prefers-reduced-motion:reduce){.archive-panel[open]{animation:none}.archive-navigation a{transition:none}}
+
+/* Homepage archive navigation: a single, compact metallic side column. */
+@property --archive-nav-angle{syntax:"<angle>";inherits:false;initial-value:0deg}
+.archive-navigation-toggle{display:none}
+main.archive-closed .archive-navigation{
+  position:absolute;z-index:6;left:max(18px,calc(50% - 560px));top:205px;
+  display:flex;flex-direction:column;flex-wrap:nowrap;gap:7px;width:196px;margin:0;padding:0;
+}
+main.archive-closed .archive-navigation a{
+  position:relative;isolation:isolate;display:flex;align-items:center;width:100%;height:44px;padding:0 12px;
+  overflow:hidden;border:1px solid #c0c0c080;border-radius:5px;background:linear-gradient(100deg,#101419,#343a40 48%,#171b20);box-shadow:inset 0 1px #ffffff14,0 5px 13px #00000038;color:#f5f5f5;
+  font:600 10px/1 var(--mono);letter-spacing:.075em;text-decoration:none;transition:transform 250ms ease,color 250ms ease,box-shadow 250ms ease,background-color 250ms ease;
+}
+main.archive-closed .archive-navigation a::before{
+  content:"";position:absolute;z-index:2;inset:0;padding:1px;border-radius:inherit;pointer-events:none;opacity:.78;
+  background:conic-gradient(from var(--archive-nav-angle),transparent 0deg 314deg,#c0c0c0 334deg,#f5f5f5 345deg,#c0c0c0 354deg,transparent 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:archive-nav-border 3s linear infinite;
+}
+main.archive-closed .archive-navigation a::after{content:"";position:absolute;z-index:0;inset:1px;border-radius:4px;background:linear-gradient(118deg,#ffffff0d,transparent 42%,#ffffff08);opacity:.7;pointer-events:none}
+.archive-nav-float{position:relative;z-index:3;display:grid;grid-template-columns:24px 16px minmax(0,1fr);align-items:center;gap:8px;width:100%;will-change:transform;animation:archive-nav-float 4s ease-in-out infinite;animation-delay:var(--nav-delay)}
+.archive-nav-number{color:#c0c0c0;font-size:8px;letter-spacing:.06em}.archive-navigation svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6}.archive-navigation a>span:last-child{white-space:nowrap}
+main.archive-closed .archive-navigation a:hover,main.archive-closed .archive-navigation a:focus-visible{transform:translateX(3px);border-color:#f5f5f5;background:linear-gradient(100deg,#1a1f25,#42494f 48%,#20252b);box-shadow:inset 0 1px #ffffff22,0 0 14px #ffffff26;color:#fff;outline:0}
+main.archive-closed .archive-navigation a:hover .archive-nav-float,main.archive-closed .archive-navigation a:focus-visible .archive-nav-float{animation-play-state:paused}
+main.archive-closed .archive-navigation a[aria-current]{border-color:#f5f5f5;background:linear-gradient(100deg,#1b2026,#4a5158 48%,#20262c);box-shadow:inset 0 1px #ffffff2b,inset 3px 0 #f5f5f5,0 0 12px #ffffff1d}
+main.archive-closed .archive-navigation a[aria-current]::after{opacity:1;background:linear-gradient(110deg,#ffffff1b,transparent 42%,#ffffff0b)}
+@keyframes archive-nav-border{to{--archive-nav-angle:1turn}}
+@keyframes archive-nav-float{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+main:not(.archive-closed) .archive-navigation,main:not(.archive-closed) .archive-navigation-toggle,main:not(.archive-closed) .archive-navigation-status{display:none}
+@media(max-width:1220px) and (min-width:761px){main.archive-closed .archive-navigation{left:18px;width:178px}.archive-nav-float{gap:6px}.archive-navigation a{font-size:9px}}
+@media(max-width:1080px){
+  main.archive-closed .archive-navigation-toggle{position:relative;z-index:7;display:flex;align-items:center;justify-content:space-between;width:min(calc(100% - 32px),440px);min-height:38px;margin:8px auto 10px;padding:0 12px;border:1px solid #c0c0c077;border-radius:5px;background:linear-gradient(100deg,#101419,#30363b,#161a1f);color:#f5f5f5;font:600 9px var(--mono);letter-spacing:.1em}
+  main.archive-closed .archive-navigation-toggle span:last-child{font-size:16px;transition:transform 250ms ease}.archive-navigation-toggle[aria-expanded="true"] span:last-child{transform:rotate(45deg)}
+  main.archive-closed .archive-navigation{position:relative;left:auto;top:auto;z-index:6;display:none;width:min(calc(100% - 32px),440px);margin:0 auto 12px}
+  main.archive-closed .archive-navigation.archive-navigation-expanded{display:flex}.archive-nav-float{animation:none}.archive-navigation a{height:42px}
+}
+@media(prefers-reduced-motion:reduce){main.archive-closed .archive-navigation a,main.archive-closed .archive-navigation a::before,.archive-nav-float,.archive-navigation-toggle span:last-child{animation:none;transition:none}.archive-nav-float{will-change:auto}}

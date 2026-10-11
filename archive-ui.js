@@ -5,8 +5,21 @@ const titles = {search:'Trooper search', inventory:'Armory inventory', statistic
 const homepageHeadings = {directory:'Official Trooper Rank Records', inventory:'Official Armory Records', armory:'Official Armory Records', search:'Trooper Records Database', statistics:'Department Overview', activity:'Official Archive Activity'};
 const nav = document.createElement('nav');
 nav.className = 'archive-navigation'; nav.setAttribute('aria-label','Central archive navigation');
-nav.innerHTML = '<a href="#directory">RANK DIRECTORY</a><a href="#inventory">ARMORY ARCHIVE</a><a href="#search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/></svg>TROOPER SEARCH</a><a href="#statistics">DEPARTMENT STATISTICS</a><a href="#activity">ACTIVITY LOG</a>';
+nav.innerHTML = '<a href="#directory" style="--nav-delay:0ms"><span class="archive-nav-float"><span class="archive-nav-number">01</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h4"/></svg><span>RANK DIRECTORY</span></span></a><a href="#inventory" style="--nav-delay:150ms"><span class="archive-nav-float"><span class="archive-nav-number">02</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14v13H5zM8 7V4h8v3"/><path d="M9 12h6M9 16h6"/></svg><span>ARMORY ARCHIVE</span></span></a><a href="#search" style="--nav-delay:300ms"><span class="archive-nav-float"><span class="archive-nav-number">03</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/></svg><span>TROOPER SEARCH</span></span></a><a href="#statistics" style="--nav-delay:450ms"><span class="archive-nav-float"><span class="archive-nav-number">04</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V10M12 19V5M19 19v-7"/><path d="M3 20h18"/></svg><span>DEPARTMENT STATISTICS</span></span></a><a href="#activity" style="--nav-delay:600ms"><span class="archive-nav-float"><span class="archive-nav-number">05</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg><span>ACTIVITY LOG</span></span></a>';
 document.querySelector('.record-heading').after(nav);
+const navToggle = document.createElement('button');
+navToggle.className = 'archive-navigation-toggle';
+navToggle.type = 'button';
+navToggle.setAttribute('aria-expanded', 'false');
+navToggle.setAttribute('aria-controls', 'archive-navigation-list');
+navToggle.innerHTML = '<span>ARCHIVE NAVIGATION</span><span aria-hidden="true">+</span>';
+nav.id = 'archive-navigation-list';
+nav.before(navToggle);
+navToggle.addEventListener('click', () => {
+  const expanded = navToggle.getAttribute('aria-expanded') === 'true';
+  navToggle.setAttribute('aria-expanded', String(!expanded));
+  nav.classList.toggle('archive-navigation-expanded', !expanded);
+});
 const dialog = document.createElement('dialog');
 dialog.id = 'archive-panel'; dialog.className = 'archive-panel'; dialog.setAttribute('aria-labelledby','archive-panel-title');
 dialog.innerHTML = '<div class="archive-panel-head"><div><span class="archive-kicker">ELYSIUM / DEPARTMENT RECORDS</span><h2 id="archive-panel-title"></h2></div><button type="button" id="archive-panel-close" aria-label="Close archive panel">CLOSE ×</button></div><div id="archive-panel-content"></div>';
@@ -130,6 +143,8 @@ nav.addEventListener('click', event => {
   const link = event.target.closest('a');
   if(!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   event.preventDefault(); history.pushState({archivePanel:!!titles[link.hash.slice(1)]},'',link.hash); route();
+  navToggle.setAttribute('aria-expanded', 'false');
+  nav.classList.remove('archive-navigation-expanded');
 });
 window.addEventListener('popstate',route);
 window.addEventListener('hashchange',() => { if (location.hash.slice(1) !== panel && titles[location.hash.slice(1)]) route(); });
