@@ -31,21 +31,3 @@
 @keyframes archive-panel-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:600px){.archive-navigation{gap:5px}.archive-navigation a{font-size:10px;padding:8px}.archive-panel{padding:17px;width:calc(100vw - 18px);max-height:90dvh}.archive-panel h2{font-size:21px}.trooper-results,.archive-chart-grid{grid-template-columns:1fr}.archive-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.archive-filters{grid-template-columns:1fr}.archive-inventory th,.archive-inventory td{padding:10px 4px;font-size:11px}.equipment-status{font-size:9px;padding:3px}.weapon-details dl{grid-template-columns:1fr}.archive-panel-head{gap:10px}.archive-panel-head button{flex-shrink:0}}
 @media(prefers-reduced-motion:reduce){.archive-panel[open]{animation:none}.archive-navigation a{transition:none}}
-
-/* Loaded after styles.css: preserve the shared viewport-centered archive shell. */
-.archive-navigation.archive-navigation{z-index:4;width:min(calc(100% - 32px),920px);margin:0 auto 22px;padding:6px;justify-content:center;background:linear-gradient(105deg,#080f17e8,#151a21e8 48%,#080f17e8)}
-.archive-navigation.archive-navigation a{min-height:34px;padding:0 12px;border-color:transparent;border-radius:0;font:600 10px/1 var(--mono);letter-spacing:.08em}
-.archive-navigation.archive-navigation a:hover,.archive-navigation.archive-navigation a:focus-visible{border-color:#c0c0c077;background:transparent}.archive-navigation.archive-navigation a[aria-current]{border-color:#c0c0c055;background:#ffffff08}
-@media(max-width:700px){.archive-navigation.archive-navigation{width:calc(100% - 20px);margin:0 auto 16px;padding:4px}.archive-navigation.archive-navigation a{min-height:32px;padding:0 8px;font-size:8px;letter-spacing:.045em}}
-
-/* The floating navigation shares the homepage's centered editorial width. */
-.archive-navigation.archive-navigation{width:min(calc(100% - 32px),680px);margin:0 auto 20px;padding:5px 7px;border:1px solid #c0c0c066;border-radius:999px;background:#15181bcc;box-shadow:inset 0 1px #ffffff12,0 12px 26px #00000024;backdrop-filter:blur(10px)}
-.archive-navigation.archive-navigation a{min-height:32px;padding:0 10px;border-radius:999px;font-size:9px;letter-spacing:.065em}
-@media(max-width:700px){.archive-navigation.archive-navigation{width:calc(100% - 20px);border-radius:12px;gap:3px;margin-bottom:16px}.archive-navigation.archive-navigation a{padding:0 7px;font-size:8px;letter-spacing:.035em}.archive-navigation.archive-navigation a:nth-child(4),.archive-navigation.archive-navigation a:nth-child(5){flex:1 1 auto}}
-
-/* Shared archive content frame. */
-.archive-navigation.archive-navigation{width:var(--archive-container);max-width:1200px;margin:0 auto;padding:0;border:0;border-bottom:1px solid #c0c0c033;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none;justify-content:center}
-.archive-navigation.archive-navigation a{height:42px;min-height:42px;padding:0 14px;border:0;border-radius:0;background:transparent!important;color:var(--archive-muted);font-size:10px}
-.archive-navigation.archive-navigation a:hover,.archive-navigation.archive-navigation a:focus-visible{color:var(--archive-text);border-color:transparent}.archive-navigation.archive-navigation a[aria-current]{color:var(--archive-text);box-shadow:none}.archive-navigation.archive-navigation a[aria-current]::after{bottom:0}
-.archive-panel{width:min(calc(100% - 48px),1200px);border-color:#c0c0c055;background:var(--archive-surface);border-radius:2px}.archive-panel-head{border-bottom-color:#c0c0c033}.archive-panel button{border-color:#c0c0c066;background:var(--archive-surface-raised)}
-@media(max-width:800px){.archive-navigation.archive-navigation{width:var(--archive-container);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}.archive-navigation.archive-navigation a{height:38px;min-height:38px;padding:0 5px;font-size:8px;letter-spacing:.035em}.archive-navigation.archive-navigation a:nth-child(4),.archive-navigation.archive-navigation a:nth-child(5){flex:auto}.archive-panel{width:var(--archive-container)}}

@@ -4,18 +4,6 @@ import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
 import {focusBook, isBookFocused, setBookFocused, setBookOpen, setBookOpening, resetBookFocus} from './book-focus.js';
 const $ = selector => document.querySelector(selector);
-const collectionVolumes = [
-  ['.archive-cover-unit', '#open-archive', 'VOLUME 01', 'ARMORY ARCHIVE', 'Official Equipment Records'],
-  ['.rank-cover-unit', '#open-rank-directory', 'VOLUME 02', 'RANK DIRECTORY', 'Official Trooper Rank Records']
-];
-for (const [unitSelector, actionSelector, volume, title, description] of collectionVolumes) {
-  const unit = $(unitSelector), action = $(actionSelector);
-  if (!unit || !action || unit.querySelector('.collection-meta')) continue;
-  const meta = document.createElement('div');
-  meta.className = 'collection-meta';
-  meta.innerHTML = `<span>${volume}</span><h2>${title}</h2><p>${description}</p>`;
-  action.before(meta);
-}
 const setTheme = theme => { document.documentElement.dataset.theme = theme; };
 setTheme('overview');
 document.addEventListener('archive-overview-start', () => {
@@ -53,6 +41,7 @@ const carouselButtons = document.createElement('nav');
 carouselButtons.className = 'carousel-controls';
 carouselButtons.setAttribute('aria-label', 'Choose a book');
 carouselButtons.innerHTML = '<button type="button" data-carousel-direction="-1" aria-label="Show the previous book">PREVIOUS BOOK</button><span aria-live="polite"></span><button type="button" data-carousel-direction="1" aria-label="Show the next book">NEXT BOOK</button>';
+pair.insertAdjacentElement('afterend', carouselButtons);
 let carouselIndex = pair.dataset.activeBook === 'directory' ? 1 : 0;
 let carouselTimer, carouselTransitioning = false, wheelTotal = 0, wheelIdleTimer, wheelGestureLocked = false;
 const carouselNames = ['ARMORY', 'RANK DIRECTORY'];
@@ -86,11 +75,14 @@ function revealOpeningButton(button) {
 function scheduleOpeningReveal(onReveal) {
   cancelOpeningReveal();
   const generation = openingRevealGeneration;
-  if (!main.classList.contains('archive-closed')) return;
-  openingActions.forEach(([, action]) => revealOpeningButton(action));
+  const selectedBook = pair.dataset.activeBook;
+  const button = openingActions.find(([kind]) => kind === selectedBook)?.[1];
+  if (!button || !main.classList.contains('archive-closed')) return;
+  openingActions.forEach(([kind, action]) => setOpeningButtonHidden(action, kind !== selectedBook));
   const reveal = () => {
-    if (generation !== openingRevealGeneration || !main.classList.contains('archive-closed') || document.querySelector('dialog[open]')) return;
-    openingActions.forEach(([, action]) => revealOpeningButton(action));
+    if (generation !== openingRevealGeneration || pair.dataset.activeBook !== selectedBook ||
+        !main.classList.contains('archive-closed') || carouselTransitioning || document.querySelector('dialog[open]')) return;
+    revealOpeningButton(button);
     onReveal?.();
   };
   if (reducedMotion.matches) {
@@ -111,6 +103,7 @@ function syncCarousel() {
     button.disabled = (Number(button.dataset.carouselDirection) < 0 && carouselIndex === 0) ||
       (Number(button.dataset.carouselDirection) > 0 && carouselIndex === 1);
   });
+  openingActions.forEach(([bookName, button]) => setOpeningButtonHidden(button, bookName !== pair.dataset.activeBook));
 }
 function setCarouselBook(index) {
   if (index < 0 || index > 1 || index === carouselIndex || carouselTransitioning) return false;
@@ -133,6 +126,14 @@ function setCarouselBook(index) {
 }
 syncCarousel();
 if (document.body.classList.contains('site-ready')) scheduleOpeningReveal();
+carouselButtons.addEventListener('click', event => {
+  const button = event.target.closest('[data-carousel-direction]');
+  if (button && !button.disabled) setCarouselBook(carouselIndex + Number(button.dataset.carouselDirection));
+});
+pair.addEventListener('click', event => {
+  const action = event.target.closest('#open-archive,#open-rank-directory');
+  if (action) setCarouselBook(action.id === 'open-archive' ? 0 : 1);
+}, true);
 pair.addEventListener('wheel', event => {
   if (!main.classList.contains('archive-closed') || document.querySelector('dialog[open]')) return;
   const direction = Math.sign(event.deltaY);
