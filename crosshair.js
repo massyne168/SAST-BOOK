@@ -4,7 +4,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const cursor = document.createElement('div');
 cursor.className = 'tactical-cursor';
 cursor.setAttribute('aria-hidden', 'true');
-cursor.innerHTML = '<span class="cursor-ring"></span><span class="cursor-cross"></span><span class="cursor-dot"></span>';
+cursor.innerHTML = '<span class="scanner-housing"><span class="scanner-hud" aria-hidden="true"></span><svg class="scanner-fingerprint" viewBox="0 0 48 48" aria-hidden="true"><path d="M16 30v-5a8 8 0 0 1 16 0v6c0 6-3 10-8 13"/><path d="M12 31v-6a12 12 0 0 1 24 0v6c0 7-3 12-9 16"/><path d="M20 34v-9a4 4 0 0 1 8 0v7c0 5-2 8-6 11"/><path d="M8 31v-6a16 16 0 0 1 32 0v6c0 7-2 13-7 18"/><path d="M24 21v-3M24 38c-1 2-3 4-5 6M15 18a13 13 0 0 0-3 8v2"/></svg><span class="scanner-line" aria-hidden="true"></span></span><span class="scanner-tooltip">IDENTITY SCANNER</span>';
 document.body.append(cursor);
 let x = 0, y = 0, trailX = 0, trailY = 0, frame = 0, lastMove = 0;
 let visible = false;
