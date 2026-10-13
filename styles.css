@@ -1456,7 +1456,13 @@ main:not(.archive-closed):not(.directory-open) #book>.ribbon{pointer-events:none
 .rank-roster-table td:last-child{color:#ed6475;white-space:nowrap;font-variant-numeric:tabular-nums}
 .rank-roster-table td:first-child{padding-right:2cqw}
 .rank-roster-table tr{break-inside:avoid}
+.rank-roster-table .rank-empty td{text-align:center;padding:5cqw 1cqw;color:#ed6475;font-weight:700;letter-spacing:.12em}
 .rank-roster-footer{display:flex;justify-content:space-between;gap:2cqw;margin-top:auto;padding-top:2cqw;border-top:1px solid #71303b;font:2.3cqw var(--mono);color:#d4b6bd}
+
+/* Server-authorized rank editing only appears after an administrator unlocks it. */
+.rank-admin-panel{display:flex;align-items:end;justify-content:center;gap:8px;flex-wrap:wrap;max-width:1440px;margin:10px auto 0;padding:10px;border:1px solid #71303b;background:#170a0e;color:#d4b6bd;font:9px var(--mono);letter-spacing:.08em}
+.rank-admin-panel label{display:grid;gap:4px}.rank-admin-panel select,.rank-admin-panel button{min-height:30px;border:1px solid #8e2a3a;background:#281016;color:#f5f5f5;font:600 10px var(--mono);padding:5px 8px}.rank-admin-panel select{max-width:235px}.rank-admin-panel button{cursor:pointer;color:#ffd0d6}
+@media(max-width:700px){.rank-admin-panel{align-items:stretch}.rank-admin-panel label,.rank-admin-panel select,.rank-admin-panel button{width:100%;max-width:none}}
 
 /* Reuse the opening-control border light on stationary rank titles. */
 .rank-roster-page .rank-list-heading h2{position:relative;isolation:isolate;--opening-travel:#C0C0C0;border:1px solid #C0C0C080;border-radius:8px;padding:2cqw 2.5cqw;box-shadow:0 0 8px #ffffff0d}

@@ -72,9 +72,9 @@ async function openBook(kind, id) {
 function searchResults() {
   const results = searchOfficers(value('trooper-query'));
   content.querySelector('#trooper-count').textContent = `${results.length} records found`;
-  content.querySelector('#trooper-results').innerHTML = results.length ? results.map(person => isOfficialRank(person.rank)
-    ? `<li><button type="button" data-officer="${escape(person.id)}"><strong>${escape(person.name)}</strong><span>${escape(person.rank)}</span><small>Badge: ${escape(person.badge)}</small><span class="result-arrow" aria-hidden="true">↗</span></button></li>`
-    : `<li><div class="trooper-other-record"><strong>${escape(person.name)}</strong><span>OTHER RECORDS · ${escape(person.rank)}</span><small>Badge: ${escape(person.badge)}</small></div></li>`
+  content.querySelector('#trooper-results').innerHTML = results.length ? results.map(person => isOfficialRank(person.rankId)
+    ? `<li><button type="button" data-officer="${escape(person.id)}"><strong>${escape(person.name)}</strong><span>${escape(person.rankId)}</span><small>Badge: ${escape(person.badge)}</small><span class="result-arrow" aria-hidden="true">↗</span></button></li>`
+    : `<li><div class="trooper-other-record"><strong>${escape(person.name)}</strong><span>OTHER RECORDS · ${escape(person.rankId)}</span><small>Badge: ${escape(person.badge)}</small></div></li>`
   ).join('') : '<li class="archive-empty">No troopers match your search.</li>';
 }
 const summary = items => `<div class="archive-stat-grid">${items.map(([label,count]) => `<div class="archive-stat"><span>${escape(label)}</span><strong>${count}</strong></div>`).join('')}</div>`;
