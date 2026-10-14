@@ -1,6 +1,7 @@
 import {FlipEngine} from './flip-engine.js';
 import {directoryPages, directoryPageCount, directoryRanks, rankDirectoryData, replaceDirectoryPersonnel} from './rank-directory-data.js';
 import {resetBookFocus} from './book-focus.js';
+import {initializeResignationForm} from './resignation-form.js';
 
 const $ = selector => document.querySelector(selector);
 const categoryCount = () => Math.ceil(directoryPageCount / 2);
@@ -188,6 +189,8 @@ function initialize() {
   directoryLeft.id = 'left';
   directoryRight.id = 'right';
   directory.hidden = false;
+  directory.append(document.querySelector('#resignation-notice'));
+  initializeResignationForm();
   const indexToggle = document.createElement('button');
   indexToggle.id = 'rank-index-toggle';
   indexToggle.type = 'button';

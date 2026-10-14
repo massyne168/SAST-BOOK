@@ -3,10 +3,12 @@ import {readFile, mkdir, rename, writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {rankDirectoryData, directoryRanks} from './rank-directory-data.js';
+import {createResignationHandler} from './resignation-service.js';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const personnelFile = path.join(root, 'data', 'personnel.json');
 const types = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.webp':'image/webp','.jpg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml','.json':'application/json'};
 const sendJson = (response, status, body) => response.writeHead(status, {'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify(body));
+const resignationHandler = createResignationHandler();
 const readJson = request => new Promise((resolve, reject) => {
   let data = '';
   request.on('data', chunk => { data += chunk; if (data.length > 1024 * 1024) request.destroy(); });
@@ -46,6 +48,11 @@ export const server = http.createServer(async (request, response) => {
       people[position] = {...people[position], rankId};
       await savePersonnel(people);
       return sendJson(response, 200, {person: people[position], people});
+    }
+    if (pathname === '/api/resignation') {
+      if (request.method !== 'POST') return sendJson(response, 405, {error: 'Method not allowed.'});
+      const result = await resignationHandler({body: await readJson(request), ip: request.headers['x-forwarded-for']?.split(',')[0]?.trim() || request.socket.remoteAddress});
+      return sendJson(response, result.status, result.body);
     }
     const filename = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (!filename.startsWith(root + path.sep)) { response.writeHead(403).end(); return; }
