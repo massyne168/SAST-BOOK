@@ -82,24 +82,24 @@ main.archive-closed .archive-cover.webp-cover {
   box-shadow:3px 4px 0 #788c9a,7px 9px 0 #263c4a,10px 13px 0 #0b1319,
     20px 32px 68px #000c,inset 5px 0 12px #0009;
 }
+/* The new Armory artwork already contains its own shadows and colors. */
 main.archive-closed .archive-cover.webp-cover::after {
-  background: linear-gradient(155deg,#0e87c02a 0%,#07131f19 46%,#10182055 100%),
-    url("assets/cover.webp") center center/100% 100% no-repeat;
-  background-blend-mode: color,normal;
+  content:none!important;
+  display:none!important;
 }
 main.archive-closed .rank-cover-stage-teaser .rank-cover {
   border-color: var(--sast-silver);
   background-color: var(--sast-navy);
-  background-image:linear-gradient(140deg,#0e87c0e6 0%,#07131ff0 55%,#101820e6),
-    url("assets/rank-directory-cover.webp");
-  background-size: cover,100% 100%;
-  background-position: center;
-  background-blend-mode:color,normal;
+  background-image:url("assets/rank-directory-cover.webp");
+  background-size:100% 100%;
+  background-position:center;
+  background-blend-mode:normal;
   box-shadow:3px 4px 0 #788c9a,7px 9px 0 #263c4a,10px 13px 0 #0b1319,20px 32px 62px #000b;
 }
 main.archive-closed .rank-cover-stage-teaser .rank-cover::before {border-color:#a9c3d67a}
 main.archive-closed .rank-cover-stage-teaser .rank-cover::after {
-  background:linear-gradient(180deg,#07131f1c,transparent 36%,#07131f55);
+  content:none!important;
+  display:none!important;
 }
 main.archive-closed .rank-cover-stage-teaser .rank-cover-binding {
   background:linear-gradient(90deg,#050b11,#15354b);
@@ -110,20 +110,15 @@ main.archive-closed :is(.classified-cover-stage-teaser,.resignation-cover-stage-
   --cover-edge:var(--sast-silver);
   --cover-depth:#31495b;
 }
+/* The shared cover image is the finished artwork. No black color overlay. */
 main.archive-closed .shared-cover-shell::after {
-  content:"";
-  position:absolute;
-  z-index:3;
-  inset:0;
-  pointer-events:none;
-  background:linear-gradient(145deg,#0e87c0 5%,#10283b 65%,#101820);
-  mix-blend-mode:color;
-  opacity:.76;
+  content:none!important;
+  display:none!important;
 }
 main.archive-closed .shared-cover-art {
   border-color:var(--sast-silver);
   background:var(--sast-navy);
-  filter:grayscale(1) contrast(1.12) brightness(.96);
+  filter:none!important;
   box-shadow:3px 4px 0 #8295a0,7px 9px 0 #1e3545,18px 30px 54px #000a;
 }
 main.archive-closed .shared-cover-spine {
@@ -364,7 +359,7 @@ html[data-theme="resignation"] .resignation-live-sheet dl > div {border-color:#6
 @media(max-width:700px) {
   .supplemental-page {box-shadow:none}
   .supplemental-page :is(h2,h3) {letter-spacing:.015em}
-  main.archive-closed .shared-cover-shell::after {opacity:.7}
+  main.archive-closed .shared-cover-shell::after {display:none!important}
 }
 @media(prefers-reduced-motion:reduce) {
   .supplemental-page,
@@ -656,4 +651,110 @@ main:not(.archive-closed):not(.directory-open) .reading-room #book .spine {
 }
 @media(prefers-reduced-motion:reduce) {
   .supplemental-flip-book>.supplemental-turn-layer .leaf-strip {will-change:auto}
+}
+
+
+/* Cover artwork and opening actions: preserve original colors, never overlap labels. */
+main.archive-closed :is(.archive-cover-unit,.rank-cover-unit,.shared-cover-unit) {
+  position:relative;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:clamp(10px,1.8vw,15px)!important;
+  width:min(100%,316px)!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin-inline:auto!important;
+  transform:none!important;
+  overflow:visible!important;
+}
+main.archive-closed .archive-cover-unit>.archive-cover,
+main.archive-closed .rank-cover-unit>.rank-cover,
+main.archive-closed .shared-cover-unit>.shared-cover-shell {
+  position:relative;
+  flex:0 0 auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  height:auto!important;
+  aspect-ratio:1191/1685;
+  margin:0!important;
+  min-width:0;
+}
+main.archive-closed :is(#open-archive,#open-rank-directory,#open-classified-archive,#open-resignation-notices,#open-command-bulletin).book-opening-tab {
+  box-sizing:border-box;
+  position:relative!important;
+  inset:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  z-index:8!important;
+  flex:0 0 auto!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+  width:100%!important;
+  max-width:316px!important;
+  min-width:0!important;
+  height:auto!important;
+  min-height:50px!important;
+  margin:0!important;
+  padding:11px 16px!important;
+  transform:none!important;
+  border:1px solid var(--sast-edge)!important;
+  border-radius:5px!important;
+  background:linear-gradient(125deg,#07131f,#153b53 58%,#101820)!important;
+  box-shadow:0 5px 18px #0009,inset 0 1px #b4c6d21c!important;
+  color:var(--sast-white)!important;
+  font:700 clamp(10px,1vw,12px)/1.3 var(--mono)!important;
+  letter-spacing:.04em!important;
+  text-align:center!important;
+  cursor:pointer;
+}
+main.archive-closed :is(#open-archive,#open-rank-directory,#open-classified-archive,#open-resignation-notices,#open-command-bulletin).book-opening-tab:is(:hover,:focus-visible) {
+  border-color:var(--sast-bright-blue)!important;
+  background:linear-gradient(125deg,#12364e,#0e577a 58%,#102a3d)!important;
+  box-shadow:0 7px 24px #000b,0 0 0 1px #57c9f17a!important;
+  transform:translateY(-2px)!important;
+  outline-offset:3px;
+}
+main.archive-closed .book-opening-tab .opening-tab-label {
+  min-width:0!important;
+  flex:1 1 auto;
+  display:block;
+  color:inherit!important;
+  font:inherit!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere;
+}
+main.archive-closed .book-opening-tab .opening-tab-arrow {
+  flex:0 0 auto;
+  display:inline-block;
+  color:var(--sast-bright-blue)!important;
+  font:700 18px/1 var(--mono)!important;
+}
+main.archive-closed .book-opening-tab :is(.opening-tab-id,.opening-tab-lock) {
+  display:none!important;
+}
+main.archive-closed .book-opening-tab::before,
+main.archive-closed .book-opening-tab::after {
+  pointer-events:none!important;
+}
+/* Respect carousel visibility: only the selected book's action can be clicked. */
+main.archive-closed .book-pair>[data-carousel-position]:not([data-carousel-position="active"]) .book-opening-tab {
+  pointer-events:none!important;
+}
+@media(max-width:700px) {
+  main.archive-closed .book-pair {min-height:585px!important;overflow:visible!important}
+  main.archive-closed :is(.archive-cover-unit,.rank-cover-unit,.shared-cover-unit) {
+    width:min(300px,75vw)!important;
+    gap:12px!important;
+  }
+  main.archive-closed :is(#open-archive,#open-rank-directory,#open-classified-archive,#open-resignation-notices,#open-command-bulletin).book-opening-tab {
+    max-width:100%!important;
+    min-height:48px!important;
+    padding:9px 12px!important;
+  }
 }
