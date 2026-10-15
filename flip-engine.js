@@ -69,20 +69,35 @@ export class FlipEngine {
     this.layer.replaceChildren(fragment);
   }
 
+  imagePageSource(content) {
+    // Armory record pages are full-page WebP artwork; leave their <img> in the
+    // markup until each turn strip has read the source filename.
+    if (!content.includes('class="page image-page"')) return null;
+    return content.match(/<img\b[^>]*\bsrc="([^"]+)"/i)?.[1] || null;
+  }
+
   configureFace(face, content, pageOffset, width, height) {
-    // Archive pages are single WebP images. A CSS background avoids cloning an img per strip.
-    if (content.includes('class="page image-page"')) {
-      const src = content.match(/<img\b[^>]*\bsrc="([^"]+)"/i)?.[1];
-      if (src) {
-        face.classList.add('leaf-image-face');
-        face.style.backgroundImage = `url(${JSON.stringify(src)})`;
-        face.style.backgroundSize = `${width}px ${height}px`;
-        face.style.backgroundPosition = `${-pageOffset}px 0px`;
-        return;
-      }
+    // Paint the image itself onto each leaf strip. Cloning/resizing <img>
+    // into the turn mesh lost its source and left the paper beige/white.
+    const src = this.imagePageSource(content);
+    if (src) {
+      face.classList.add('leaf-image-face');
+      face.style.backgroundColor = '#0b1016';
+      face.style.backgroundImage = `url(${JSON.stringify(src)})`;
+      face.style.backgroundRepeat = 'no-repeat';
+      face.style.backgroundSize = `${width}px ${height}px`;
+      face.style.backgroundPosition = `${-pageOffset}px 0px`;
+      // Reused strips may contain content from a prior text/personnel page.
+      const inner = face.firstElementChild;
+      inner.replaceChildren();
+      inner.style.width = '';
+      inner.style.left = '';
+      return;
     }
     face.classList.remove('leaf-image-face');
+    face.style.backgroundColor = '';
     face.style.backgroundImage = '';
+    face.style.backgroundRepeat = '';
     face.style.backgroundSize = '';
     face.style.backgroundPosition = '';
     const inner = face.firstElementChild;
@@ -92,6 +107,9 @@ export class FlipEngine {
   }
 
   removeTurnImages(content) {
+    // A full-page archive image must reach configureFace unchanged, otherwise
+    // the face cannot find its src and exposes the default pale paper texture.
+    if (this.imagePageSource(content)) return content;
     if (!content.includes('<img')) return content;
     const template = document.createElement('template');
     template.innerHTML = content;
