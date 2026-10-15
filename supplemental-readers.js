@@ -232,6 +232,12 @@ export function closeSupplementalReader(kind) {
   const state = roots.get(kind); if (!state) return;
   state.engine.cancel(true);
   if (kind === 'resignation') parkNotice(state);
-  if (kind === 'bulletins') parkBulletinEditor(state);
+  if (kind === 'bulletins') {
+    parkBulletinEditor(state);
+    if(state.editor?.form){
+      state.editor.form.elements.secret.value='';
+      state.editor.form.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+  }
   state.root.hidden = true; state.root.inert = true;
 }
