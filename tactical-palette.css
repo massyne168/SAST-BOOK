@@ -381,7 +381,7 @@ html[data-theme="resignation"] .resignation-live-sheet dl > div {border-color:#6
 .supplemental-page {
   position:relative;
   isolation:isolate;
-  overflow:hidden;
+  /* Preserve existing resignation form and document scrolling. */
   box-shadow:inset 0 0 0 1px #849aa963, inset 0 0 24px #02070e50;
 }
 .supplemental-page:nth-child(odd) {
@@ -496,3 +496,7 @@ main:not(.archive-closed):not(.directory-open) .reading-room #book .spine {
   .supplemental-page,
   .supplemental-page::before {transition:none!important}
 }
+
+/* Animated leaf shadows outrank the static inset frame. */
+.supplemental-page.is-turning {box-shadow:-12px 14px 32px #000a,inset 12px 0 21px #0003}
+.supplemental-page.is-turning:nth-child(odd) {box-shadow:12px 14px 32px #000a,inset -12px 0 21px #0003}
