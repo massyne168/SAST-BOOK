@@ -513,12 +513,18 @@ export function navigateBook(kind, officerId) {
       }
       if (officerId && !await rankDirectoryModule.revealOfficer(officerId)) throw new Error('Unable to locate the officer. Please try again.');
     } else if (kind === 'resignation') {
-      if (!main.classList.contains('archive-closed')) {
-        if (main.classList.contains('directory-open')) await rankDirectoryModule.closeDirectory();
-        else if (main.classList.contains('classified-open')) await closeClassified();
+      if (!main.classList.contains('resignation-open')) {
+        if (!main.classList.contains('archive-closed')) {
+          if (main.classList.contains('directory-open')) await rankDirectoryModule.closeDirectory();
+          else if (main.classList.contains('classified-open')) await closeClassified();
+          else if (main.classList.contains('bulletins-open')) await closeBulletinArchive();
+          else await closeArchive();
+        }
+        setCarouselBook(3);
+        if (!isBookFocused('resignation')) await focusBook('resignation');
+        await openResignationNotices();
       }
-      setCarouselBook(3);
-      if (main.classList.contains('archive-closed')) await openResignationNotices();
+      document.querySelector('.supplemental-reader--resignation [data-open-form]')?.click();
     } else {
       if (main.classList.contains('directory-open')) await rankDirectoryModule.closeDirectory();
       setCarouselBook(0);
