@@ -500,3 +500,160 @@ main:not(.archive-closed):not(.directory-open) .reading-room #book .spine {
 /* Animated leaf shadows outrank the static inset frame. */
 .supplemental-page.is-turning {box-shadow:-12px 14px 32px #000a,inset 12px 0 21px #0003}
 .supplemental-page.is-turning:nth-child(odd) {box-shadow:12px 14px 32px #000a,inset -12px 0 21px #0003}
+
+
+/* Shared mesh-style book turning for Classified, Resignation and Bulletins. */
+.supplemental-reader .supplemental-book-frame {
+  width:min(100%,860px);
+  overflow:visible;
+  perspective:2200px;
+}
+.supplemental-flip-book.supplemental-page-stack {
+  display:block!important;
+  grid-template-columns:none!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%;
+  height:auto;
+  min-height:0;
+  aspect-ratio:2382 / 1685!important;
+  margin:0 auto;
+  padding:0;
+  position:relative;
+  isolation:isolate;
+  transform:none!important;
+  transform-style:preserve-3d;
+  touch-action:pan-y;
+  user-select:none;
+  --paper:var(--sast-navy);
+  --ink:var(--sast-white);
+}
+.supplemental-flip-book>.board {
+  z-index:0;
+  inset:-9px -11px -13px;
+  border:1px solid var(--sast-steel);
+  background:linear-gradient(120deg,#07131f,#18465f 51%,#07131f);
+  box-shadow:inset 0 0 0 5px #080f17,0 5px 0 #060d15,0 8px 0 #476378,0 23px 42px #0009;
+}
+.supplemental-flip-book>.paper-stack {
+  z-index:1;
+  inset:2px -3px -8px;
+  background:repeating-linear-gradient(0deg,#7792a3 0 1px,#d2dce0 1px 2px,#90a5b0 2px 3px);
+}
+.supplemental-flip-book>.supplemental-slot {
+  position:absolute;
+  top:0;
+  z-index:2;
+  width:50%;
+  height:100%;
+  min-width:0;
+  overflow:hidden;
+  background:var(--sast-navy);
+  color:var(--sast-white);
+  cursor:grab;
+}
+.supplemental-flip-book>.supplemental-slot-left {left:0}
+.supplemental-flip-book>.supplemental-slot-right {right:0}
+.supplemental-flip-book>.spine {
+  z-index:3;
+  left:calc(50% - 5px);
+  width:10px;
+  background:linear-gradient(90deg,#02080e,#294a5d,#9aaeb9,#0e2638,#02080e);
+}
+.supplemental-flip-book .supplemental-slot>.supplemental-page {
+  display:flex!important;
+  width:100%;
+  height:100%;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--sast-edge) var(--sast-navy);
+}
+.supplemental-flip-book>.supplemental-turn-layer {
+  position:absolute;
+  inset:0;
+  z-index:5;
+  perspective:2200px;
+  transform-style:preserve-3d;
+  pointer-events:none;
+  visibility:hidden;
+}
+.supplemental-flip-book.turning>.supplemental-turn-layer {visibility:visible}
+.supplemental-flip-book>.supplemental-turn-layer::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  opacity:var(--turn-shadow,0);
+  background:linear-gradient(90deg,transparent 43%,#0007 50%,transparent 57%);
+  pointer-events:none;
+}
+.supplemental-flip-book>.supplemental-turn-layer .leaf-strip {
+  position:absolute;
+  top:0;
+  left:50%;
+  height:100%;
+  transform-origin:left center;
+  transform-style:preserve-3d;
+  backface-visibility:hidden;
+  visibility:hidden;
+}
+.supplemental-flip-book.turning>.supplemental-turn-layer .leaf-strip {
+  visibility:visible;
+  will-change:transform;
+}
+.supplemental-flip-book>.supplemental-turn-layer .leaf-face {
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  backface-visibility:hidden;
+  background:var(--sast-navy);
+  color:var(--sast-white);
+}
+.supplemental-flip-book>.supplemental-turn-layer .leaf-face.back {transform:rotateY(180deg)}
+.supplemental-flip-book>.supplemental-turn-layer .leaf-content {
+  position:absolute;
+  top:0;
+  height:100%;
+}
+.supplemental-flip-book>.supplemental-turn-layer .leaf-content>.supplemental-page {
+  width:100%;
+  height:100%;
+  overflow:hidden!important;
+  scrollbar-width:none;
+  pointer-events:none;
+}
+.supplemental-flip-book.turning>.supplemental-slot,
+.supplemental-flip-book.turning-touch>.supplemental-slot {box-shadow:none}
+.supplemental-flip-book.turning>.supplemental-slot::after,
+.supplemental-flip-book.turning-touch .leaf-face::after {display:none}
+.supplemental-flip-book.turning-touch>.supplemental-turn-layer::before {display:none}
+.supplemental-flip-book.turning-touch {touch-action:none}
+/* Only hide the rasterized form copy during a physical turn, not the interactive form. */
+.supplemental-flip-book .leaf-content [data-form-slot] {display:none}
+.supplemental-flip-book:focus-visible {
+  outline:2px solid var(--sast-bright-blue);
+  outline-offset:16px;
+}
+@media(max-width:700px) {
+  .supplemental-reader .supplemental-book-frame {width:min(100%,860px);margin:18px auto 14px}
+  .supplemental-flip-book.supplemental-page-stack {
+    aspect-ratio:1.18!important;
+    min-height:0;
+  }
+  .supplemental-flip-book .supplemental-slot>.supplemental-page {
+    padding:clamp(9px,2vw,18px);
+    min-height:0!important;
+  }
+  .supplemental-flip-book .supplemental-page h2 {font-size:clamp(13px,3.6vw,25px);line-height:1.1}
+  .supplemental-flip-book .supplemental-page header,
+  .supplemental-flip-book .supplemental-page footer {font-size:7px;letter-spacing:0}
+  .supplemental-flip-book .supplemental-page p:not(.supplemental-label) {font-size:11px;line-height:1.35}
+  .supplemental-flip-book .supplemental-page::before {inset:5px;opacity:.5}
+  .supplemental-flip-book .resignation-live-sheet {padding:8px}
+  .supplemental-flip-book .resignation-live-sheet dl {grid-template-columns:1fr}
+  .supplemental-flip-book .resignation-live-sheet dl > div {grid-column:1/-1}
+}
+@media(prefers-reduced-motion:reduce) {
+  .supplemental-flip-book>.supplemental-turn-layer .leaf-strip {will-change:auto}
+}
