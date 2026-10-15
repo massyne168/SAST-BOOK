@@ -5,6 +5,7 @@ import {readFileSync} from 'node:fs';
 const source = readFileSync(new URL('../tactical-palette.css', import.meta.url), 'utf8');
 const section = source.slice(source.indexOf('/* SAST internal paper / restrained tactical-edge treatment'));
 const original = readFileSync(new URL('../supplemental-readers.js', import.meta.url), 'utf8');
+const mesh = readFileSync(new URL('../flip-engine.js', import.meta.url), 'utf8');
 
 test('all supplemental book pages receive unobtrusive tactical edge treatment', () => {
   assert.match(section,/\.supplemental-page::before\s*\{/);
@@ -29,8 +30,9 @@ test('form spread and live resignation sheet remain accessible', () => {
 test('cursor-driven page turns and physical book page placement are unchanged', () => {
   assert.match(section,/\.supplemental-page\.is-turning\s*\{/);
   assert.match(section,/\.supplemental-page\.is-turning:nth-child\(odd\)/);
-  assert.match(original,/setPointerCapture/);
-  assert.match(original,/d\.progress > \.5/);
+  assert.match(original,/new FlipEngine\(book/);
+  assert.match(mesh,/setPointerCapture/);
+  assert.match(mesh,/shouldComplete\(this\.drag\.p\)/);
 });
 
 test('Rank Directory and Armory art are retained while decorative edges are styled', () => {
