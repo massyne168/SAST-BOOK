@@ -370,3 +370,129 @@ html[data-theme="resignation"] .resignation-live-sheet dl > div {border-color:#6
   .supplemental-page,
   .supplemental-page.is-turning {transition:none!important}
 }
+
+
+/* SAST internal paper / restrained tactical-edge treatment (2026-10-15). */
+/*
+  Every document keeps a legible central reading area.
+  Graphics are confined to the edges and ignore all pointer input,
+  so flip/drag, forms, officer cards, and page navigation remain usable.
+*/
+.supplemental-page {
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  box-shadow:inset 0 0 0 1px #849aa963, inset 0 0 24px #02070e50;
+}
+.supplemental-page:nth-child(odd) {
+  box-shadow:inset -17px 0 27px #02070e55,inset 0 0 0 1px #849aa963;
+}
+.supplemental-page:nth-child(even) {
+  box-shadow:inset 17px 0 27px #02070e55,inset 0 0 0 1px #849aa963;
+}
+.supplemental-page::before {
+  content:"";
+  position:absolute;
+  z-index:0;
+  inset:clamp(9px,1.3vw,17px);
+  border:1px solid #95aabd45;
+  border-radius:1px;
+  opacity:.85;
+  background:
+    linear-gradient(#57c9f1,#57c9f1) left top / 23px 2px no-repeat,
+    linear-gradient(#57c9f1,#57c9f1) left top / 2px 23px no-repeat,
+    linear-gradient(#aebdc7,#aebdc7) right top / 23px 2px no-repeat,
+    linear-gradient(#aebdc7,#aebdc7) right top / 2px 23px no-repeat,
+    linear-gradient(#aebdc7,#aebdc7) left bottom / 23px 2px no-repeat,
+    linear-gradient(#aebdc7,#aebdc7) left bottom / 2px 23px no-repeat,
+    linear-gradient(#57c9f1,#57c9f1) right bottom / 23px 2px no-repeat,
+    linear-gradient(#57c9f1,#57c9f1) right bottom / 2px 23px no-repeat;
+  pointer-events:none;
+}
+.supplemental-page > header,
+.supplemental-page > footer,
+.supplemental-page > .supplemental-page-body {
+  position:relative;
+  z-index:1;
+  min-width:0;
+}
+.supplemental-page > header {
+  padding-block-end:clamp(8px,1.2vw,14px);
+  margin-block-end:clamp(8px,1.2vw,16px);
+  gap:10px;
+  font-variant-numeric:tabular-nums;
+}
+.supplemental-page > header b {
+  color:var(--sast-silver);
+  font:700 10px var(--mono);
+  white-space:nowrap;
+}
+.supplemental-page > footer {
+  gap:10px;
+  font-size:clamp(7px,.8vw,9px);
+  letter-spacing:.09em;
+  padding-top:10px;
+}
+.supplemental-page > footer span {
+  color:var(--sast-bright-blue);
+}
+.supplemental-page h2,
+.supplemental-page h3 {
+  max-width:100%;
+  overflow-wrap:anywhere;
+  text-wrap:balance;
+}
+.supplemental-page .supplemental-rule {
+  width:min(160px,42%);
+  height:2px;
+  opacity:.8;
+}
+/* Lower-detail form spread: keep fields and the generated notice unobstructed. */
+.supplemental-page:has(.supplemental-form-slot)::before,
+.supplemental-page:has(.resignation-live-sheet)::before {
+  opacity:.48;
+}
+.supplemental-page .resignation-live-sheet {
+  position:relative;
+  z-index:2;
+}
+/* Rank Directory retains its existing readable content and officer record placement. */
+#rank-directory .rank-page {
+  box-shadow:inset 0 0 0 1px #a4b6c25b,inset 0 0 22px #01080d40;
+}
+#rank-directory .rank-page::before {
+  border-color:#8daabb66;
+  pointer-events:none;
+}
+#rank-directory .rank-page-head,
+#rank-directory .rank-page-foot {
+  border-color:#7599b266;
+}
+#rank-directory .rank-page-head strong,
+#rank-directory .rank-list-heading h2 {
+  text-shadow:0 1px 12px #57c9f114;
+}
+#rank-directory .rank-page .rank-record,
+#rank-directory .rank-page .rank-personnel-table {
+  box-shadow:inset 2px 0 #0e87c066;
+}
+#rank-directory .rank-book .board {
+  outline:1px solid #a4b6c26e;
+  outline-offset:3px;
+}
+/* The Armory's original artwork must remain unaltered; accent its physical book frame only. */
+main:not(.archive-closed):not(.directory-open) .reading-room #book .board {
+  border-color:var(--sast-steel);
+}
+main:not(.archive-closed):not(.directory-open) .reading-room #book .spine {
+  box-shadow:inset 0 0 0 1px #b9c9d169;
+}
+@media(max-width:700px) {
+  .supplemental-page::before {inset:8px;opacity:.58}
+  .supplemental-page > header {margin-bottom:10px}
+  .supplemental-page > footer {letter-spacing:.05em}
+}
+@media(prefers-reduced-motion:reduce) {
+  .supplemental-page,
+  .supplemental-page::before {transition:none!important}
+}
