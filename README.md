@@ -55,3 +55,21 @@ The Rank Directory includes a separate **Trooper Resignation Notice** form. It d
 Before enabling administrative writes, connect durable storage and verified server-side permissions. In one database transaction, lock/re-read the serialized weapon, check the allowed transition and active assignment uniqueness, validate officer identity by stable ID, update the record, and append an immutable audit event. Enforce a database uniqueness constraint for an active assignment per normalized serial; client validation alone cannot prevent races. The event ID, actor identity and timestamp must come from the trusted server, not public request fields. Preserve previous assignments and source forms, and do not backfill invented audit events. On Vercel use a persistent database, never the temporary server filesystem. The helpers intentionally perform no writes and provide no authorization boundary.
 
 Validation: `npm run check`, `npm test`, `npm run test:browser`, and `npm run test:archive-browser`. Browser scripts use optional externally installed Playwright and Microsoft Edge (see `PLAYWRIGHT_PATH` above), with no new production dependencies. The archive suite covers real searches, duplicate badges, exact animated page navigation, highlight cleanup, weapon filters/details, derived statistics, history, keyboard/mouse/touch navigation, reduced motion and responsive widths. Test-only assignment and activity fixtures never enter production data. There is no build step or lint configuration for this buildless site.
+
+
+## Announcements & Orders: High Command publishing
+
+The **Announcements & Orders** book now includes an authenticated publishing form on its final two-page spread. The facing page is a live **draft preview**; typing does **not** publish. An authorized High Command officer enters a title, notice type (Announcement/Order), issuing officer, priority, full message, optional expiry date, optional pin, and the private High Command access key, confirms approval, clicks **REVIEW DRAFT**, and finally **PUBLISH TO BOOK**.
+
+A successful server response generates an immutable `AO-YYYY-...` reference and saves the publication. Each published announcement occupies its own page, the register is updated, and the book adds additional spreads automatically when needed. Search/detail views share the same server data. The editor access key is never stored in localStorage, never rendered on the preview, and never returned in GET responses. Server authorization is mandatory; hiding a form is not used as an access control.
+
+**Set these private server environment variables for Vercel:**
+
+- `HIGH_COMMAND_TOKEN`: a strong private token known only to High Command (the existing `ADMIN_TOKEN` may be used as a fallback).
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`: a durable Upstash Redis/Marketplace database, or use `KV_REST_API_URL` and `KV_REST_API_TOKEN` for the same integration.
+
+These variables must be configured in the Vercel project's server environment, **not** embedded in website JavaScript or a public repository. Redeploy after configuring them. Without server-side Redis, Vercel serves a read-only empty register and rejects publication with a clear configuration error. A GitHub commit or static file cannot act as a safe shared multi-user publishing database.
+
+Local Node development uses `HIGH_COMMAND_TOKEN=...` and an automatically created `data/bulletins.json` file. The file is ignored by Git and persists across local restarts. Production Redis writes and reads are shared across clients and deployments. A successfully created notice is kept in history; no automatic deletion is performed. The GET endpoint `/api/bulletins` is readable without a password, whereas the POST endpoint requires a server-verified Bearer token.
+
+Test with `npm test` (including `tests/bulletin-publishing.test.js`) and optionally `npm run test:browser` in a development environment equipped with Playwright. Neither the Armory nor Rank Directory data files are altered by this feature.
