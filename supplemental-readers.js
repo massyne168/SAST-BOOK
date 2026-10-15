@@ -48,14 +48,14 @@ function buildPage([eyebrow, title, label, body], index, kind) {
 }
 // All five books now share the same multi-strip curl mesh and drag physics.
 let latestNotice = null;
-function parkNotice() {
-  const notice = document.querySelector('#resignation-notice');
+function parkNotice(state) {
+  const notice = state.notice;
   if (notice && notice.parentNode !== document.body) document.body.append(notice);
 }
 function mountNotice(state) {
   if (state.kind !== 'resignation') return;
   const slot = state.index === 4 ? state.root.querySelector('.supplemental-slot-left [data-form-slot]') : null;
-  const notice = document.querySelector('#resignation-notice');
+  const notice = state.notice;
   if (notice && slot && notice.parentNode !== slot) slot.append(notice);
 }
 function updateControls(state) {
@@ -75,7 +75,7 @@ function create(kind) {
   root.hidden = true; root.inert = true;
   root.innerHTML = `<header class="supplemental-reader-head"><div><span>${escape(kind.toUpperCase())} / INTERNAL PAGES</span><h2>${escape(pages[0][1])}</h2></div>${kind === 'resignation' ? '<button type="button" class="supplemental-open-form" data-open-form>GO TO NOTICE FORM →</button>' : ''}<button type="button" data-supplemental-close>RETURN TO OVERVIEW</button></header><div class="supplemental-book-frame"><div class="supplemental-page-stack supplemental-flip-book book" role="group" tabindex="0" aria-label="Interactive hardcover book. Drag across the spine to flip; arrow keys also turn pages."><div class="board"><span class="board-label">SAST / CONTROLLED RECORDS</span></div><div class="paper-stack"></div><div class="page-slot left supplemental-slot supplemental-slot-left"></div><div class="page-slot right supplemental-slot supplemental-slot-right"></div><div class="spine"></div><div class="supplemental-turn-layer" aria-hidden="true"></div></div></div><nav class="supplemental-reader-controls" aria-label="${escape(pages[0][1])} page navigation"><button type="button" data-page-prev>PREVIOUS</button><output aria-live="polite">SPREAD 01 / 05</output><button type="button" data-page-next>NEXT</button></nav>`;
   document.querySelector('main').append(root);
-  const state = {root,kind,index:0,engine:null};
+  const state = {root,kind,index:0,engine:null,notice:kind === 'resignation' ? document.querySelector('#resignation-notice') : null};
   roots.set(kind,state);
   const book = root.querySelector('.supplemental-flip-book');
   state.engine = new FlipEngine(book,{
@@ -90,7 +90,7 @@ function create(kind) {
       if (kind === 'resignation' && latestNotice) updateNoticePreview({detail:latestNotice});
     },
     onBusyChange:busy=>{
-      if (busy && kind === 'resignation') parkNotice();
+      if (busy && kind === 'resignation') parkNotice(state);
       if (!busy) mountNotice(state);
       updateControls(state);
     }
@@ -111,7 +111,7 @@ function show(kind,index) {
   if (!state || !Number.isInteger(index) || index < 0 || index >= 5) return false;
   if (state.index === index) { mountNotice(state); return true; }
   if (state.engine.drag || state.engine.animating || state.engine.pending) return false;
-  if (kind === 'resignation') parkNotice();
+  if (kind === 'resignation') parkNotice(state);
   const moved = state.engine.goTo(index);
   if (!moved) mountNotice(state);
   return moved;
@@ -153,6 +153,6 @@ export function openSupplementalReader(kind) {
 export function closeSupplementalReader(kind) {
   const state = roots.get(kind); if (!state) return;
   state.engine.cancel(true);
-  if (kind === 'resignation') parkNotice();
+  if (kind === 'resignation') parkNotice(state);
   state.root.hidden = true; state.root.inert = true;
 }
