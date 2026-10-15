@@ -2,7 +2,6 @@ import {readFile,mkdir,writeFile,rename} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const defaultFile=path.join(path.dirname(fileURLToPath(import.meta.url)),'data','bulletins.json');
-const MAX_BULLETINS=300;
 
 // Local Node server: atomic file replacement and serialized writes.
 export function createLocalBulletinStore({filename=defaultFile}={}) {
@@ -20,7 +19,7 @@ export function createLocalBulletinStore({filename=defaultFile}={}) {
       const task=serial.then(async()=>{
         const current=await list();
         if(current.some(record=>record.reference===entry.reference))throw Error('Duplicate bulletin reference');
-        const next=[entry,...current].slice(0,MAX_BULLETINS);
+        const next=[entry,...current];
         await mkdir(path.dirname(filename),{recursive:true});
         const temp=filename+'.'+process.pid+'.tmp';
         await writeFile(temp,JSON.stringify(next,null,2)+'\n','utf8');
@@ -57,13 +56,12 @@ export function createRedisBulletinStore({
   }
   return {
     async list(){
-      const result=await command('LRANGE',key,'0',String(MAX_BULLETINS-1));
+      const result=await command('LRANGE',key,'0','-1');
       return (result||[]).map(value=>JSON.parse(value));
     },
     async add(entry) {
       // An LPUSH is atomic and persists independently of serverless deploys.
       await command('LPUSH',key,JSON.stringify(entry));
-      await command('LTRIM',key,'0',String(MAX_BULLETINS-1));
     }
   };
 }
