@@ -1678,9 +1678,18 @@ main.archive-closed .shared-cover-art {
   z-index: 3;
 }
 .supplemental-reader-controls {
+  position: sticky;
+  bottom: max(8px, env(safe-area-inset-bottom));
   flex-wrap: wrap;
+  width: max-content;
+  max-width: 100%;
   min-height: 46px;
-  padding-bottom: 8px;
+  margin: 0 auto;
+  padding: 8px 12px;
+  border: 1px solid var(--active-frame);
+  border-radius: 6px;
+  background: var(--active-surface);
+  box-shadow: 0 8px 28px #0008;
   pointer-events: auto;
 }
 .supplemental-page:has(.supplemental-form-slot) {
