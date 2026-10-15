@@ -4,12 +4,15 @@ import {readFileSync} from 'node:fs';
 
 const css = readFileSync(new URL('../tactical-palette.css', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 const markupIds = ['open-archive','open-rank-directory','open-classified-archive','open-resignation-notices','open-command-bulletin'];
 
 test('all five original cover files remain referenced in markup and CSS',()=>{
   for (const id of markupIds) assert.ok(html.includes('id="' + id + '"'));
   for (const id of ['classified-cover','resignation-cover','bulletins-cover']) assert.ok(html.includes('id="' + id + '"'));
-  for (const file of ['assets/cover.webp','assets/rank-directory-cover.webp']) assert.ok(css.includes(file));
+  assert.ok(styles.includes('assets/cover.webp'));
+  assert.ok(css.includes('assets/rank-directory-cover.webp'));
+  for (const file of ['classified-archive-cover.png','resignation-notices-cover.png','announcements-orders-cover.png']) assert.ok(html.includes(file));
 });
 
 test('dark overlays and grayscale are removed from the fresh artworks',()=>{
