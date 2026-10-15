@@ -1700,3 +1700,178 @@ main.archive-closed .shared-cover-art {
   .supplemental-page h2 { font-size: clamp(23px, 6vw, 34px); }
   .supplemental-reader-head h2 { font-size: clamp(24px, 6.2vw, 34px); }
 }
+
+
+/* Command tools, interactive supplemental paper, and in-book resignation dossier (2026-10-15). */
+.masthead .header-utilities .command-center-entry {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  min-height:40px;
+  max-width:160px;
+  margin:0;
+  padding:0 11px;
+  border:1px solid var(--theme-border-strong,#456b82);
+  border-radius:4px;
+  background:var(--theme-panel,#0b1b28);
+  color:var(--theme-text,#dceaf0);
+  font:700 9px/1.2 var(--mono);
+  letter-spacing:.08em;
+  white-space:nowrap;
+}
+.masthead .header-utilities .command-center-entry:is(:hover,:focus-visible) {
+  border-color:var(--theme-highlight,#91e2f7);
+  background:var(--theme-panel-raised,#10283a);
+  outline-offset:3px;
+}
+@media(max-width:700px) {
+  .masthead .header-utilities .command-center-entry {
+    width:38px;
+    min-width:38px;
+    max-width:38px;
+    min-height:38px;
+    padding:0;
+    font-size:0;
+  }
+  .masthead .header-utilities .command-center-entry::before {
+    content:"HQ";
+    font:800 11px var(--mono);
+    letter-spacing:0;
+  }
+}
+.supplemental-page-stack {
+  isolation:isolate;
+  perspective:1600px;
+  transform-style:preserve-3d;
+  min-width:0;
+}
+.supplemental-page {
+  min-height:0;
+  transform:rotateY(0deg);
+  transform-style:preserve-3d;
+  backface-visibility:hidden;
+  transform-origin:left center;
+}
+.supplemental-page:nth-child(odd) {transform-origin:right center}
+.supplemental-page.is-turning {
+  position:relative;
+  z-index:4;
+  transform:rotateY(var(--page-turn-angle,0deg));
+  box-shadow:-10px 15px 34px #0009,inset 14px 0 24px #0003;
+  transition:transform .44s cubic-bezier(.2,.67,.17,1),box-shadow .44s ease;
+  will-change:transform;
+  pointer-events:none;
+}
+.supplemental-page.is-turning:nth-child(odd) {
+  box-shadow:10px 15px 34px #0009,inset -14px 0 24px #0003;
+}
+.supplemental-page.is-page-dragging {transition:none!important}
+.supplemental-page.is-turning::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:10;
+  pointer-events:none;
+  background:linear-gradient(95deg,#fff2,transparent 27%,#0005 96%);
+  mix-blend-mode:soft-light;
+}
+.supplemental-page-stack {touch-action:pan-y}
+.supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="8"],
+.supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="9"] {
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-color:var(--theme-border-strong,#906ca0) var(--theme-bg,#1d1023);
+  scrollbar-width:thin;
+  padding:clamp(15px,2.1vw,27px);
+}
+.supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="8"] .supplemental-page-body,
+.supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="9"] .supplemental-page-body {
+  width:100%;
+  margin:8px 0 12px;
+}
+.supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="8"] h2,
+.supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="9"] h2 {
+  font-size:clamp(21px,2.6vw,32px);
+  line-height:1.08;
+  margin:8px 0;
+}
+.supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="8"] .supplemental-rule,
+.supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="9"] .supplemental-rule {margin:10px 0}
+.supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="8"] .supplemental-page-body > p:not(.supplemental-label),
+.supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="9"] .supplemental-page-body > p:not(.supplemental-label) {font-size:12px;line-height:1.4}
+main.resignation-open .supplemental-form-slot #resignation-notice {
+  display:block!important;
+  margin:8px 0 0!important;
+  max-width:100%;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.supplemental-form-slot .resignation-grid {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:9px;
+}
+.supplemental-form-slot .resignation-wide {grid-column:auto}
+.supplemental-form-slot .resignation-notice label {font-size:9px;letter-spacing:.04em}
+.supplemental-form-slot .resignation-notice :is(input:not([type="checkbox"]),select,textarea) {
+  width:100%;
+  margin-top:4px;
+  min-height:34px;
+  padding:7px 8px;
+  font-size:12px;
+}
+.supplemental-form-slot .resignation-notice textarea {min-height:58px}
+.supplemental-form-slot .resignation-confirm {margin:11px 0}
+.supplemental-form-slot .resignation-confirm span {font-size:11px}
+.supplemental-form-slot .resignation-actions button {min-height:36px;padding:7px 9px;font-size:9px}
+.supplemental-form-slot .resignation-summary {display:none!important}
+.supplemental-form-slot #resignation-status {overflow-wrap:anywhere;font-size:11px}
+.supplemental-reader--resignation .supplemental-reader-head {align-items:center;flex-wrap:wrap}
+.supplemental-open-form {white-space:nowrap}
+.resignation-live-sheet {
+  margin-top:12px;
+  padding:clamp(12px,2vw,20px);
+  border:1px double var(--theme-border-strong,#906ca0);
+  background:linear-gradient(145deg,#352040,#1d1023);
+  box-shadow:inset 0 0 0 3px #1d1023,inset 0 0 0 4px #906ca044;
+  color:#f1e8f4;
+  overflow-wrap:anywhere;
+}
+.resignation-live-sheet__top {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  gap:6px;
+  padding-bottom:9px;
+  border-bottom:1px solid #906ca066;
+  font:8px/1.4 var(--mono);
+  color:#d5b9e2;
+  letter-spacing:.08em;
+}
+.resignation-live-sheet h3 {
+  font:700 clamp(15px,2vw,23px)/1.07 var(--display);
+  letter-spacing:.06em;
+  margin:12px 0 7px;
+  color:#fff;
+}
+.resignation-live-sheet__subtitle {font:10px/1.4 var(--body);color:#c4abc9;margin:0 0 12px}
+.resignation-live-sheet dl {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 10px;margin:0}
+.resignation-live-sheet dl > div {min-width:0;border-top:1px solid #906ca04d;padding-top:8px}
+.resignation-live-sheet dl > .resignation-live-sheet__wide {grid-column:1/-1}
+.resignation-live-sheet dt {color:#c4abc9;font:8px/1.4 var(--mono);letter-spacing:.09em}
+.resignation-live-sheet dd {margin:5px 0 0;color:#fff;font:600 12px/1.45 var(--body);white-space:pre-wrap;overflow-wrap:anywhere}
+.resignation-live-sheet__foot {margin:16px 0 0;border-top:1px solid #906ca066;padding-top:10px;font:9px/1.5 var(--mono);letter-spacing:.05em;color:#d5b9e2}
+@media(max-width:700px) {
+  .supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="8"],
+  .supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="9"] {min-height:570px;max-height:none;padding:16px}
+  .supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="8"] h2,
+  .supplemental-reader--resignation .supplemental-page[data-supplemental-page-index="9"] h2 {font-size:clamp(23px,6vw,30px)}
+  .resignation-live-sheet h3 {font-size:20px}
+  .resignation-live-sheet dl {gap:10px}
+}
+@media(prefers-reduced-motion:reduce) {
+  .supplemental-page.is-turning {transition:none!important}
+}
