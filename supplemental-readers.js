@@ -1,7 +1,7 @@
 import {FlipEngine} from './flip-engine.js';
 import {createBulletinEditor} from './bulletin-editor.js';
 import {buildBulletinPages} from './bulletin-pages.js';
-import {fetchBulletins,currentBulletins,updateBulletins} from './bulletin-store.js';
+import {fetchBulletins,currentBulletins,updateBulletins,bulletinConfig} from './bulletin-store.js';
 const escape = value => String(value).replace(/[&<>'"]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[character]));
 
 const drafts = {
@@ -216,7 +216,13 @@ export function openSupplementalReader(kind) {
   show(kind,0);
   mountNotice(state);
   mountBulletinEditor(state);previewBulletin(state);
-  if(kind==='bulletins')fetchBulletins().then(()=>refreshBulletinBook(state)).catch(error=>{
+  if(kind==='bulletins')fetchBulletins().then(()=>{
+    refreshBulletinBook(state);
+    if(!bulletinConfig().publishingConfigured){
+      const status=state.editor?.element.querySelector('[data-bulletin-status]');
+      if(status)status.textContent='Server publishing is not configured yet. High Command must set its private access key and connect persistent storage in Vercel.';
+    }
+  }).catch(error=>{
     const target=state.root.querySelector('[data-bulletin-open-form]');
     if(target)target.title='Could not sync published bulletins: '+error.message;
   });
