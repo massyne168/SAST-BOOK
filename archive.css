@@ -68,3 +68,6 @@ main:not(.archive-closed) .archive-navigation,main:not(.archive-closed) .archive
   main.archive-closed .archive-navigation.archive-navigation-expanded{display:flex}.archive-nav-float{animation:none}.archive-navigation a{height:42px}
 }
 @media(prefers-reduced-motion:reduce){main.archive-closed .archive-navigation a,main.archive-closed .archive-navigation a::before,.archive-nav-float,.archive-navigation-toggle span:last-child{animation:none;transition:none}.archive-nav-float{will-change:auto}}
+
+/* Utility navigation is viewport anchored, never part of the carousel transform tree. */
+@media(min-width:1161px){main.archive-closed .archive-navigation{position:fixed;top:108px;right:clamp(18px,3vw,48px);transform:none;margin:0;z-index:40}main.archive-closed .book-pair{margin-right:max(0px,220px)}}

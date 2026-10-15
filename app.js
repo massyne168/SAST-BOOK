@@ -6,6 +6,7 @@ import {focusBook, isBookFocused, setBookFocused, setBookOpen, setBookOpening, r
 import {openClassifiedArchive, closeClassifiedArchive} from './classified-archive.js';
 import {openBulletins, closeBulletins} from './bulletins.js';
 import {initializeResignationForm} from './resignation-form.js';
+import {openSupplementalReader, closeSupplementalReader} from './supplemental-readers.js';
 import {bookConfig, getBook} from './book-config.js';
 const $ = selector => document.querySelector(selector);
 const spreadCount = pageCount / 2;
@@ -414,7 +415,7 @@ async function openClassified() {
     main.classList.remove('archive-closed');
     main.classList.add('classified-open');
     setBookTheme('classified');
-    openClassifiedArchive();
+    openSupplementalReader('classified');
     setBookOpen('classified');
   } catch {
     main.classList.remove('classified-open');
@@ -425,7 +426,7 @@ async function openClassified() {
   }
 }
 async function closeClassified() {
-  closeClassifiedArchive();
+  closeSupplementalReader('classified');
   main.classList.remove('classified-open');
   main.classList.add('archive-closed');
   setTheme('overview');
@@ -438,28 +439,32 @@ async function openResignationNotices() {
   if (!setBookOpening('resignation')) return;
   try {
     main.classList.remove('archive-closed'); main.classList.add('resignation-open'); setBookTheme('resignation');
-    main.append(document.querySelector('#resignation-notice'));
     initializeResignationForm();
-    document.querySelector('#resignation-notice').style.display = 'block';
+    openSupplementalReader('resignation');
     setBookOpen('resignation');
   } catch { setBookFocused('resignation'); status('Unable to open resignation notices. Please try again.'); }
 }
 async function closeResignationNotices() {
-  document.querySelector('#resignation-notice').style.display = '';
+  closeSupplementalReader('resignation');
   main.classList.remove('resignation-open'); main.classList.add('archive-closed'); setTheme('overview');
   await resetBookFocus('resignation'); scheduleOpeningReveal(() => resignationOpeningButton.focus({preventScroll:true}));
 }
 async function openBulletinArchive() {
   if (!isBookFocused('bulletins')) { await focusBook('bulletins'); return; }
   if (!setBookOpening('bulletins')) return;
-  try { main.classList.remove('archive-closed'); main.classList.add('bulletins-open'); setBookTheme('bulletins'); openBulletins(); setBookOpen('bulletins'); }
+  try { main.classList.remove('archive-closed'); main.classList.add('bulletins-open'); setBookTheme('bulletins'); openSupplementalReader('bulletins'); setBookOpen('bulletins'); }
   catch { setBookFocused('bulletins'); status('Unable to open command bulletins. Please try again.'); }
 }
 async function closeBulletinArchive() {
-  closeBulletins(); main.classList.remove('bulletins-open'); main.classList.add('archive-closed'); setTheme('overview');
+  closeSupplementalReader('bulletins'); main.classList.remove('bulletins-open'); main.classList.add('archive-closed'); setTheme('overview');
   await resetBookFocus('bulletins'); scheduleOpeningReveal(() => bulletinOpeningButton.focus({preventScroll:true}));
 }
 $('#bulletins-close').addEventListener('click', () => { void closeBulletinArchive(); });
+document.addEventListener('supplemental-reader-close', event => {
+  if (event.detail?.kind === 'classified') void closeClassified();
+  if (event.detail?.kind === 'resignation') void closeResignationNotices();
+  if (event.detail?.kind === 'bulletins') void closeBulletinArchive();
+});
 const bookOpenActions = {openArchive, openDirectory, openClassified, openResignationNotices, openBulletinArchive};
 bookConfig.forEach(book => {
   $(book.opener)?.addEventListener('click', () => { void bookOpenActions[book.action]?.(); });
