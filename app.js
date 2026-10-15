@@ -3,6 +3,7 @@ import {pages, pageFiles, pageCount, sourcePageCount, prepareSpread, prepareNear
 import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
 import {focusBook, isBookFocused, setBookFocused, setBookOpen, setBookOpening, resetBookFocus} from './book-focus.js';
+import {openClassifiedArchive, closeClassifiedArchive} from './classified-archive.js';
 const $ = selector => document.querySelector(selector);
 const spreadCount = pageCount / 2;
 const setTheme = theme => { document.documentElement.dataset.theme = theme; };
@@ -16,6 +17,7 @@ document.addEventListener('archive-overview-ready', () => {
 });
 document.addEventListener('archive-select-first', () => setCarouselBook(0));
 const directoryOpeningButton = $('#open-rank-directory');
+const classifiedOpeningButton = $('#open-classified-archive');
 const discord = $('.discord-link');
 const discordUrl = discord?.dataset.discordUrl || 'https://discord.gg/YOUR-SERVER';
 if (discord) discord.href = discordUrl;
@@ -43,10 +45,10 @@ carouselButtons.className = 'carousel-controls';
 carouselButtons.setAttribute('aria-label', 'Choose a book');
 carouselButtons.innerHTML = '<button type="button" data-carousel-direction="-1" aria-label="Show the previous book">PREVIOUS BOOK</button><span aria-live="polite"></span><button type="button" data-carousel-direction="1" aria-label="Show the next book">NEXT BOOK</button>';
 pair.insertAdjacentElement('afterend', carouselButtons);
-let carouselIndex = pair.dataset.activeBook === 'directory' ? 1 : 0;
+let carouselIndex = pair.dataset.activeBook === 'directory' ? 1 : pair.dataset.activeBook === 'classified' ? 2 : 0;
 let carouselTimer, carouselTransitioning = false, wheelTotal = 0, wheelIdleTimer, wheelGestureLocked = false;
-const carouselNames = ['ARMORY', 'RANK DIRECTORY'];
-const openingActions = [['archive', $('#open-archive')], ['directory', $('#open-rank-directory')]];
+const carouselNames = ['ARMORY', 'RANK DIRECTORY', 'CLASSIFIED ARCHIVE'];
+const openingActions = [['archive', $('#open-archive')], ['directory', $('#open-rank-directory')], ['classified', classifiedOpeningButton]];
 let openingRevealTimer, openingRevealGeneration = 0;
 function cancelOpeningReveal() {
   window.clearTimeout(openingRevealTimer);
@@ -98,16 +100,16 @@ reducedMotion.addEventListener?.('change', event => {
 document.addEventListener('site-ready', () => scheduleOpeningReveal());
 document.addEventListener('archive-panel-closed', () => scheduleOpeningReveal());
 function syncCarousel() {
-  pair.dataset.activeBook = carouselIndex === 0 ? 'archive' : 'directory';
-  carouselButtons.querySelector('span').textContent = `${carouselNames[carouselIndex]} / 02`;
+  pair.dataset.activeBook = ['archive', 'directory', 'classified'][carouselIndex];
+  carouselButtons.querySelector('span').textContent = `${carouselNames[carouselIndex]} / 03`;
   carouselButtons.querySelectorAll('button').forEach(button => {
     button.disabled = (Number(button.dataset.carouselDirection) < 0 && carouselIndex === 0) ||
-      (Number(button.dataset.carouselDirection) > 0 && carouselIndex === 1);
+      (Number(button.dataset.carouselDirection) > 0 && carouselIndex === 2);
   });
   openingActions.forEach(([bookName, button]) => setOpeningButtonHidden(button, bookName !== pair.dataset.activeBook));
 }
 function setCarouselBook(index) {
-  if (index < 0 || index > 1 || index === carouselIndex || carouselTransitioning) return false;
+  if (index < 0 || index > 2 || index === carouselIndex || carouselTransitioning) return false;
   cancelOpeningReveal();
   carouselIndex = index;
   syncCarousel();
@@ -132,15 +134,15 @@ carouselButtons.addEventListener('click', event => {
   if (button && !button.disabled) setCarouselBook(carouselIndex + Number(button.dataset.carouselDirection));
 });
 pair.addEventListener('click', event => {
-  const action = event.target.closest('#open-archive,#open-rank-directory');
-  if (action) setCarouselBook(action.id === 'open-archive' ? 0 : 1);
+  const action = event.target.closest('#open-archive,#open-rank-directory,#open-classified-archive');
+  if (action) setCarouselBook(action.id === 'open-archive' ? 0 : action.id === 'open-rank-directory' ? 1 : 2);
 }, true);
 pair.addEventListener('wheel', event => {
   if (!main.classList.contains('archive-closed') || document.querySelector('dialog[open]')) return;
   const direction = Math.sign(event.deltaY);
   if (!direction) return;
   const nextIndex = carouselIndex + direction;
-  if (nextIndex < 0 || nextIndex > 1) {
+  if (nextIndex < 0 || nextIndex > 2) {
     wheelTotal = 0;
     return;
   }
@@ -392,6 +394,33 @@ async function openDirectory() {
 
 
 $('#open-rank-directory').addEventListener('click', openDirectory);
+async function openClassified() {
+  if (!isBookFocused('classified')) { await focusBook('classified'); return; }
+  if (!setBookOpening('classified')) return;
+  try {
+    main.classList.remove('archive-closed');
+    main.classList.add('classified-open');
+    setTheme('classified');
+    openClassifiedArchive();
+    setBookOpen('classified');
+  } catch {
+    main.classList.remove('classified-open');
+    main.classList.add('archive-closed');
+    setTheme('overview');
+    setBookFocused('classified');
+    status('Unable to open the Classified Archive. Please try again.');
+  }
+}
+async function closeClassified() {
+  closeClassifiedArchive();
+  main.classList.remove('classified-open');
+  main.classList.add('archive-closed');
+  setTheme('overview');
+  await resetBookFocus('classified');
+  scheduleOpeningReveal(() => classifiedOpeningButton.focus({preventScroll:true}));
+}
+classifiedOpeningButton.addEventListener('click', () => { void openClassified(); });
+$('#classified-close').addEventListener('click', () => { void closeClassified(); });
 // Shared navigation adapter waits for existing animations before switching books.
 let archiveNavigation = Promise.resolve();
 export function navigateBook(kind, officerId) {
