@@ -6,7 +6,7 @@
     "start": "node server.js",
     "test": "node --test tests/*.test.js",
     "test:browser": "node tests/browser.mjs",
-    "check": "node --check app.js && node --check book-focus.js && node --check crosshair.js && node --check flip-engine.js && node --check loader.js && node --check page-content.js && node --check rank-directory.js && node --check rank-directory-data.js && node --check reader-state.js && node --check zoom.js && node --check server.js && node --check resignation-service.js && node --check resignation-form.js && node --check api/resignation.js && node --check archive-data.js && node --check armory-data.js && node --check archive-management.js && node --check archive-ui.js",
+    "check": "node --check app.js && node --check book-focus.js && node --check crosshair.js && node --check flip-engine.js && node --check loader.js && node --check page-content.js && node --check rank-directory.js && node --check rank-directory-data.js && node --check reader-state.js && node --check zoom.js && node --check server.js && node --check resignation-service.js && node --check resignation-form.js && node --check api/resignation.js && node --check api/bulletins.js && node --check bulletin-service.js && node --check bulletin-storage.js && node --check bulletin-store.js && node --check bulletin-pages.js && node --check bulletin-editor.js && node --check bulletins.js && node --check supplemental-readers.js && node --check archive-data.js && node --check armory-data.js && node --check archive-management.js && node --check archive-ui.js",
     "test:archive-browser": "node tests/archive-browser.mjs"
   }
 }
