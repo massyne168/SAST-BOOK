@@ -5,12 +5,12 @@ export function shouldComplete(progress) { return progress > 0.5; }
 
 /** Reusable page-turn mesh. Rendering stays injected and page agnostic. */
 export class FlipEngine {
-  constructor(book, {render, spreadCount, onChange, onBusyChange, onSelect, onPrepareTurn, blocked = () => false, initialSpread = 0}) {
+  constructor(book, {render, spreadCount, onChange, onBusyChange, onSelect, onPrepareTurn, blocked = () => false, initialSpread = 0, slots = {layer:'#turn-layer',left:'#left',right:'#right'}}) {
     Object.assign(this, {book, render, count: spreadCount, onChange, onBusyChange, onSelect, onPrepareTurn, blocked});
     this.spread = clamp(Number.isFinite(initialSpread) ? Math.trunc(initialSpread) : 0, 0, spreadCount - 1);
-    this.layer = book.querySelector('#turn-layer');
-    this.left = book.querySelector('#left');
-    this.right = book.querySelector('#right');
+    this.layer = book.querySelector(slots.layer);
+    this.left = book.querySelector(slots.left);
+    this.right = book.querySelector(slots.right);
     this.motion = matchMedia('(prefers-reduced-motion: reduce)');
     this.touchDevice = matchMedia('(pointer: coarse)');
     this.lowPower = this.touchDevice.matches || matchMedia('(max-width: 600px)').matches ||
@@ -33,6 +33,7 @@ export class FlipEngine {
     book.addEventListener('dragstart', e => e.preventDefault());
     book.addEventListener('contextmenu', e => { if (this.pending || this.drag) e.preventDefault(); });
     book.addEventListener('keydown', e => {
+      if (e.target.closest('input,textarea,select,button,[contenteditable]')) return;
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
         e.preventDefault(); this.turn(e.key === 'ArrowRight' ? 1 : -1);
       }
@@ -160,7 +161,7 @@ export class FlipEngine {
   }
 
   down(e) {
-    if (e.button !== 0 || e.isPrimary === false || this.blocked() || this.drag || this.animating || this.pending || e.target.closest('a,button,input')) return;
+    if (e.button !== 0 || e.isPrimary === false || this.blocked() || this.drag || this.animating || this.pending || e.target.closest('a,button,input,textarea,select,label,form,[contenteditable]')) return;
     const {left, centerX, width} = this.metrics;
     if (!width) return;
     const d = e.clientX >= centerX ? 1 : -1;
