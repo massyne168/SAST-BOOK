@@ -58,7 +58,11 @@ function create(kind) {
     if (event.target.closest('[data-open-form]')) { show(kind, 4); root.querySelector('#resignation-form [name=fullName]')?.focus({preventScroll:true}); }
     if (event.target.closest('[data-supplemental-close]')) document.dispatchEvent(new CustomEvent('supplemental-reader-close',{detail:{kind}}));
   });
-  root.querySelector('.supplemental-page-stack').addEventListener('pointerdown', event => startPageDrag(kind, event));
+  const pageStack = root.querySelector('.supplemental-page-stack');
+  pageStack.tabIndex = 0;
+  pageStack.setAttribute('role', 'group');
+  pageStack.setAttribute('aria-label', 'Interactive book: drag an outer page edge to turn, or use the arrow keys.');
+  pageStack.addEventListener('pointerdown', event => startPageDrag(kind, event));
   root.addEventListener('keydown', event => {
     if (event.target.closest('input,textarea,select,button,[contenteditable]')) return;
     if (event.key === 'ArrowRight') { event.preventDefault(); turn(kind, 1); }
