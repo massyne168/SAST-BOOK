@@ -135,7 +135,9 @@ function startPageDrag(kind, event) {
     const d = state.drag;
     const complete = !cancelled && d.progress > .5;
     state.drag = null; state.busy = true;
+    const duration = reducedMotion.matches ? 0 : Math.max(140, Math.round(turnDuration * (complete ? 1 - d.progress : d.progress)));
     d.page.classList.remove('is-page-dragging');
+    d.page.style.transitionDuration = duration + 'ms';
     d.page.style.setProperty('--page-turn-angle', (complete ? (d.direction === 1 ? -162 : 162) : 0) + 'deg');
     stack.removeEventListener('pointermove', move);
     stack.removeEventListener('pointerup', onUp);
@@ -144,9 +146,10 @@ function startPageDrag(kind, event) {
     window.setTimeout(() => {
       d.page.classList.remove('is-turning');
       d.page.style.removeProperty('--page-turn-angle');
+      d.page.style.removeProperty('transition-duration');
       state.busy = false;
       if (complete && !state.root.hidden) show(kind, state.index + d.direction);
-    }, reducedMotion.matches ? 0 : Math.max(180, 340 * (1 - Math.abs(d.progress - (complete ? 1 : 0)))));
+    }, duration);
   };
   const onUp = e => finish(e);
   const onCancel = e => finish(e, true);
