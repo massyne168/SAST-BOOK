@@ -37,7 +37,9 @@ test('slow silver edge light keeps existing opening animation and is reduced-mot
 });
 
 test('no layout, clickability, form, or hidden state changes are introduced',()=>{
-  assert.doesNotMatch(css,/\bpointer-events:\s*none\b(?![^{}]*::before)/); // no element-level pointer suppression
+  for(const [,selector,body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (/pointer-events:\s*none/.test(body)) assert.match(selector,/::before|::after/);
+  }
   assert.doesNotMatch(css,/\bdisplay:\s*(none|flex|grid|block)\b/);
   assert.doesNotMatch(css,/\bposition:\s*(absolute|fixed|sticky)\b/);
   assert.doesNotMatch(css,/\btransform:\s*translate/);
