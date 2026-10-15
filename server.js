@@ -4,11 +4,14 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {rankDirectoryData, directoryRanks} from './rank-directory-data.js';
 import {createResignationHandler} from './resignation-service.js';
+import {createBulletinHandler} from './bulletin-service.js';
+import {createLocalBulletinStore} from './bulletin-storage.js';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const personnelFile = path.join(root, 'data', 'personnel.json');
 const types = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.webp':'image/webp','.jpg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml','.json':'application/json'};
 const sendJson = (response, status, body) => response.writeHead(status, {'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify(body));
 const resignationHandler = createResignationHandler();
+const bulletinHandler = createBulletinHandler({store:createLocalBulletinStore()});
 const readJson = request => new Promise((resolve, reject) => {
   let data = '';
   request.on('data', chunk => { data += chunk; if (data.length > 1024 * 1024) request.destroy(); });
@@ -48,6 +51,13 @@ export const server = http.createServer(async (request, response) => {
       people[position] = {...people[position], rankId};
       await savePersonnel(people);
       return sendJson(response, 200, {person: people[position], people});
+    }
+    if (pathname === '/api/bulletins') {
+      const result=await bulletinHandler({
+        method:request.method,authorization:request.headers.authorization,
+        body:request.method==='POST'?await readJson(request):{}
+      });
+      return sendJson(response,result.status,result.body);
     }
     if (pathname === '/api/resignation') {
       if (request.method !== 'POST') return sendJson(response, 405, {error: 'Method not allowed.'});
