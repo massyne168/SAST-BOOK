@@ -6,9 +6,19 @@ import {focusBook, isBookFocused, setBookFocused, setBookOpen, setBookOpening, r
 import {openClassifiedArchive, closeClassifiedArchive} from './classified-archive.js';
 import {openBulletins, closeBulletins} from './bulletins.js';
 import {initializeResignationForm} from './resignation-form.js';
+import {bookConfig, getBook} from './book-config.js';
 const $ = selector => document.querySelector(selector);
 const spreadCount = pageCount / 2;
-const setTheme = theme => { document.documentElement.dataset.theme = theme; };
+const setTheme = theme => {
+  document.documentElement.dataset.theme = theme;
+  if (theme === 'overview') delete document.documentElement.dataset.activeBook;
+};
+const setBookTheme = id => {
+  const selectedBook = getBook(id);
+  if (!selectedBook) return;
+  document.documentElement.dataset.theme = selectedBook.theme;
+  document.documentElement.dataset.activeBook = selectedBook.id;
+};
 setTheme('overview');
 document.addEventListener('archive-overview-start', () => {
   setTheme('overview');
@@ -49,11 +59,9 @@ carouselButtons.className = 'carousel-controls';
 carouselButtons.setAttribute('aria-label', 'Choose a book');
 carouselButtons.innerHTML = '<button type="button" data-carousel-direction="-1" aria-label="Show the previous book">PREVIOUS BOOK</button><span aria-live="polite"></span><button type="button" data-carousel-direction="1" aria-label="Show the next book">NEXT BOOK</button>';
 pair.insertAdjacentElement('afterend', carouselButtons);
-const carouselBooks = ['archive', 'directory', 'classified', 'resignation', 'bulletins'];
-let carouselIndex = Math.max(0, carouselBooks.indexOf(pair.dataset.activeBook));
+let carouselIndex = Math.max(0, bookConfig.findIndex(book => book.id === pair.dataset.activeBook));
 let carouselTimer, carouselTransitioning = false, wheelTotal = 0, wheelIdleTimer, wheelGestureLocked = false;
-const carouselNames = ['ARMORY', 'RANK DIRECTORY', 'CLASSIFIED ARCHIVE', 'RESIGNATION NOTICES', 'ANNOUNCEMENTS & ORDERS'];
-const openingActions = [['archive', $('#open-archive')], ['directory', $('#open-rank-directory')], ['classified', classifiedOpeningButton], ['resignation', resignationOpeningButton], ['bulletins', bulletinOpeningButton]];
+const openingButtons = bookConfig.map(book => [book.id, $(book.opener)]);
 let openingRevealTimer, openingRevealGeneration = 0;
 function cancelOpeningReveal() {
   window.clearTimeout(openingRevealTimer);
@@ -70,7 +78,7 @@ function setOpeningButtonHidden(button, inactive = false) {
 }
 function hideOpeningButtons() {
   cancelOpeningReveal();
-  openingActions.forEach(([, button]) => setOpeningButtonHidden(button));
+  openingButtons.forEach(([, button]) => setOpeningButtonHidden(button));
 }
 function revealOpeningButton(button) {
   button.classList.remove('opening-button-pending', 'opening-button-inactive');
@@ -84,9 +92,9 @@ function scheduleOpeningReveal(onReveal) {
   cancelOpeningReveal();
   const generation = openingRevealGeneration;
   const selectedBook = pair.dataset.activeBook;
-  const button = openingActions.find(([kind]) => kind === selectedBook)?.[1];
+  const button = openingButtons.find(([kind]) => kind === selectedBook)?.[1];
   if (!button || !main.classList.contains('archive-closed')) return;
-  openingActions.forEach(([kind, action]) => setOpeningButtonHidden(action, kind !== selectedBook));
+  openingButtons.forEach(([kind, action]) => setOpeningButtonHidden(action, kind !== selectedBook));
   const reveal = () => {
     if (generation !== openingRevealGeneration || pair.dataset.activeBook !== selectedBook ||
         !main.classList.contains('archive-closed') || carouselTransitioning || document.querySelector('dialog[open]')) return;
@@ -105,16 +113,18 @@ reducedMotion.addEventListener?.('change', event => {
 document.addEventListener('site-ready', () => scheduleOpeningReveal());
 document.addEventListener('archive-panel-closed', () => scheduleOpeningReveal());
 function syncCarousel() {
-  pair.dataset.activeBook = carouselBooks[carouselIndex];
-  carouselButtons.querySelector('span').textContent = `${carouselNames[carouselIndex]} / ${carouselBooks.length.toString().padStart(2, '0')}`;
+  const selectedBook = bookConfig[carouselIndex];
+  pair.dataset.activeBook = selectedBook.id;
+  pair.dataset.activeTheme = selectedBook.theme;
+  carouselButtons.querySelector('span').textContent = `${selectedBook.title} · ${String(carouselIndex + 1).padStart(2, '0')} / ${String(bookConfig.length).padStart(2, '0')}`;
   carouselButtons.querySelectorAll('button').forEach(button => {
     button.disabled = (Number(button.dataset.carouselDirection) < 0 && carouselIndex === 0) ||
-      (Number(button.dataset.carouselDirection) > 0 && carouselIndex === carouselBooks.length - 1);
+      (Number(button.dataset.carouselDirection) > 0 && carouselIndex === bookConfig.length - 1);
   });
-  openingActions.forEach(([bookName, button]) => setOpeningButtonHidden(button, bookName !== pair.dataset.activeBook));
+  openingButtons.forEach(([bookName, button]) => setOpeningButtonHidden(button, bookName !== selectedBook.id));
 }
 function setCarouselBook(index) {
-  if (index < 0 || index >= carouselBooks.length || index === carouselIndex || carouselTransitioning) return false;
+  if (index < 0 || index >= bookConfig.length || index === carouselIndex || carouselTransitioning) return false;
   cancelOpeningReveal();
   carouselIndex = index;
   syncCarousel();
@@ -139,15 +149,15 @@ carouselButtons.addEventListener('click', event => {
   if (button && !button.disabled) setCarouselBook(carouselIndex + Number(button.dataset.carouselDirection));
 });
 pair.addEventListener('click', event => {
-  const action = event.target.closest('#open-archive,#open-rank-directory,#open-classified-archive,#open-resignation-notices,#open-command-bulletin');
-  if (action) setCarouselBook(carouselBooks.indexOf({ 'open-archive':'archive', 'open-rank-directory':'directory', 'open-classified-archive':'classified', 'open-resignation-notices':'resignation', 'open-command-bulletin':'bulletins' }[action.id]));
+  const selectedBook = bookConfig.find(book => event.target.closest(book.opener));
+  if (selectedBook) setCarouselBook(bookConfig.indexOf(selectedBook));
 }, true);
 pair.addEventListener('wheel', event => {
   if (!main.classList.contains('archive-closed') || document.querySelector('dialog[open]')) return;
   const direction = Math.sign(event.deltaY);
   if (!direction) return;
   const nextIndex = carouselIndex + direction;
-  if (nextIndex < 0 || nextIndex >= carouselBooks.length) {
+  if (nextIndex < 0 || nextIndex >= bookConfig.length) {
     wheelTotal = 0;
     return;
   }
@@ -316,7 +326,7 @@ async function openArchive() {
     cover.classList.add('opening');
     await new Promise(resolve => setTimeout(resolve, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650));
     main.classList.remove('archive-closed');
-    setTheme('armory');
+    setBookTheme('archive');
     document.dispatchEvent(new CustomEvent('archive-section-selected', {detail:{section:'armory'}}));
     status(pageDataUnavailable ? 'PAGE DATA UNAVAILABLE' : ''); book.focus({preventScroll:true});
     const stamp = $('#access-stamp'); stamp.hidden = false;
@@ -335,7 +345,6 @@ async function openArchive() {
     controls(engine.spread);
   }
 }
-$('#open-archive').addEventListener('click', openArchive);
 async function closeArchive() {
   if (busy() || engine.pending) return;
   clearTimeout(stampTimer); $('#access-stamp').hidden = true;
@@ -381,7 +390,7 @@ async function openDirectory() {
     rankDirectoryModule = await import('./rank-directory.js');
     main.classList.remove('archive-closed');
     main.classList.add('directory-open');
-    setTheme('directory');
+    setBookTheme('directory');
     document.dispatchEvent(new CustomEvent('archive-section-selected', {detail:{section:'directory'}}));
     rankDirectoryModule.openRankDirectory();
     setBookOpen('directory');
@@ -398,14 +407,13 @@ async function openDirectory() {
 }
 
 
-$('#open-rank-directory').addEventListener('click', openDirectory);
 async function openClassified() {
   if (!isBookFocused('classified')) { await focusBook('classified'); return; }
   if (!setBookOpening('classified')) return;
   try {
     main.classList.remove('archive-closed');
     main.classList.add('classified-open');
-    setTheme('classified');
+    setBookTheme('classified');
     openClassifiedArchive();
     setBookOpen('classified');
   } catch {
@@ -424,13 +432,12 @@ async function closeClassified() {
   await resetBookFocus('classified');
   scheduleOpeningReveal(() => classifiedOpeningButton.focus({preventScroll:true}));
 }
-classifiedOpeningButton.addEventListener('click', () => { void openClassified(); });
 $('#classified-close').addEventListener('click', () => { void closeClassified(); });
 async function openResignationNotices() {
   if (!isBookFocused('resignation')) { await focusBook('resignation'); return; }
   if (!setBookOpening('resignation')) return;
   try {
-    main.classList.remove('archive-closed'); main.classList.add('resignation-open'); setTheme('resignation');
+    main.classList.remove('archive-closed'); main.classList.add('resignation-open'); setBookTheme('resignation');
     main.append(document.querySelector('#resignation-notice'));
     initializeResignationForm();
     document.querySelector('#resignation-notice').style.display = 'block';
@@ -445,16 +452,18 @@ async function closeResignationNotices() {
 async function openBulletinArchive() {
   if (!isBookFocused('bulletins')) { await focusBook('bulletins'); return; }
   if (!setBookOpening('bulletins')) return;
-  try { main.classList.remove('archive-closed'); main.classList.add('bulletins-open'); setTheme('bulletins'); openBulletins(); setBookOpen('bulletins'); }
+  try { main.classList.remove('archive-closed'); main.classList.add('bulletins-open'); setBookTheme('bulletins'); openBulletins(); setBookOpen('bulletins'); }
   catch { setBookFocused('bulletins'); status('Unable to open command bulletins. Please try again.'); }
 }
 async function closeBulletinArchive() {
   closeBulletins(); main.classList.remove('bulletins-open'); main.classList.add('archive-closed'); setTheme('overview');
   await resetBookFocus('bulletins'); scheduleOpeningReveal(() => bulletinOpeningButton.focus({preventScroll:true}));
 }
-resignationOpeningButton.addEventListener('click', () => { void openResignationNotices(); });
-bulletinOpeningButton.addEventListener('click', () => { void openBulletinArchive(); });
 $('#bulletins-close').addEventListener('click', () => { void closeBulletinArchive(); });
+const bookOpenActions = {openArchive, openDirectory, openClassified, openResignationNotices, openBulletinArchive};
+bookConfig.forEach(book => {
+  $(book.opener)?.addEventListener('click', () => { void bookOpenActions[book.action]?.(); });
+});
 // Shared navigation adapter waits for existing animations before switching books.
 let archiveNavigation = Promise.resolve();
 export function navigateBook(kind, officerId) {
