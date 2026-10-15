@@ -1600,3 +1600,94 @@ main.archive-closed .book-pair:not([data-carousel-ready="true"])>[data-carousel-
 #open-classified-archive.book-opening-tab.opening-button-revealed,#open-resignation-notices.book-opening-tab.opening-button-revealed,#open-command-bulletin.book-opening-tab.opening-button-revealed{opacity:1;visibility:visible;pointer-events:auto}
 @media(max-width:700px){main.archive-closed .book-pair{width:100%!important;min-height:510px;overflow:hidden}main.archive-closed .book-pair>[data-carousel-position="previous"],main.archive-closed .book-pair>[data-carousel-position="next"]{display:none!important}}
 @media(prefers-reduced-motion:reduce){main.archive-closed .book-pair>[data-carousel-position],#open-classified-archive.book-opening-tab::before,#open-resignation-notices.book-opening-tab::before,#open-command-bulletin.book-opening-tab::before{transition:none!important;animation:none!important}}.supplemental-page-stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.supplemental-page{min-width:0;border-right:1px solid color-mix(in srgb,var(--active-frame,#917b4a) 55%,transparent)}.supplemental-page:nth-child(even){border-right:0}.supplemental-page[hidden]{display:none}@media(max-width:700px){.supplemental-page-stack{grid-template-columns:1fr;aspect-ratio:auto}.supplemental-page{min-height:520px;border-right:0;border-bottom:1px solid color-mix(in srgb,var(--active-frame,#917b4a) 55%,transparent)}}
+
+
+/* Five-book reader isolation and responsive supplemental-page fixes (2026-10-15). */
+/* The chooser is only an overview control. The archive and directory retain their own readers. */
+main:not(.archive-closed) > .carousel-controls {
+  display: none !important;
+}
+main:not(.archive-closed):not(.directory-open) .book-pair > .rank-cover-stage-teaser,
+main:not(.archive-closed) .book-pair > .shared-cover-stage {
+  display: none !important;
+}
+main.directory-open .book-pair > .shared-cover-stage {
+  display: none !important;
+}
+/* Supplemental readers live after the cover carousel in the main document. */
+main:is(.classified-open,.resignation-open,.bulletins-open) > .book-pair {
+  display: none !important;
+}
+main:is(.classified-open,.resignation-open,.bulletins-open) > .record-heading {
+  display: none;
+}
+main:is(.classified-open,.resignation-open,.bulletins-open) > :is(.reader-progress,.reader-controls,.gesture-hint,.reading-access,#reader-status) {
+  display: none !important;
+}
+/* Keep the new cover artwork sized by the physical cover, not by its intrinsic pixel size. */
+main.archive-closed .shared-cover-stage,
+main.archive-closed .shared-cover-unit,
+main.archive-closed .shared-cover-shell {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+main.archive-closed .shared-cover-art {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+/* Reuse the registered book palette; prevent fallback to Classified gold on the other volumes. */
+.supplemental-reader {
+  --active-bg: var(--theme-bg);
+  --active-surface: var(--theme-panel);
+  --active-frame: var(--theme-border-strong);
+  --active-accent: var(--theme-highlight);
+  --active-text: var(--theme-text);
+  --active-muted: var(--theme-muted);
+  min-width: 0;
+}
+.supplemental-page,
+.supplemental-page-body,
+.supplemental-reader-head,
+.supplemental-reader-head > div {
+  min-width: 0;
+}
+.supplemental-reader-head h2,
+.supplemental-page h2 {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
+}
+.supplemental-page h2 {
+  font-size: clamp(21px, 2.8vw, 38px);
+  line-height: 1.08;
+  letter-spacing: .025em;
+}
+.supplemental-reader-head,
+.supplemental-reader-controls {
+  position: relative;
+  z-index: 3;
+}
+.supplemental-reader-controls {
+  flex-wrap: wrap;
+  min-height: 46px;
+  padding-bottom: 8px;
+  pointer-events: auto;
+}
+.supplemental-page:has(.supplemental-form-slot) {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 700px) {
+  .supplemental-page h2 { font-size: clamp(23px, 6vw, 34px); }
+  .supplemental-reader-head h2 { font-size: clamp(24px, 6.2vw, 34px); }
+}
