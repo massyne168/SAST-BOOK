@@ -22,7 +22,8 @@ test('page content stays above noninteractive corner decorations', () => {
 
 test('form spread and live resignation sheet remain accessible', () => {
   assert.match(section,/\.supplemental-page:has\(\.supplemental-form-slot\)::before/);
-  assert.doesNotMatch(section,/\.supplemental-page\s*\{[^}]*overflow:hidden/);
+  assert.match(section,/\.supplemental-flip-book \.supplemental-slot>\.supplemental-page\s*\{[^}]*overflow-y:auto/);
+  assert.match(section,/\.supplemental-flip-book>\.supplemental-turn-layer \.leaf-content>\.supplemental-page\s*\{[^}]*overflow:hidden/);
   assert.match(original,/data-form-slot/);
   assert.match(original,/data-resignation-preview/);
 });
