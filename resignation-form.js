@@ -17,6 +17,8 @@ export function validateNotice(values) {
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 export function initializeResignationForm() {
   const form = document.querySelector('#resignation-form'); if (!form) return;
+  if (form.dataset.initialized === 'true') return;
+  form.dataset.initialized = 'true';
   const rank = form.elements.currentRank;
   rank.innerHTML = '<option value="">SELECT RANK</option>' + directoryRanks.map(item => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');
   const review = document.querySelector('#review-resignation'), submit = document.querySelector('#submit-resignation'), summary = document.querySelector('#resignation-summary'), status = document.querySelector('#resignation-status');

@@ -29,6 +29,6 @@ dialog.addEventListener('click', event => {
   const officer = event.target.closest('[data-officer]');
   if (officer) { dialog.close(); void navigateBook('directory', officer.dataset.officer); }
   if (event.target.closest('[data-open-directory]')) { dialog.close(); void navigateBook('directory'); }
-  if (event.target.closest('[data-open-resignation]')) { dialog.close(); void navigateBook('directory').then(() => document.querySelector('#resignation-notice')?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'})); }
+  if (event.target.closest('[data-open-resignation]')) { dialog.close(); void navigateBook('resignation'); }
 });
 input.addEventListener('input', search);

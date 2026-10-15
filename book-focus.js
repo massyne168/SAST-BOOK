@@ -2,25 +2,31 @@
 const primary = document.querySelector('.primary-book');
 const directoryTeaser = document.querySelector('.rank-cover-stage-teaser');
 const classifiedTeaser = document.querySelector('.classified-cover-stage-teaser');
+const resignationTeaser = document.querySelector('.resignation-cover-stage-teaser');
+const bulletinsTeaser = document.querySelector('.bulletins-cover-stage-teaser');
 const archiveCover = document.querySelector('#archive-cover');
 const rankCover = document.querySelector('#rank-cover');
 const classifiedCover = document.querySelector('#classified-cover');
+const resignationCover = document.querySelector('#resignation-cover');
+const bulletinsCover = document.querySelector('#bulletins-cover');
 const archiveBook = document.querySelector('#book');
 const rankBook = document.querySelector('#rank-book');
 const archiveAction = document.querySelector('#open-archive');
 const rankAction = document.querySelector('#open-rank-directory');
 const classifiedAction = document.querySelector('#open-classified-archive');
+const resignationAction = document.querySelector('#open-resignation-notices');
+const bulletinsAction = document.querySelector('#open-command-bulletin');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let transitionPending = false;
 let nearestBook = null;
 let observerFrame = 0;
 let scrollDebounce = 0;
-const nodes = {archive: archiveCover, directory: rankCover, classified: classifiedCover};
-const wrappers = {archive: primary, directory: directoryTeaser, classified: classifiedTeaser};
-const labels = {archive: 'OPEN ARCHIVE', directory: 'ENTER DIRECTORY', classified: 'OPEN CLASSIFIED ARCHIVE'};
-const idleLabels = {archive: 'OPEN ARCHIVE', directory: 'ENTER DIRECTORY', classified: 'OPEN CLASSIFIED ARCHIVE'};
-const actions = {archive: archiveAction, directory: rankAction, classified: classifiedAction};
-const buttonText = {archive: archiveAction?.querySelector('.opening-tab-label'), directory: rankAction?.querySelector('.opening-tab-label'), classified: classifiedAction?.querySelector('.opening-tab-label')};
+const nodes = {archive: archiveCover, directory: rankCover, classified: classifiedCover, resignation: resignationCover, bulletins: bulletinsCover};
+const wrappers = {archive: primary, directory: directoryTeaser, classified: classifiedTeaser, resignation: resignationTeaser, bulletins: bulletinsTeaser};
+const labels = {archive: 'OPEN ARCHIVE', directory: 'ENTER DIRECTORY', classified: 'OPEN CLASSIFIED ARCHIVE', resignation: 'OPEN RESIGNATION NOTICES', bulletins: 'OPEN COMMAND BULLETIN'};
+const idleLabels = labels;
+const actions = {archive: archiveAction, directory: rankAction, classified: classifiedAction, resignation: resignationAction, bulletins: bulletinsAction};
+const buttonText = Object.fromEntries(Object.entries(actions).map(([key, action]) => [key, action?.querySelector('.opening-tab-label')]));
 
 function setState(kind, state) {
   const node = nodes[kind];
@@ -29,9 +35,9 @@ function setState(kind, state) {
   const action = actions[kind];
   const actionLabel = {
     'book-focused': `${labels[kind]} — selected book, activate again to open`,
-    'book-opening': `Opening ${kind === 'classified' ? 'Classified Archive' : kind === 'archive' ? 'archive' : 'directory'}`,
-    'book-open': `${kind === 'classified' ? 'Classified Archive' : kind === 'archive' ? 'Archive' : 'Directory'} open`,
-    'book-closing': `Closing ${kind === 'classified' ? 'Classified Archive' : kind === 'archive' ? 'archive' : 'directory'}`,
+    'book-opening': `Opening ${labels[kind].toLowerCase()}`,
+    'book-open': `${labels[kind]} open`,
+    'book-closing': `Closing ${labels[kind].toLowerCase()}`,
     'book-hover': `${idleLabels[kind]}; activate to focus`,
     'book-idle': `${idleLabels[kind]}; focus the book first`
   }[state] || idleLabels[kind];
@@ -88,7 +94,7 @@ function updateNearestBook() {
   const centerX = innerWidth / 2, centerY = innerHeight / 2;
   const candidates = [
     ['archive', archiveCover], ['archive', archiveBook],
-    ['directory', rankCover], ['directory', rankBook], ['classified', classifiedCover]
+    ['directory', rankCover], ['directory', rankBook], ['classified', classifiedCover], ['resignation', resignationCover], ['bulletins', bulletinsCover]
   ];
   let best = null;
   for (const [kind, element] of candidates) {
@@ -120,7 +126,7 @@ const visibilityObserver = 'IntersectionObserver' in window ? new IntersectionOb
   rootMargin: '0px',
   threshold: [0, .2, .45, .7, 1]
 }) : null;
-for (const element of [archiveCover, archiveBook, rankCover, rankBook, classifiedCover]) visibilityObserver?.observe(element);
+for (const element of [archiveCover, archiveBook, rankCover, rankBook, classifiedCover, resignationCover, bulletinsCover]) visibilityObserver?.observe(element);
 window.addEventListener('resize', scheduleNearestUpdate, {passive: true});
 window.addEventListener('scroll', () => {
   clearTimeout(scrollDebounce);
@@ -205,3 +211,5 @@ function observeHover(kind) {
 observeHover('archive');
 observeHover('directory');
 observeHover('classified');
+observeHover('resignation');
+observeHover('bulletins');

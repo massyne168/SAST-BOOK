@@ -4,6 +4,8 @@ import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
 import {focusBook, isBookFocused, setBookFocused, setBookOpen, setBookOpening, resetBookFocus} from './book-focus.js';
 import {openClassifiedArchive, closeClassifiedArchive} from './classified-archive.js';
+import {openBulletins, closeBulletins} from './bulletins.js';
+import {initializeResignationForm} from './resignation-form.js';
 const $ = selector => document.querySelector(selector);
 const spreadCount = pageCount / 2;
 const setTheme = theme => { document.documentElement.dataset.theme = theme; };
@@ -18,6 +20,8 @@ document.addEventListener('archive-overview-ready', () => {
 document.addEventListener('archive-select-first', () => setCarouselBook(0));
 const directoryOpeningButton = $('#open-rank-directory');
 const classifiedOpeningButton = $('#open-classified-archive');
+const resignationOpeningButton = $('#open-resignation-notices');
+const bulletinOpeningButton = $('#open-command-bulletin');
 const discord = $('.discord-link');
 const discordUrl = discord?.dataset.discordUrl || 'https://discord.gg/YOUR-SERVER';
 if (discord) discord.href = discordUrl;
@@ -45,10 +49,11 @@ carouselButtons.className = 'carousel-controls';
 carouselButtons.setAttribute('aria-label', 'Choose a book');
 carouselButtons.innerHTML = '<button type="button" data-carousel-direction="-1" aria-label="Show the previous book">PREVIOUS BOOK</button><span aria-live="polite"></span><button type="button" data-carousel-direction="1" aria-label="Show the next book">NEXT BOOK</button>';
 pair.insertAdjacentElement('afterend', carouselButtons);
-let carouselIndex = pair.dataset.activeBook === 'directory' ? 1 : pair.dataset.activeBook === 'classified' ? 2 : 0;
+const carouselBooks = ['archive', 'directory', 'classified', 'resignation', 'bulletins'];
+let carouselIndex = Math.max(0, carouselBooks.indexOf(pair.dataset.activeBook));
 let carouselTimer, carouselTransitioning = false, wheelTotal = 0, wheelIdleTimer, wheelGestureLocked = false;
-const carouselNames = ['ARMORY', 'RANK DIRECTORY', 'CLASSIFIED ARCHIVE'];
-const openingActions = [['archive', $('#open-archive')], ['directory', $('#open-rank-directory')], ['classified', classifiedOpeningButton]];
+const carouselNames = ['ARMORY', 'RANK DIRECTORY', 'CLASSIFIED ARCHIVE', 'RESIGNATION NOTICES', 'ANNOUNCEMENTS & ORDERS'];
+const openingActions = [['archive', $('#open-archive')], ['directory', $('#open-rank-directory')], ['classified', classifiedOpeningButton], ['resignation', resignationOpeningButton], ['bulletins', bulletinOpeningButton]];
 let openingRevealTimer, openingRevealGeneration = 0;
 function cancelOpeningReveal() {
   window.clearTimeout(openingRevealTimer);
@@ -100,16 +105,16 @@ reducedMotion.addEventListener?.('change', event => {
 document.addEventListener('site-ready', () => scheduleOpeningReveal());
 document.addEventListener('archive-panel-closed', () => scheduleOpeningReveal());
 function syncCarousel() {
-  pair.dataset.activeBook = ['archive', 'directory', 'classified'][carouselIndex];
-  carouselButtons.querySelector('span').textContent = `${carouselNames[carouselIndex]} / 03`;
+  pair.dataset.activeBook = carouselBooks[carouselIndex];
+  carouselButtons.querySelector('span').textContent = `${carouselNames[carouselIndex]} / ${carouselBooks.length.toString().padStart(2, '0')}`;
   carouselButtons.querySelectorAll('button').forEach(button => {
     button.disabled = (Number(button.dataset.carouselDirection) < 0 && carouselIndex === 0) ||
-      (Number(button.dataset.carouselDirection) > 0 && carouselIndex === 2);
+      (Number(button.dataset.carouselDirection) > 0 && carouselIndex === carouselBooks.length - 1);
   });
   openingActions.forEach(([bookName, button]) => setOpeningButtonHidden(button, bookName !== pair.dataset.activeBook));
 }
 function setCarouselBook(index) {
-  if (index < 0 || index > 2 || index === carouselIndex || carouselTransitioning) return false;
+  if (index < 0 || index >= carouselBooks.length || index === carouselIndex || carouselTransitioning) return false;
   cancelOpeningReveal();
   carouselIndex = index;
   syncCarousel();
@@ -134,15 +139,15 @@ carouselButtons.addEventListener('click', event => {
   if (button && !button.disabled) setCarouselBook(carouselIndex + Number(button.dataset.carouselDirection));
 });
 pair.addEventListener('click', event => {
-  const action = event.target.closest('#open-archive,#open-rank-directory,#open-classified-archive');
-  if (action) setCarouselBook(action.id === 'open-archive' ? 0 : action.id === 'open-rank-directory' ? 1 : 2);
+  const action = event.target.closest('#open-archive,#open-rank-directory,#open-classified-archive,#open-resignation-notices,#open-command-bulletin');
+  if (action) setCarouselBook(carouselBooks.indexOf({ 'open-archive':'archive', 'open-rank-directory':'directory', 'open-classified-archive':'classified', 'open-resignation-notices':'resignation', 'open-command-bulletin':'bulletins' }[action.id]));
 }, true);
 pair.addEventListener('wheel', event => {
   if (!main.classList.contains('archive-closed') || document.querySelector('dialog[open]')) return;
   const direction = Math.sign(event.deltaY);
   if (!direction) return;
   const nextIndex = carouselIndex + direction;
-  if (nextIndex < 0 || nextIndex > 2) {
+  if (nextIndex < 0 || nextIndex >= carouselBooks.length) {
     wheelTotal = 0;
     return;
   }
@@ -421,6 +426,35 @@ async function closeClassified() {
 }
 classifiedOpeningButton.addEventListener('click', () => { void openClassified(); });
 $('#classified-close').addEventListener('click', () => { void closeClassified(); });
+async function openResignationNotices() {
+  if (!isBookFocused('resignation')) { await focusBook('resignation'); return; }
+  if (!setBookOpening('resignation')) return;
+  try {
+    main.classList.remove('archive-closed'); main.classList.add('resignation-open'); setTheme('resignation');
+    main.append(document.querySelector('#resignation-notice'));
+    initializeResignationForm();
+    document.querySelector('#resignation-notice').style.display = 'block';
+    setBookOpen('resignation');
+  } catch { setBookFocused('resignation'); status('Unable to open resignation notices. Please try again.'); }
+}
+async function closeResignationNotices() {
+  document.querySelector('#resignation-notice').style.display = '';
+  main.classList.remove('resignation-open'); main.classList.add('archive-closed'); setTheme('overview');
+  await resetBookFocus('resignation'); scheduleOpeningReveal(() => resignationOpeningButton.focus({preventScroll:true}));
+}
+async function openBulletinArchive() {
+  if (!isBookFocused('bulletins')) { await focusBook('bulletins'); return; }
+  if (!setBookOpening('bulletins')) return;
+  try { main.classList.remove('archive-closed'); main.classList.add('bulletins-open'); setTheme('bulletins'); openBulletins(); setBookOpen('bulletins'); }
+  catch { setBookFocused('bulletins'); status('Unable to open command bulletins. Please try again.'); }
+}
+async function closeBulletinArchive() {
+  closeBulletins(); main.classList.remove('bulletins-open'); main.classList.add('archive-closed'); setTheme('overview');
+  await resetBookFocus('bulletins'); scheduleOpeningReveal(() => bulletinOpeningButton.focus({preventScroll:true}));
+}
+resignationOpeningButton.addEventListener('click', () => { void openResignationNotices(); });
+bulletinOpeningButton.addEventListener('click', () => { void openBulletinArchive(); });
+$('#bulletins-close').addEventListener('click', () => { void closeBulletinArchive(); });
 // Shared navigation adapter waits for existing animations before switching books.
 let archiveNavigation = Promise.resolve();
 export function navigateBook(kind, officerId) {
@@ -437,6 +471,13 @@ export function navigateBook(kind, officerId) {
         await openDirectory();
       }
       if (officerId && !await rankDirectoryModule.revealOfficer(officerId)) throw new Error('Unable to locate the officer. Please try again.');
+    } else if (kind === 'resignation') {
+      if (!main.classList.contains('archive-closed')) {
+        if (main.classList.contains('directory-open')) await rankDirectoryModule.closeDirectory();
+        else if (main.classList.contains('classified-open')) await closeClassified();
+      }
+      setCarouselBook(3);
+      if (main.classList.contains('archive-closed')) await openResignationNotices();
     } else {
       if (main.classList.contains('directory-open')) await rankDirectoryModule.closeDirectory();
       setCarouselBook(0);
