@@ -1,0 +1,372 @@
+/*
+  SAST / Unified Tactical Blue + Silver
+  2026-10-15 — presentation layer only.
+  Overview: matte black and paper white.
+  Five covers and rendered interiors: navy, tactical blue, matte black, silver.
+  Existing records, image files, page content, and page-turn behavior are untouched.
+*/
+:root {
+  --sast-black: #080b0e;
+  --sast-matte: #101820;
+  --sast-navy: #07131f;
+  --sast-deep-navy: #0b2030;
+  --sast-blue: #0e87c0;
+  --sast-bright-blue: #57c9f1;
+  --sast-white: #f2f3ef;
+  --sast-silver: #c5cdd2;
+  --sast-steel: #8fa3af;
+  --sast-edge: #577386;
+}
+
+/* 01 / The first screen is restrained black + paper white. */
+html[data-theme="overview"] {
+  --theme-bg: var(--sast-black);
+  --theme-panel: #11171c;
+  --theme-panel-raised: #1a2229;
+  --theme-border: #343f48;
+  --theme-border-strong: #81929d;
+  --theme-accent: var(--sast-silver);
+  --theme-highlight: var(--sast-white);
+  --theme-text: var(--sast-white);
+  --theme-muted: var(--sast-silver);
+  --theme-glow: #a7b7c00d;
+  --theme-glow-border: #c5cdd277;
+  --theme-depth: #303943;
+}
+html[data-theme="overview"] body:not(.is-loading) {
+  background-color: var(--sast-black);
+  background-image: radial-gradient(ellipse at 50% 35%,#c5cdd20a 0%,transparent 60%),
+    linear-gradient(180deg,#080b0e,#0c1015 58%,#080b0e);
+  color: var(--sast-white);
+}
+html[data-theme="overview"] .record-heading h1,
+html[data-theme="overview"] .record-heading .collection-intro,
+html[data-theme="overview"] .masthead .brand-name {
+  color: var(--sast-white);
+}
+html[data-theme="overview"] .record-heading .eyebrow,
+html[data-theme="overview"] .archive-label,
+html[data-theme="overview"] .masthead .edition {
+  color: var(--sast-silver);
+}
+html[data-theme="overview"] main.archive-closed .archive-navigation a,
+html[data-theme="overview"] main.archive-closed .archive-navigation-toggle {
+  border-color: #a5b1bc88;
+  background: linear-gradient(110deg,#11161a,#263038 55%,#11161a);
+  color: var(--sast-white);
+}
+
+/* 02 / All five open books share one UI color system. */
+html:is([data-theme="armory"],[data-theme="directory"],[data-theme="classified"],[data-theme="resignation"],[data-theme="bulletins"]) {
+  --theme-bg: var(--sast-navy);
+  --theme-panel: var(--sast-matte);
+  --theme-panel-raised: var(--sast-deep-navy);
+  --theme-border: #2b4657;
+  --theme-border-strong: var(--sast-edge);
+  --theme-accent: var(--sast-blue);
+  --theme-highlight: var(--sast-bright-blue);
+  --theme-text: var(--sast-white);
+  --theme-muted: var(--sast-silver);
+  --theme-glow: #0e87c02c;
+  --theme-glow-border: #57c9f177;
+  --theme-depth: #18384d;
+}
+html:is([data-theme="armory"],[data-theme="directory"],[data-theme="classified"],[data-theme="resignation"],[data-theme="bulletins"]) body:not(.is-loading) {
+  background-image: radial-gradient(ellipse at 50% 24%,#0e87c023,transparent 65%),
+    linear-gradient(145deg,#07131f,#0b1620 62%,#080b0e);
+}
+
+/* 03 / Consistent hardcover edges; preserve the original cover artwork and labels. */
+main.archive-closed .archive-cover.webp-cover {
+  border-color: var(--sast-silver);
+  box-shadow:3px 4px 0 #788c9a,7px 9px 0 #263c4a,10px 13px 0 #0b1319,
+    20px 32px 68px #000c,inset 5px 0 12px #0009;
+}
+main.archive-closed .archive-cover.webp-cover::after {
+  background: linear-gradient(155deg,#0e87c02a 0%,#07131f19 46%,#10182055 100%),
+    url("assets/cover.webp") center center/100% 100% no-repeat;
+  background-blend-mode: color,normal;
+}
+main.archive-closed .rank-cover-stage-teaser .rank-cover {
+  border-color: var(--sast-silver);
+  background-color: var(--sast-navy);
+  background-image:linear-gradient(140deg,#0e87c0e6 0%,#07131ff0 55%,#101820e6),
+    url("assets/rank-directory-cover.webp");
+  background-size: cover,100% 100%;
+  background-position: center;
+  background-blend-mode:color,normal;
+  box-shadow:3px 4px 0 #788c9a,7px 9px 0 #263c4a,10px 13px 0 #0b1319,20px 32px 62px #000b;
+}
+main.archive-closed .rank-cover-stage-teaser .rank-cover::before {border-color:#a9c3d67a}
+main.archive-closed .rank-cover-stage-teaser .rank-cover::after {
+  background:linear-gradient(180deg,#07131f1c,transparent 36%,#07131f55);
+}
+main.archive-closed .rank-cover-stage-teaser .rank-cover-binding {
+  background:linear-gradient(90deg,#050b11,#15354b);
+  border-color:var(--sast-matte);
+  color:var(--sast-silver);
+}
+main.archive-closed :is(.classified-cover-stage-teaser,.resignation-cover-stage-teaser,.bulletins-cover-stage-teaser) {
+  --cover-edge:var(--sast-silver);
+  --cover-depth:#31495b;
+}
+main.archive-closed .shared-cover-shell::after {
+  content:"";
+  position:absolute;
+  z-index:3;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(145deg,#0e87c0 5%,#10283b 65%,#101820);
+  mix-blend-mode:color;
+  opacity:.76;
+}
+main.archive-closed .shared-cover-art {
+  border-color:var(--sast-silver);
+  background:var(--sast-navy);
+  filter:grayscale(1) contrast(1.12) brightness(.96);
+  box-shadow:3px 4px 0 #8295a0,7px 9px 0 #1e3545,18px 30px 54px #000a;
+}
+main.archive-closed .shared-cover-spine {
+  background:linear-gradient(90deg,#05090e,#14435c 50%,#07131f);
+  border-color:#304b5e;
+  color:var(--sast-silver);
+}
+main.archive-closed .shared-cover-pages {
+  border-color:var(--sast-steel);
+  background:repeating-linear-gradient(0deg,#8699a5 0 1px,var(--sast-white) 1px 2px,#aeb9c2 2px 3px);
+}
+:is(.classified-latch,.resignation-latch,.bulletin-latch) {
+  --opening-glow:#0e87c033;
+  --opening-border:var(--sast-steel);
+  --opening-text:var(--sast-white);
+  --opening-hover:#173d54;
+  color:var(--sast-white);
+  border-color:var(--opening-border);
+  background:linear-gradient(115deg,var(--sast-matte),var(--sast-deep-navy));
+}
+:is(#open-classified-archive,#open-resignation-notices,#open-command-bulletin).book-opening-tab:is(:hover,:focus-visible) {
+  border-color:var(--sast-bright-blue);
+  background:#173d54;
+}
+
+/* 04 / Rank Directory now belongs to the same navy/silver system. */
+#rank-directory,.rank-cover-stage-teaser {
+  --rd-bg:var(--sast-navy);
+  --rd-panel:var(--sast-matte);
+  --rd-crimson:var(--sast-blue);
+  --rd-highlight:var(--sast-bright-blue);
+  --rd-text:var(--sast-white);
+  --rd-secondary:var(--sast-silver);
+}
+#rank-directory {
+  background:radial-gradient(ellipse at 50% 0%,#124367 0%,#07131f 56%,#080b0e 100%);
+  color:var(--rd-text);
+  scrollbar-color:var(--sast-blue) var(--sast-navy);
+}
+#rank-directory .rank-directory-heading {border-color:#66849a66}
+#rank-directory .rank-close,
+#rank-directory .rank-controls button,
+#rank-directory .rank-person-pagination button {
+  border-color:var(--sast-edge);
+  color:var(--sast-white);
+  background:linear-gradient(130deg,var(--sast-matte),var(--sast-deep-navy));
+}
+#rank-directory .rank-book .board {
+  border-color:var(--sast-silver);
+  background:linear-gradient(90deg,#080b0e,#113b53 50%,#080b0e);
+  box-shadow:inset 0 0 0 5px #0b1420,0 4px 0 #080b0e,0 9px 0 #526f81,0 13px 0 #080b0e,0 28px 44px #0009;
+}
+#rank-directory .rank-book .paper-stack {
+  background:repeating-linear-gradient(0deg,#547187 0,#e2e8e9 1px,#a5b7c2 2px);
+}
+#rank-directory .rank-book :is(.page-slot,.leaf-face) {
+  background:var(--sast-navy);
+  color:var(--sast-white);
+  border-color:#3d6379;
+}
+#rank-directory .rank-book .page-slot.right {
+  background:linear-gradient(115deg,var(--sast-matte),var(--sast-deep-navy));
+}
+#rank-directory .rank-book .spine {
+  background:linear-gradient(90deg,#080b0e,#164967,#aabcc7,#183d51,#080b0e);
+}
+#rank-directory .rank-book .ribbon {background:var(--sast-blue)}
+#rank-directory .rank-page,
+#rank-directory .rank-blank,
+#rank-directory .rank-selection-back {
+  background:linear-gradient(140deg,var(--sast-deep-navy),var(--sast-matte) 74%);
+  color:var(--sast-white);
+}
+#rank-directory .rank-page:before,
+#rank-directory .rank-blank:before {border-color:#8da3b266}
+#rank-directory :is(.rank-list-heading,.rank-page-head,.rank-page-foot,.rank-record-name,.rank-signature,.rank-person-pagination) {
+  border-color:#50738c;
+}
+#rank-directory .rank-list-heading::after {
+  background:linear-gradient(90deg,var(--sast-blue),var(--sast-silver) 74%,#1a435d);
+}
+#rank-directory .rank-personnel-table,
+#rank-directory .rank-record,
+#rank-directory .rank-portrait,
+#rank-directory .rank-empty {
+  border-color:#52778e;
+  background:linear-gradient(140deg,#102535,var(--sast-matte));
+}
+#rank-directory .rank-record {box-shadow:inset 3px 0 var(--sast-blue)}
+#rank-directory .rank-person-head {
+  background:linear-gradient(90deg,#0d4665,#127eaf);
+  color:var(--sast-white);
+}
+#rank-directory .rank-person-rows {background:#0b1f2e}
+#rank-directory .rank-person-row {border-color:#3e5b6f;color:var(--sast-white)}
+#rank-directory .rank-portrait-empty {
+  color:var(--sast-silver);
+  background:repeating-linear-gradient(135deg,#0d2231 0 5px,#19364a 5px 10px);
+}
+#rank-directory .rank-profile {color:#d8e2e7}
+#rank-directory .rank-signature strong {color:var(--sast-white)}
+#rank-directory .rank-category-list {
+  background:linear-gradient(155deg,#0a1118,#142e40 62%,#101820);
+  border-color:#52778e;
+}
+#rank-directory .rank-category-list button {
+  color:var(--sast-silver);
+  border-color:#456477;
+  background:linear-gradient(108deg,#0c1c29,#203f52 55%,#101820);
+}
+#rank-directory .rank-category-list button[aria-current="page"] {
+  color:var(--sast-white);
+  border-color:var(--sast-bright-blue);
+  background:linear-gradient(108deg,#0c4061,#0e668e 52%,#163248);
+  box-shadow:inset 0 1px #ffffff22,0 0 9px #0e87c041;
+}
+#rank-directory .rank-category-list button[aria-current="page"]::before {background:var(--sast-silver)}
+#rank-directory .rank-category-list button span {
+  border-color:var(--sast-edge);
+  background:#142b3b;
+  color:var(--sast-white);
+}
+#rank-directory .rank-roster-footer {border-color:#52778e;color:var(--sast-silver)}
+#read-dialog.directory-reading {
+  --reading-bg:var(--sast-navy);
+  --reading-panel:var(--sast-matte);
+  --reading-text:var(--sast-white);
+  --reading-secondary:var(--sast-silver);
+  --reading-highlight:var(--sast-bright-blue);
+}
+
+/* 05 / Classified, Resignation and Bulletin page layouts share one material system. */
+.supplemental-reader {
+  --active-bg:var(--sast-navy);
+  --active-surface:var(--sast-matte);
+  --active-frame:var(--sast-edge);
+  --active-accent:var(--sast-blue);
+  --active-text:var(--sast-white);
+  --active-muted:var(--sast-silver);
+}
+.supplemental-page {
+  color:var(--sast-white);
+  background:radial-gradient(ellipse at 82% 12%,#0e87c01c,transparent 42%),
+    linear-gradient(135deg,#0c2638,#07131f 70%);
+  border-color:#476477;
+}
+.supplemental-page:nth-child(4n + 2),
+.supplemental-page:nth-child(4n + 3) {
+  background:radial-gradient(ellipse at 20% 10%,#0e87c019,transparent 48%),
+    linear-gradient(140deg,#101820,#0c2534 76%);
+}
+.supplemental-page :is(h2,h3) {color:var(--sast-white)}
+.supplemental-page :is(header,footer) {border-color:#8fa3af55;color:var(--sast-silver)}
+.supplemental-page .supplemental-rule {background:linear-gradient(90deg,var(--sast-blue),var(--sast-silver))}
+.supplemental-label {color:var(--sast-bright-blue)}
+.supplemental-reader-controls,
+.supplemental-reader-head {color:var(--sast-white)}
+.supplemental-reader :is(button,input,select,textarea) {accent-color:var(--sast-blue)}
+.supplemental-reader button {
+  border-color:var(--sast-edge);
+  background:var(--sast-matte);
+  color:var(--sast-white);
+}
+.supplemental-reader button:is(:hover,:focus-visible):not(:disabled) {
+  border-color:var(--sast-bright-blue);
+  background:#12364b;
+  color:var(--sast-white);
+}
+.supplemental-page-stack {border-color:var(--sast-edge)}
+.supplemental-reader-controls {border-color:var(--sast-edge);background:var(--sast-matte)}
+.supplemental-page.is-turning {box-shadow:-12px 14px 32px #000a,inset 12px 0 21px #0003}
+
+/* 06 / Resignation is an in-book form/document, not a separate purple screen. */
+html[data-theme="resignation"] main.resignation-open #resignation-notice,
+html[data-theme="resignation"] .supplemental-form-slot #resignation-notice {
+  background:transparent!important;
+  color:var(--sast-white);
+  border-color:var(--sast-edge);
+  box-shadow:none;
+}
+html[data-theme="resignation"] .resignation-notice label,
+html[data-theme="resignation"] .resignation-intro span {
+  color:var(--sast-silver);
+}
+html[data-theme="resignation"] .resignation-notice :is(input:not([type="checkbox"]),select,textarea) {
+  border-color:#496b7f;
+  background:#08131d;
+  color:var(--sast-white);
+}
+html[data-theme="resignation"] .resignation-notice :is(input,select,textarea):focus {
+  outline-color:var(--sast-bright-blue);
+}
+html[data-theme="resignation"] .resignation-actions button {
+  border-color:var(--sast-blue);
+  background:linear-gradient(120deg,#10405d,#101820);
+}
+html[data-theme="resignation"] .resignation-confirm span {color:var(--sast-white)}
+html[data-theme="resignation"] .resignation-live-sheet {
+  border-color:var(--sast-steel);
+  background:linear-gradient(155deg,#112c3f,#101820 76%);
+  box-shadow:inset 0 0 0 3px #09131d,inset 0 0 0 4px #a2b5c44c;
+  color:var(--sast-white);
+}
+html[data-theme="resignation"] .resignation-live-sheet :is(h3,dd) {color:var(--sast-white)}
+html[data-theme="resignation"] .resignation-live-sheet :is(.resignation-live-sheet__top,.resignation-live-sheet__subtitle,dt,.resignation-live-sheet__foot) {
+  color:var(--sast-silver);
+  border-color:#6f95a866;
+}
+html[data-theme="resignation"] .resignation-live-sheet dl > div {border-color:#6f95a855}
+
+/* 07 / Keep supplementary search panels in palette, with clear focus and active states. */
+:is(.command-center,.classified-archive,.bulletins-archive) {
+  border-color:var(--sast-edge);
+  background:linear-gradient(145deg,#07131f,#101820);
+  color:var(--sast-white);
+}
+:is(.command-center,.classified-archive,.bulletins-archive) :is(button,input,select) {
+  border-color:var(--sast-edge);
+  color:var(--sast-white);
+}
+:is(.classified-archive,.bulletins-archive) input,
+.bulletin-filters select,
+.command-search-label input {
+  background:#091927;
+}
+:is(.command-center,.classified-archive,.bulletins-archive) :is(button,input,select):focus-visible {
+  outline:2px solid var(--sast-bright-blue);
+}
+.command-center .command-summary section,
+.command-center #command-personnel-results button {
+  border-color:#3c5a70;
+  background:#0d2535;
+}
+
+/* Text must stay readable inside narrow half-page layouts. */
+.supplemental-page :is(h2,h3,.supplemental-label),
+.rank-page :is(h2,h3) {overflow-wrap:anywhere}
+@media(max-width:700px) {
+  .supplemental-page {box-shadow:none}
+  .supplemental-page :is(h2,h3) {letter-spacing:.015em}
+  main.archive-closed .shared-cover-shell::after {opacity:.7}
+}
+@media(prefers-reduced-motion:reduce) {
+  .supplemental-page,
+  .supplemental-page.is-turning {transition:none!important}
+}
