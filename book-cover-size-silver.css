@@ -1,0 +1,143 @@
+/*
+  SAST / Real-Size Book Covers + Slow Silver Edge Light
+  Presentation only: no changes to image files, records or page-turn behavior.
+*/
+@property --book-light-angle {
+  syntax:"<angle>";
+  inherits:false;
+  initial-value:0deg;
+}
+@keyframes sast-book-silver-orbit {
+  to { --book-light-angle:360deg; }
+}
+
+/* Let each existing cover image define the visual perimeter;
+   remove duplicate book boards and fake blue/red offset outlines. */
+main.archive-closed :is(.archive-cover-unit,.rank-cover-unit,.shared-cover-unit)::after {
+  content:none!important;
+  display:none!important;
+}
+main.archive-closed .archive-cover.webp-cover,
+main.archive-closed .rank-cover-stage-teaser .rank-cover,
+main.archive-closed .shared-cover-art {
+  box-sizing:border-box;
+  border:0!important;
+  outline:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  filter:none!important;
+  background-color:transparent!important;
+  transform:none!important;
+}
+main.archive-closed .archive-cover.webp-cover {
+  background-image:url("assets/cover.webp")!important;
+  background-position:center!important;
+  background-size:100% 100%!important;
+  background-repeat:no-repeat!important;
+}
+main.archive-closed .rank-cover-stage-teaser .rank-cover {
+  background-image:url("assets/rank-directory-cover.webp")!important;
+  background-position:center!important;
+  background-size:100% 100%!important;
+  background-repeat:no-repeat!important;
+}
+main.archive-closed :is(.archive-cover-unit,.rank-cover-unit,.shared-cover-unit) {
+  width:min(100%,330px)!important;
+  max-width:100%!important;
+}
+main.archive-closed .archive-cover-unit>.archive-cover,
+main.archive-closed .rank-cover-unit>.rank-cover,
+main.archive-closed .shared-cover-unit>.shared-cover-shell {
+  aspect-ratio:1191/1685!important;
+  width:100%!important;
+  height:auto!important;
+  max-width:100%!important;
+  overflow:visible!important;
+}
+main.archive-closed .shared-cover-shell {
+  border:0!important;
+  background:none!important;
+  box-shadow:none!important;
+}
+main.archive-closed .shared-cover-art {
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  background:transparent!important;
+}
+main.archive-closed :is(.shared-cover-spine,.shared-cover-pages),
+main.archive-closed .rank-cover-binding,
+main.archive-closed .archive-cover.webp-cover :is(.cover-binding,.cover-corner) {
+  display:none!important;
+}
+/* Existing cover image is complete. Don't darken it with extra overlay. */
+main.archive-closed .archive-cover.webp-cover::after,
+main.archive-closed .rank-cover-stage-teaser .rank-cover::after {
+  content:none!important;
+  display:none!important;
+}
+
+/* A faint silver stroke travels around the physical book art every 18s.
+   The effect is purely decorative: buttons remain separate and clickable. */
+main.archive-closed .archive-cover.webp-cover::before,
+main.archive-closed .rank-cover-stage-teaser .rank-cover::before,
+main.archive-closed .shared-cover-shell::after {
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  inset:clamp(2px,.55vw,6px)!important;
+  z-index:5!important;
+  box-sizing:border-box;
+  padding:2px!important;
+  border:0!important;
+  border-radius:3px!important;
+  pointer-events:none!important;
+  opacity:.78!important;
+  background:conic-gradient(from var(--book-light-angle),
+    transparent 0deg 299deg,
+    rgba(197,205,210,.04) 311deg,
+    rgba(215,225,232,.32) 328deg,
+    rgba(247,250,252,.95) 341deg,
+    rgba(197,205,210,.39) 355deg,
+    transparent 360deg)!important;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0)!important;
+  -webkit-mask-composite:xor!important;
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0)!important;
+  mask-composite:exclude!important;
+  animation:sast-book-silver-orbit 18s linear infinite!important;
+  box-shadow:none!important;
+  transform:none!important;
+  mix-blend-mode:normal!important;
+}
+main.archive-closed :is(.archive-cover.webp-cover,.rank-cover-stage-teaser .rank-cover,.shared-cover-shell) {
+  isolation:isolate;
+}
+main.archive-closed .shared-cover-art {position:relative;z-index:2}
+main.archive-closed .shared-cover-shell::after {z-index:4!important}
+
+/* A light physical shadow, without any artificial border/background frame. */
+main.archive-closed .archive-cover.webp-cover,
+main.archive-closed .rank-cover-stage-teaser .rank-cover,
+main.archive-closed .shared-cover-art {
+  filter:drop-shadow(0 13px 15px rgba(0,0,0,.43))!important;
+}
+
+/* Existing carousel controls and responsive buttons keep their own layout. */
+@media(max-width:700px) {
+  main.archive-closed :is(.archive-cover-unit,.rank-cover-unit,.shared-cover-unit) {
+    width:min(300px,74vw)!important;
+  }
+  main.archive-closed .book-pair {
+    min-height:585px!important;
+    overflow:visible!important;
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  main.archive-closed .archive-cover.webp-cover::before,
+  main.archive-closed .rank-cover-stage-teaser .rank-cover::before,
+  main.archive-closed .shared-cover-shell::after {
+    animation:none!important;
+    --book-light-angle:337deg;
+  }
+}
