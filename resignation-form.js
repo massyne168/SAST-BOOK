@@ -23,6 +23,8 @@ export function initializeResignationForm() {
   rank.innerHTML = '<option value="">SELECT RANK</option>' + directoryRanks.map(item => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');
   const review = document.querySelector('#review-resignation'), submit = document.querySelector('#submit-resignation'), summary = document.querySelector('#resignation-summary'), status = document.querySelector('#resignation-status');
   const values = () => Object.fromEntries(new FormData(form).entries());
+  const notify = (phase, data, reference) => document.dispatchEvent(new CustomEvent('resignation-notice-updated', {detail:{phase, data, reference}}));
+  const snapshot = () => ({...values(), confirmation:form.elements.confirmation.checked});
   const showErrors = errors => {
     form.querySelectorAll('[aria-invalid]').forEach(field => field.removeAttribute('aria-invalid'));
     Object.keys(errors).forEach(name => form.elements[name]?.setAttribute('aria-invalid', 'true'));
@@ -33,20 +35,21 @@ export function initializeResignationForm() {
     summary.innerHTML = '<h3>REVIEW NOTICE</h3>' + Object.entries(labels).map(([key, label]) => `<div><strong>${label}</strong><span>${escapeHtml(key === 'confirmation' ? 'Confirmed' : (data[key] || (key === 'notes' ? 'None provided' : '')))}</span></div>`).join('');
     summary.hidden = false; submit.hidden = false; submit.focus({preventScroll:true});
   };
-  review.addEventListener('click', () => { const data = values(); data.confirmation = form.elements.confirmation.checked; if (showErrors(validateNotice(data))) makeSummary(data); });
-  form.addEventListener('input', () => { summary.hidden = true; submit.hidden = true; });
-  form.addEventListener('change', () => { summary.hidden = true; submit.hidden = true; });
+  review.addEventListener('click', () => { const data = snapshot(); if (showErrors(validateNotice(data))) { makeSummary(data); notify('reviewed', data); } else notify('draft', data); });
+  form.addEventListener('input', () => { summary.hidden = true; submit.hidden = true; notify('draft', snapshot()); });
+  form.addEventListener('change', () => { summary.hidden = true; submit.hidden = true; notify('draft', snapshot()); });
   form.addEventListener('submit', async event => {
-    event.preventDefault(); const data = values(); data.confirmation = form.elements.confirmation.checked;
+    event.preventDefault(); const data = snapshot();
     if (!showErrors(validateNotice(data))) return;
-    submit.disabled = true; review.disabled = true; status.textContent = 'SENDING NOTICE…';
+    submit.disabled = true; review.disabled = true; status.textContent = 'SENDING NOTICE…'; notify('sending', data);
     try {
       const response = await fetch('/api/resignation', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || 'Delivery could not be confirmed.');
       status.textContent = `NOTICE DELIVERED — REFERENCE ${payload.reference}`;
+      notify('delivered', data, payload.reference);
       form.reset(); summary.hidden = true; submit.hidden = true;
-    } catch (cause) { status.textContent = cause.message; }
+    } catch (cause) { status.textContent = cause.message; notify('error', data); }
     finally { submit.disabled = false; review.disabled = false; }
   });
 }
