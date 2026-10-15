@@ -63,6 +63,7 @@ pair.insertAdjacentElement('afterend', carouselButtons);
 let carouselIndex = Math.max(0, bookConfig.findIndex(book => book.id === pair.dataset.activeBook));
 let carouselTimer, carouselTransitioning = false, wheelTotal = 0, wheelIdleTimer, wheelGestureLocked = false;
 const openingButtons = bookConfig.map(book => [book.id, $(book.opener)]);
+const carouselStages = new Map(bookConfig.map(book => [book.id, pair.querySelector(book.stage)]));
 let openingRevealTimer, openingRevealGeneration = 0;
 function cancelOpeningReveal() {
   window.clearTimeout(openingRevealTimer);
@@ -117,12 +118,37 @@ function syncCarousel() {
   const selectedBook = bookConfig[carouselIndex];
   pair.dataset.activeBook = selectedBook.id;
   pair.dataset.activeTheme = selectedBook.theme;
+  bookConfig.forEach((book, index) => {
+    const stage = carouselStages.get(book.id);
+    const distance = index - carouselIndex;
+    const visible = Math.abs(distance) <= 1;
+    const position = distance === 0 ? 'active' : distance === -1 ? 'previous' : distance === 1 ? 'next' : 'hidden';
+    stage.dataset.carouselPosition = position;
+    stage.inert = !visible;
+    stage.setAttribute('aria-hidden', String(!visible));
+  });
   carouselButtons.querySelector('span').textContent = `${selectedBook.title} · ${String(carouselIndex + 1).padStart(2, '0')} / ${String(bookConfig.length).padStart(2, '0')}`;
   carouselButtons.querySelectorAll('button').forEach(button => {
     button.disabled = (Number(button.dataset.carouselDirection) < 0 && carouselIndex === 0) ||
       (Number(button.dataset.carouselDirection) > 0 && carouselIndex === bookConfig.length - 1);
   });
   openingButtons.forEach(([bookName, button]) => setOpeningButtonHidden(button, bookName !== selectedBook.id));
+}
+async function decodeCover(book) {
+  const image = pair.querySelector(`${book.cover}:is(img)`);
+  if (!image) return;
+  const timeout = new Promise(resolve => window.setTimeout(resolve, 2500));
+  const loaded = image.complete ? Promise.resolve() : new Promise(resolve => {
+    image.addEventListener('load', resolve, {once:true}); image.addEventListener('error', resolve, {once:true});
+  });
+  await Promise.race([loaded, timeout]);
+  try { await image.decode?.(); } catch { /* The fixed wrapper remains usable when artwork fails. */ }
+}
+async function initializeCarousel() {
+  const visible = bookConfig.filter((_, index) => Math.abs(index - carouselIndex) <= 1);
+  await Promise.all(visible.map(decodeCover));
+  pair.dataset.carouselReady = 'true';
+  bookConfig.filter(book => !visible.includes(book)).forEach(book => { void decodeCover(book); });
 }
 function setCarouselBook(index) {
   if (index < 0 || index >= bookConfig.length || index === carouselIndex || carouselTransitioning) return false;
@@ -144,6 +170,7 @@ function setCarouselBook(index) {
   return true;
 }
 syncCarousel();
+void initializeCarousel();
 if (document.body.classList.contains('site-ready')) scheduleOpeningReveal();
 carouselButtons.addEventListener('click', event => {
   const button = event.target.closest('[data-carousel-direction]');

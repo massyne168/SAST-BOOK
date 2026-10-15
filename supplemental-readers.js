@@ -60,11 +60,12 @@ function create(kind) {
 }
 function show(kind, index) {
   const state = roots.get(kind); if (!state) return;
-  state.index = Math.max(0, Math.min(9,index));
-  state.root.querySelectorAll('.supplemental-page').forEach((page,pageIndex) => page.hidden = pageIndex !== state.index);
-  state.root.querySelector('output').textContent = `${String(state.index + 1).padStart(2,'0')} / 10`;
+  state.index = Math.max(0, Math.min(4,index));
+  const first = state.index * 2;
+  state.root.querySelectorAll('.supplemental-page').forEach((page,pageIndex) => page.hidden = pageIndex !== first && pageIndex !== first + 1);
+  state.root.querySelector('output').textContent = `SPREAD ${String(state.index + 1).padStart(2,'0')} / 05`;
   state.root.querySelector('[data-page-prev]').disabled = state.index === 0;
-  state.root.querySelector('[data-page-next]').disabled = state.index === 9;
+  state.root.querySelector('[data-page-next]').disabled = state.index === 4;
 }
 export function openSupplementalReader(kind) {
   const state = roots.get(kind) || create(kind); state.root.hidden = false; state.root.inert = false; show(kind, 0);
