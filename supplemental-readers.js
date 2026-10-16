@@ -2,6 +2,8 @@ import {FlipEngine} from './flip-engine.js';
 import {createBulletinEditor} from './bulletin-editor.js';
 import {buildBulletinPages} from './bulletin-pages.js';
 import {fetchBulletins,currentBulletins,updateBulletins,bulletinConfig} from './bulletin-store.js';
+import {buildResignationPages} from './resignation-pages.js';
+import {fetchResignationRecords,currentResignationRecords,insertResignationRecord,resignationRecordsError} from './resignation-records-client.js';
 const escape = value => String(value).replace(/[&<>'"]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[character]));
 
 const drafts = {
@@ -44,10 +46,10 @@ const drafts = {
 };
 
 const roots = new Map();
-function buildPage([eyebrow, title, label, body], index, kind) {
-  const formSlot = kind === 'resignation' && index === 8 ? '<div class="supplemental-form-slot" data-form-slot></div>' : '';
-  const previewSlot = kind === 'resignation' && index === 9 ? "<section class=\"resignation-live-sheet\" data-resignation-preview aria-label=\"Live notice preview\"><div class=\"resignation-live-sheet__top\"><span>SAST / PERSONNEL DIVISION</span><strong data-notice-phase>DRAFT · NOT SUBMITTED</strong></div><h3>TROOPER RESIGNATION NOTICE</h3><p class=\"resignation-live-sheet__subtitle\">Personal notice • Preview generated from the form on the left</p><dl><div><dt>OFFICER NAME</dt><dd data-notice-field=\"fullName\">—</dd></div><div><dt>BADGE NUMBER</dt><dd data-notice-field=\"badgeNumber\">—</dd></div><div><dt>CURRENT RANK</dt><dd data-notice-field=\"currentRank\">—</dd></div><div><dt>EFFECTIVE DATE</dt><dd data-notice-field=\"effectiveDate\">—</dd></div><div class=\"resignation-live-sheet__wide\"><dt>STATEMENT OF RESIGNATION</dt><dd data-notice-field=\"reason\">—</dd></div><div class=\"resignation-live-sheet__wide\"><dt>ADDITIONAL NOTES</dt><dd data-notice-field=\"notes\">—</dd></div></dl><p class=\"resignation-live-sheet__foot\" data-notice-reference>UNSUBMITTED DRAFT · NOT A PERSONNEL STATUS CHANGE</p></section>" : '';
-  return `<article class="supplemental-page" data-supplemental-page-index="${index}"><header><span>${escape(eyebrow)}</span><b>${String(index + 1).padStart(2,'0')} / 10</b></header><div class="supplemental-page-body"><p class="supplemental-label">${escape(label)}</p><h2>${escape(title)}</h2><div class="supplemental-rule"></div><p>${escape(body)}</p>${formSlot}${previewSlot}</div><footer>SAST CLASSIFIED RECORDS <span>${escape(kind.toUpperCase())}</span></footer></article>`;
+function buildPage([eyebrow, title, label, body], index, kind, formIndex = 8, total = 10) {
+  const formSlot = kind === 'resignation' && index === formIndex ? '<div class="supplemental-form-slot" data-form-slot></div>' : '';
+  const previewSlot = kind === 'resignation' && index === formIndex + 1 ? "<section class=\"resignation-live-sheet\" data-resignation-preview aria-label=\"Live notice preview\"><div class=\"resignation-live-sheet__top\"><span>SAST / PERSONNEL DIVISION</span><strong data-notice-phase>DRAFT · NOT SUBMITTED</strong></div><h3>TROOPER RESIGNATION NOTICE</h3><p class=\"resignation-live-sheet__subtitle\">Personal notice • Preview generated from the form on the left</p><dl><div><dt>OFFICER NAME</dt><dd data-notice-field=\"fullName\">—</dd></div><div><dt>BADGE NUMBER</dt><dd data-notice-field=\"badgeNumber\">—</dd></div><div><dt>CURRENT RANK</dt><dd data-notice-field=\"currentRank\">—</dd></div><div><dt>EFFECTIVE DATE</dt><dd data-notice-field=\"effectiveDate\">—</dd></div><div class=\"resignation-live-sheet__wide\"><dt>STATEMENT OF RESIGNATION</dt><dd data-notice-field=\"reason\">—</dd></div><div class=\"resignation-live-sheet__wide\"><dt>ADDITIONAL NOTES</dt><dd data-notice-field=\"notes\">—</dd></div></dl><p class=\"resignation-live-sheet__foot\" data-notice-reference>UNSUBMITTED DRAFT · NOT A PERSONNEL STATUS CHANGE</p></section>" : '';
+  return `<article class="supplemental-page" data-supplemental-page-index="${index}"><header><span>${escape(eyebrow)}</span><b>${String(index + 1).padStart(2,'0')} / ${String(total).padStart(2,'0')}</b></header><div class="supplemental-page-body"><p class="supplemental-label">${escape(label)}</p><h2>${escape(title)}</h2><div class="supplemental-rule"></div><p>${escape(body)}</p>${formSlot}${previewSlot}</div><footer>SAST CLASSIFIED RECORDS <span>${escape(kind.toUpperCase())}</span></footer></article>`;
 }
 // All five books now share the same multi-strip curl mesh and drag physics.
 let latestNotice = null;
@@ -57,7 +59,7 @@ function parkNotice(state) {
 }
 function mountNotice(state) {
   if (state.kind !== 'resignation') return;
-  const slot = state.index === 4 ? state.root.querySelector('.supplemental-slot-left [data-form-slot]') : null;
+  const slot = state.index === (state.engine?.count || 5) - 1 ? state.root.querySelector('.supplemental-slot-left [data-form-slot]') : null;
   const notice = state.notice;
   if (notice && slot && notice.parentNode !== slot) slot.append(notice);
 }
@@ -85,6 +87,31 @@ function previewBulletin(state) {
   if(phase)phase.textContent=({draft:'DRAFT · NOT PUBLISHED',reviewed:'REVIEWED · NOT PUBLISHED',
     publishing:'SAVING...',error:'NOT PUBLISHED',published:'PUBLISHED'})[draft.phase]||'DRAFT · NOT PUBLISHED';
 }
+function refreshResignationBook(state,highlightReference=null) {
+  if(!state||state.kind!=='resignation')return;
+  if(state.engine?.drag||state.engine?.pending||state.engine?.animating){
+    state.needsResignationRefresh=true;
+    state.resignationJump=highlightReference||state.resignationJump;
+    return;
+  }
+  parkNotice(state);
+  state.documentPages=buildResignationPages(currentResignationRecords(),drafts.resignation,buildPage);
+  state.engine.count=state.documentPages.length/2;
+  let destination=Math.min(state.index,state.engine.count-1);
+  if(highlightReference){
+    const records=currentResignationRecords().slice().sort((a,b)=>
+      String(b.submittedAt||'').localeCompare(String(a.submittedAt||''))||
+      String(b.reference||'').localeCompare(String(a.reference||'')));
+    const position=records.findIndex(record=>record.reference===highlightReference);
+    if(position>=0)destination=4+Math.floor(position/2);
+  }
+  state.engine.goTo(destination);
+  mountNotice(state);
+  updateControls(state);
+  const archiveStatus=state.root.querySelector('[data-resignation-archive-status]');
+  if(archiveStatus)archiveStatus.textContent=resignationRecordsError()||
+    (currentResignationRecords().length+' SAVED NOTICE(S) · OPEN THE BOOK TO VIEW THE OFFICIAL PAPER RECORDS');
+}
 function refreshBulletinBook(state,goToIndex=null) {
   if(!state||state.kind!=='bulletins')return;
   if(state.engine.drag||state.engine.pending||state.engine.animating){
@@ -106,6 +133,8 @@ function updateControls(state) {
   root.querySelector('[data-page-next]').disabled = busy || index === (engine?.count||5)-1;
   const jump = root.querySelector('[data-open-form]');
   if (jump) jump.disabled = busy;
+  const noticeJump=root.querySelector('[data-open-form]');
+  if(noticeJump && state.kind==='resignation')noticeJump.title='Jump to the final form spread';
   const bulletinJump=root.querySelector('[data-bulletin-open-form]');
   if(bulletinJump)bulletinJump.disabled=busy;
   root.querySelector('.supplemental-flip-book').setAttribute('aria-busy', String(busy));
@@ -115,16 +144,16 @@ function create(kind) {
   const root = document.createElement('section');
   root.className = `supplemental-reader supplemental-reader--${kind}`;
   root.hidden = true; root.inert = true;
-  root.innerHTML = `<header class="supplemental-reader-head"><div><span>${escape(kind.toUpperCase())} / INTERNAL PAGES</span><h2>${escape(pages[0][1])}</h2></div>${kind === 'resignation' ? '<button type="button" class="supplemental-open-form" data-open-form>GO TO NOTICE FORM →</button>' : ''}${kind === 'bulletins' ? '<button type="button" class="supplemental-open-form" data-bulletin-open-form>HIGH COMMAND / PUBLISH →</button>' : ''}<button type="button" data-supplemental-close>RETURN TO OVERVIEW</button></header><div class="supplemental-book-frame"><div class="supplemental-page-stack supplemental-flip-book book" role="group" tabindex="0" aria-label="Interactive hardcover book. Drag across the spine to flip; arrow keys also turn pages."><div class="board"><span class="board-label">SAST / CONTROLLED RECORDS</span></div><div class="paper-stack"></div><div class="page-slot left supplemental-slot supplemental-slot-left"></div><div class="page-slot right supplemental-slot supplemental-slot-right"></div><div class="spine"></div><div class="supplemental-turn-layer" aria-hidden="true"></div></div></div><nav class="supplemental-reader-controls" aria-label="${escape(pages[0][1])} page navigation"><button type="button" data-page-prev>PREVIOUS</button><output aria-live="polite">SPREAD 01 / 05</output><button type="button" data-page-next>NEXT</button></nav>`;
+  root.innerHTML = `<header class="supplemental-reader-head"><div><span>${escape(kind.toUpperCase())} / INTERNAL PAGES</span><h2>${escape(pages[0][1])}</h2></div>${kind === 'resignation' ? '<button type="button" class="supplemental-open-form" data-open-form>GO TO NOTICE FORM →</button>' : ''}${kind === 'bulletins' ? '<button type="button" class="supplemental-open-form" data-bulletin-open-form>HIGH COMMAND / PUBLISH →</button>' : ''}<button type="button" data-supplemental-close>RETURN TO OVERVIEW</button></header><div class="supplemental-book-frame"><div class="supplemental-page-stack supplemental-flip-book book" role="group" tabindex="0" aria-label="Interactive hardcover book. Drag across the spine to flip; arrow keys also turn pages."><div class="board"><span class="board-label">SAST / CONTROLLED RECORDS</span></div><div class="paper-stack"></div><div class="page-slot left supplemental-slot supplemental-slot-left"></div><div class="page-slot right supplemental-slot supplemental-slot-right"></div><div class="spine"></div><div class="supplemental-turn-layer" aria-hidden="true"></div></div></div><nav class="supplemental-reader-controls" aria-label="${escape(pages[0][1])} page navigation"><button type="button" data-page-prev>PREVIOUS</button><output aria-live="polite">SPREAD 01 / 05</output><button type="button" data-page-next>NEXT</button></nav>${kind === 'resignation' ? '<p class="resignation-archive-status" role="status" aria-live="polite" data-resignation-archive-status>LOADING SAVED NOTICES…</p>' : ''}`;
   document.querySelector('main').append(root);
   const state = {root,kind,index:0,engine:null,notice:kind === 'resignation' ? document.querySelector('#resignation-notice') : null,
-    documentPages:kind === 'bulletins' ? buildBulletinPages(currentBulletins()) : null,
-    editor:null,editorParking:null,draft:null,needsRefresh:false,refreshIndex:null};
+    documentPages:kind === 'bulletins' ? buildBulletinPages(currentBulletins()) : kind === 'resignation' ? buildResignationPages(currentResignationRecords(),drafts.resignation,buildPage) : null,
+    editor:null,editorParking:null,draft:null,needsRefresh:false,refreshIndex:null,needsResignationRefresh:false,resignationJump:null};
   roots.set(kind,state);
   const book = root.querySelector('.supplemental-flip-book');
   state.engine = new FlipEngine(book,{
-    spreadCount:kind === 'bulletins'?state.documentPages.length/2:5, initialSpread:0,
-    render:index=>kind === 'bulletins'?state.documentPages[index]:buildPage(pages[index],index,kind),
+    spreadCount:state.documentPages?state.documentPages.length/2:5, initialSpread:0,
+    render:index=>state.documentPages?state.documentPages[index]:buildPage(pages[index],index,kind),
     slots:{layer:'.supplemental-turn-layer',left:'.supplemental-slot-left',right:'.supplemental-slot-right'},
     blocked:()=>root.hidden || root.inert || !!document.querySelector('dialog[open]'),
     onChange:index=>{
@@ -139,6 +168,7 @@ function create(kind) {
       if(!busy) {mountNotice(state);mountBulletinEditor(state);previewBulletin(state);}
       updateControls(state);
       if(!busy&&state.needsRefresh){const target=state.refreshIndex;state.needsRefresh=false;state.refreshIndex=null;refreshBulletinBook(state,target);}
+      if(!busy&&state.needsResignationRefresh){const ref=state.resignationJump;state.needsResignationRefresh=false;state.resignationJump=null;refreshResignationBook(state,ref);}
 
     }
   });
@@ -166,7 +196,7 @@ function create(kind) {
       if(show(kind,last))root.querySelector('.supplemental-slot-left [name=title]')?.focus({preventScroll:true});
     }
     if (event.target.closest('[data-open-form]')) {
-      if (show(kind,4)) root.querySelector('.supplemental-slot-left #resignation-form [name=fullName]')?.focus({preventScroll:true});
+      if (show(kind,(state.engine?.count||5)-1)) root.querySelector('.supplemental-slot-left #resignation-form [name=fullName]')?.focus({preventScroll:true});
     }
     if (event.target.closest('[data-supplemental-close]')) document.dispatchEvent(new CustomEvent('supplemental-reader-close',{detail:{kind}}));
   });
@@ -216,6 +246,10 @@ export function openSupplementalReader(kind) {
   show(kind,0);
   mountNotice(state);
   mountBulletinEditor(state);previewBulletin(state);
+  if(kind==='resignation')fetchResignationRecords().then(()=>refreshResignationBook(state)).catch(error=>{
+    const noticeStatus=state.root.querySelector('[data-resignation-archive-status]');
+    if(noticeStatus)noticeStatus.textContent='ARCHIVE UNAVAILABLE: '+error.message+' · Existing drafts remain editable.';
+  });
   if(kind==='bulletins')fetchBulletins().then(()=>{
     refreshBulletinBook(state);
     if(!bulletinConfig().publishingConfigured){
@@ -228,6 +262,18 @@ export function openSupplementalReader(kind) {
   });
   state.root.querySelector('.supplemental-flip-book').focus({preventScroll:true});
 }
+document.addEventListener('resignation-record-created',event=>{
+  const record=event.detail?.record;
+  if(!record?.reference)return;
+  insertResignationRecord(record);
+  const state=roots.get('resignation');
+  if(state&&!state.root.hidden)refreshResignationBook(state,record.reference);
+});
+document.addEventListener('resignation-records-updated',()=>{
+  const state=roots.get('resignation');
+  if(state&&!state.root.hidden)refreshResignationBook(state);
+});
+
 export function closeSupplementalReader(kind) {
   const state = roots.get(kind); if (!state) return;
   state.engine.cancel(true);
