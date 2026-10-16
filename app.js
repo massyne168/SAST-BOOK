@@ -3,6 +3,7 @@ import {pages, pageFiles, pageCount, sourcePageCount, prepareSpread, prepareNear
 import {loadSpread, saveSpread} from './reader-state.js';
 import {setupZoom} from './zoom.js';
 import {focusBook, isBookFocused, setBookFocused, setBookOpen, setBookOpening, resetBookFocus} from './book-focus.js';
+import {ensureBookAccess} from './discord-access-client.js';
 import {openClassifiedArchive, closeClassifiedArchive} from './classified-archive.js';
 import {openBulletins, closeBulletins} from './bulletins.js';
 import {initializeResignationForm} from './resignation-form.js';
@@ -330,6 +331,7 @@ readDialog.addEventListener('keydown', event => {
   readDialog.close();
 });
 async function openArchive() {
+  if (!await ensureBookAccess('archive')) return;
   if (coverOpening) return;
   if (!isBookFocused('archive')) {
     try { await focusBook('archive'); }
@@ -405,6 +407,7 @@ document.addEventListener('fullscreenchange', syncFullscreen);
 syncFullscreen();
 
 async function openDirectory() {
+  if (!await ensureBookAccess('directory')) return;
   if (!isBookFocused('directory')) {
     try { await focusBook('directory'); }
     catch (cause) {
@@ -436,6 +439,7 @@ async function openDirectory() {
 
 
 async function openClassified() {
+  if (!await ensureBookAccess('classified')) return;
   if (!isBookFocused('classified')) { await focusBook('classified'); return; }
   if (!setBookOpening('classified')) return;
   try {
@@ -462,6 +466,7 @@ async function closeClassified() {
 }
 $('#classified-close').addEventListener('click', () => { void closeClassified(); });
 async function openResignationNotices() {
+  if (!await ensureBookAccess('resignation')) return;
   if (!isBookFocused('resignation')) { await focusBook('resignation'); return; }
   if (!setBookOpening('resignation')) return;
   try {
@@ -477,6 +482,7 @@ async function closeResignationNotices() {
   await resetBookFocus('resignation'); scheduleOpeningReveal(() => resignationOpeningButton.focus({preventScroll:true}));
 }
 async function openBulletinArchive() {
+  if (!await ensureBookAccess('bulletins')) return;
   if (!isBookFocused('bulletins')) { await focusBook('bulletins'); return; }
   if (!setBookOpening('bulletins')) return;
   try { main.classList.remove('archive-closed'); main.classList.add('bulletins-open'); setBookTheme('bulletins'); openSupplementalReader('bulletins'); setBookOpen('bulletins'); }
@@ -506,6 +512,7 @@ export function navigateBook(kind, officerId) {
     }
     if (busy() || engine.drag || engine.pending || carouselTransitioning) throw new Error('Please finish the current page turn and try again.');
     const destinations = {archive:0,directory:1,classified:2,resignation:3,bulletins:4};
+    if (!await ensureBookAccess(kind)) return;
     if (!Object.hasOwn(destinations,kind)) throw new Error('Unknown book destination.');
     const active = [
       ['directory','directory-open'],['classified','classified-open'],
