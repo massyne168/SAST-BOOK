@@ -6,7 +6,12 @@ export const resignationRecordsError=()=>failure;
 const changed=()=>document.dispatchEvent(new CustomEvent('resignation-records-updated',{detail:{records:currentResignationRecords(),error:failure}}));
 export function setResignationRecords(items) {
   if(!Array.isArray(items))return;
-  records=items.slice();
+  // An older in-flight GET must never erase a just-confirmed POST response.
+  // Notices are append-only, so keeping already-confirmed references is safe.
+  const seen=new Set(items.map(entry=>entry.reference));
+  records=[...items,...records.filter(entry=>!seen.has(entry.reference))].sort((a,b)=>
+    String(b.submittedAt||'').localeCompare(String(a.submittedAt||''))||
+    String(b.reference||'').localeCompare(String(a.reference||'')));
   failure=null;
   changed();
 }
