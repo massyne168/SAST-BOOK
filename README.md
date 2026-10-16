@@ -73,3 +73,36 @@ These variables must be configured in the Vercel project's server environment, *
 Local Node development uses `HIGH_COMMAND_TOKEN=...` and an automatically created `data/bulletins.json` file. The file is ignored by Git and persists across local restarts. Production Redis writes and reads are shared across clients and deployments. A successfully created notice is kept in history; no automatic deletion is performed. The GET endpoint `/api/bulletins` is readable without a password, whereas the POST endpoint requires a server-verified Bearer token.
 
 Test with `npm test` (including `tests/bulletin-publishing.test.js`) and optionally `npm run test:browser` in a development environment equipped with Playwright. Neither the Armory nor Rank Directory data files are altered by this feature.
+
+
+## Phase 01 — Secure Command Foundation
+
+The header Command Center now uses server-verified access-key login and an eight-hour signed HttpOnly cookie. Existing five-book designs, original Armory and Rank Directory data, page-turn engine, resignation form and public reader access remain unchanged.
+
+### Production / Vercel configuration
+
+Set these **server-side secrets** in Vercel Environment Variables (never place them in the repository or browser):
+
+- `COMMAND_SESSION_SECRET`: random, unique signing string of 32+ characters. Changing it revokes all sessions.
+- `HIGH_COMMAND_TOKEN`: High Command department access key (12+ characters); enables authorized announcement publication.
+- `ADMIN_TOKEN`: Administrator access key (12+ characters). Existing personnel editing endpoints retain their separate Bearer authentication.
+- `ARMORY_TOKEN`: optional access key (12+ characters) for read-only Phase 01 dashboard sign-in as Armory Officer.
+- `TROOPER_TOKEN`: optional access key (12+ characters) for read-only Phase 01 dashboard sign-in as Trooper.
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (or `KV_REST_API_URL` and `KV_REST_API_TOKEN`): durable database shared by Vercel deployments for the bulletin archive.
+
+Redeploy after adding secrets. These environment values cannot be configured automatically by a GitHub code commit. When unconfigured, login and publication fail safely, and the dashboard shows a storage warning instead of false bulletin totals.
+
+### Roles and endpoints
+
+| Role | View Command Dashboard | Publish bulletins | Future management permission |
+|---|---|---|---|
+| Administrator | Yes | Yes | Personnel + Armory + approvals |
+| High Command | Yes | Yes | Approvals |
+| Armory Officer | Yes | No | Armory |
+| Trooper | Yes | No | None |
+
+Management permissions are **reserved for future phases**, not new editing API endpoints. The current sign-in keys are shared by role, not individual officer accounts; user-specific accountability will require per-officer identities.
+
+`GET/POST/DELETE /api/command-session` checks, creates, or clears the signed cookie. Login/logout requests must have `X-SAST-Request: command-ui`. `GET /api/command-overview` requires a valid signed session and returns verified personnel, weapon and bulletin statistics. Publishing within Announcements & Orders uses the signed High Command/Administrator session; the original Bearer-key method remains backward compatible. Credentials are not persisted in browser storage. Access checks occur on the server, not only in the UI.
+
+The local Node server continues to use the append-only bulletin JSON store, and Vercel requires Upstash Redis. No existing bulletin is deleted or replaced; if persistence is missing, the server refuses publication.
