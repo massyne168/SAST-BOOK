@@ -1,4 +1,5 @@
 import {createCipheriv,createDecipheriv,createHash,randomBytes,timingSafeEqual} from 'node:crypto';
+import {ELYSIUM_DISCORD_GUILD_ID,ELYSIUM_BOOK_ROLE_IDS} from './discord-elysium-roles.js';
 
 export const DISCORD_BOOK_IDS=Object.freeze(['archive','directory','classified','resignation','bulletins']);
 const COOKIE_SESSION='sast_discord_session',COOKIE_STATE='sast_discord_oauth_state';
@@ -32,10 +33,14 @@ export function createDiscordBookAccess({
 }={}) {
   const clientId=env.DISCORD_CLIENT_ID||'';
   const clientSecret=env.DISCORD_CLIENT_SECRET||'';
-  const guildId=env.DISCORD_GUILD_ID||'';
+  const guildId=env.DISCORD_GUILD_ID||ELYSIUM_DISCORD_GUILD_ID;
   const redirectUri=env.DISCORD_REDIRECT_URI||'';
   const signing=env.DISCORD_SESSION_SECRET||'';
-  const roles=parseRoles(env.DISCORD_BOOK_ROLES_JSON);
+  // Explicit env overrides remain authoritative; absent env uses the exact IDs
+  // configured for ELYSIUM. Malformed overrides fail closed, not silently open.
+  const roles=parseRoles(env.DISCORD_BOOK_ROLES_JSON===undefined
+    ?JSON.stringify(ELYSIUM_BOOK_ROLE_IDS)
+    :env.DISCORD_BOOK_ROLES_JSON);
   const configured=idPattern.test(clientId)&&idPattern.test(guildId)&&clientSecret.length>=10&&
     signing.length>=32&&/^https:\/\/[^#?]+$|^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/[^#?]+$/.test(redirectUri);
   const key=createHash('sha256').update(signing||'disabled').digest();
