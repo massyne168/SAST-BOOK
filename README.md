@@ -116,3 +116,44 @@ The book fetches real stored records from `GET /api/resignation-records` every t
 On Vercel, the **existing** `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` (or `KV_REST_API_URL`/`KV_REST_API_TOKEN`) are required. The resignations use their own list key, `sast:resignations:v1`, and do not overwrite announcements or staff data. Local Node saves notices in ignored `data/resignations.json`. When storage is unconfigured or unreachable, submission is blocked with an explicit error instead of showing a false permanent record. Discord forwarding remains supported through the existing `DISCORD_RESIGNATION_WEBHOOK_URL`; if no webhook is configured, successful archival is still possible and is explicitly marked book-only. If Discord confirms delivery but archive writing fails, the error warns that Discord may have received the record and includes a reference. Ensure the existing webhook is configured if Discord delivery is required.
 
 The official pages can show sensitive text submitted in the reason/notes fields to visitors of the shared site. Do not submit private credentials or personal information not intended for display. Keep the server-side archive protected and never commit runtime storage files.
+
+
+## Discord Role Access — per-book authorization (2026-10-16)
+
+The five books are now gated through **Login with Discord**. The browser does not decide who is authorized: on every opening attempt, the server calls Discord's `/users/@me/guilds/{guild.id}/member` using the authenticated member's OAuth token, reads the current **role IDs** and compares them against a separate allowlist for the selected book. The OAuth grant requests `identify` and `guilds.members.read` only. OAuth state uses a short-lived sealed cookie; the server session uses an encrypted `HttpOnly; SameSite=Lax` cookie with a two-hour maximum lifetime. No Discord Client Secret or OAuth access token is sent to application JavaScript or stored in localStorage.
+
+### Required Vercel environment variables
+
+- `DISCORD_CLIENT_ID`: Application ID from Discord Developer Portal.
+- `DISCORD_CLIENT_SECRET`: **secret** from the same application.
+- `DISCORD_GUILD_ID`: Server ID of the intended Discord community.
+- `DISCORD_REDIRECT_URI`: exact callback URL registered in Discord OAuth2 Redirects, e.g. `https://YOUR-PROJECT.vercel.app/api/discord` (no query parameters).
+- `DISCORD_SESSION_SECRET`: independent random secret string, **32+ characters**.
+- `DISCORD_BOOK_ROLES_JSON`: JSON allowlist using **actual Discord role IDs** (strings). A book with no valid role ID is inaccessible to everyone by default.
+
+Example configuration (IDs shown below are illustrative placeholders, **not actual permissions**):
+
+```json
+{
+  "archive": ["111111111111111111", "222222222222222222"],
+  "directory": ["333333333333333333", "222222222222222222"],
+  "classified": ["222222222222222222"],
+  "resignation": ["333333333333333333", "222222222222222222"],
+  "bulletins": ["333333333333333333", "222222222222222222"]
+}
+```
+
+Suggested labels for these **replaceable examples**: `archive` = Armory Officer / High Command; `directory` = Trooper / High Command; `classified` = High Command; `resignation` = Trooper / High Command; `bulletins` = Trooper / High Command (High Command publication still requires the existing Command publishing authorization). Multiple roles per book mean **any one** listed role grants reading. Enable Developer Mode in Discord, right-click a role and copy its ID; right-click the server and copy the Server ID. The IDs must be entered as strings, not numbers, to preserve precision.
+
+### Discord Developer Portal steps
+
+1. Create/select a Discord OAuth2 application in Discord Developer Portal.
+2. Add the exact `DISCORD_REDIRECT_URI` from above under **OAuth2 → Redirects**.
+3. Set the private variables on Vercel for Production, Preview if needed, then redeploy.
+4. Visit the site and click **LOGIN WITH DISCORD**. After authorizing `identify` + `guilds.members.read`, the home page will show the connected account. When opening any book, the server checks the appropriate allowlist.
+
+Only guild membership is sufficient for a login session; **the individual book role is still required**, and the site rejects all undefined/invalid permissions. Removing or changing a role takes effect on the next server access check. `GET /api/discord?action=session` returns only permitted book booleans and display username; `GET /api/discord?action=access&book=archive` performs an authoritative book check. `GET /api/resignation-records`, `POST /api/resignation`, and `GET/POST /api/bulletins` additionally require the corresponding current Discord role.
+
+**Security limitation:** Armory WebP images, Rank Directory source records, and some static book source files are still part of a public GitHub-backed static website. Hiding a book in the UI is **not** sufficient to keep those raw files confidential: someone can request their URLs directly or view the public repository. These role gates control the site interface and the protected dynamic API endpoints; true confidentiality requires moving protected source records/media to private server-side storage with authenticated file-serving or restricting repository visibility. No existing files are deleted or relocated by this change.
+
+Run `npm run check` and `npm test`. OAuth integration also requires real Discord configuration for an end-to-end browser sign-in test.
