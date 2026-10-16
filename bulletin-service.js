@@ -1,4 +1,5 @@
 import {randomUUID,timingSafeEqual} from 'node:crypto';
+import {roleCan} from './command-auth.js';
 
 const clean = value => typeof value === 'string' ? value.trim() : '';
 export const BULLETIN_LIMITS=Object.freeze({title:120,issuedBy:100,message:4000});
@@ -40,7 +41,7 @@ export function createBulletinHandler({
   now=()=>new Date(),
   id=()=>randomUUID()
 }={}) {
-  return async({method,authorization='',body={}})=>{
+  return async({method,authorization='',role=null,body={}})=>{
     if(method==='GET') {
       if(!store)return {status:200,body:{bulletins:[],publishingConfigured:false}};
       try {
@@ -49,8 +50,8 @@ export function createBulletinHandler({
       }catch{return {status:503,body:{error:'Bulletin records are temporarily unavailable.'}}}
     }
     if(method!=='POST')return {status:405,body:{error:'Method not allowed.'}};
-    if(!token)return {status:503,body:{error:'High Command authorization is not configured on the server.'}};
-    if(!authorized(authorization,token))return {status:401,body:{error:'High Command authorization required.'}};
+    if(!token&&!roleCan(role,'bulletins:publish'))return {status:503,body:{error:'High Command authorization is not configured on the server.'}};
+    if(!roleCan(role,'bulletins:publish')&&!authorized(authorization,token))return {status:401,body:{error:'High Command authorization required.'}};
     if(!store)return {status:503,body:{error:'Persistent bulletin storage is not configured. An administrator must connect the server-side Upstash Redis integration.'}};
     const validated=validateBulletin(body);
     if(!validated.valid)return {status:400,body:{error:'Please correct the required fields.',fields:validated.errors}};
