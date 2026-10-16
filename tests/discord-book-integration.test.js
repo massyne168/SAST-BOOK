@@ -11,7 +11,7 @@ test('all five book opening handlers and navigation require Discord roles',()=>{
   for(const [method,id] of [
     ['openArchive','archive'],['openDirectory','directory'],['openClassified','classified'],
     ['openResignationNotices','resignation'],['openBulletinArchive','bulletins']
-  ])assert.ok(app.includes("async function "+method+"() {\\n  if (!await ensureBookAccess('"+id+"')) return;"));
+  ])assert.ok(app.includes("async function "+method+"() {\n  if (!await ensureBookAccess('"+id+"')) return;"));
   assert.match(app,/if \(!await ensureBookAccess\(kind\)\) return/);
   assert.match(app,/import \{ensureBookAccess\} from '\.\/discord-access-client\.js'/);
   assert.match(app,/bookConfig\.forEach/);
