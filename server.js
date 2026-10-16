@@ -86,8 +86,9 @@ export const server = http.createServer(async (request, response) => {
       const result = await resignationHandler({body: await readJson(request), ip: request.headers['x-forwarded-for']?.split(',')[0]?.trim() || request.socket.remoteAddress});
       return sendJson(response, result.status, result.body);
     }
-    if (pathname.startsWith('/data/')||pathname==='/.env'||pathname.startsWith('/.git/')||
-        pathname.startsWith('/api/')||pathname.endsWith('.tmp'))return sendJson(response,404,{error:'Not found.'});
+    if (pathname.startsWith('/data/')||pathname.startsWith('/api/')||
+        pathname.split('/').some(segment=>segment.startsWith('.')&&segment!=='.well-known')||
+        pathname.endsWith('.tmp'))return sendJson(response,404,{error:'Not found.'});
     const filename = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (!filename.startsWith(root + path.sep)) { response.writeHead(403).end(); return; }
     const data = await readFile(filename);
