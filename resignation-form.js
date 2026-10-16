@@ -46,9 +46,10 @@ export function initializeResignationForm() {
       const response = await fetch('/api/resignation', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || 'Delivery could not be confirmed.');
-      status.textContent = `NOTICE DELIVERED — REFERENCE ${payload.reference}`;
+      status.textContent = `NOTICE SAVED IN BOOK — REFERENCE ${payload.reference}${payload.delivery === 'book-only' ? ' (DISCORD NOT CONFIGURED)' : ''}`;
       notify('delivered', data, payload.reference);
       form.reset(); summary.hidden = true; submit.hidden = true;
+      if (payload.record?.reference) document.dispatchEvent(new CustomEvent('resignation-record-created', {detail:{record:payload.record}}));
     } catch (cause) { status.textContent = cause.message; notify('error', data); }
     finally { submit.disabled = false; review.disabled = false; }
   });
