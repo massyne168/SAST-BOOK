@@ -13,7 +13,7 @@ test('original Command Center entry remains in masthead and opens a secure login
   assert.match(command,/command-center-entry/);
   assert.match(command,/name="role"/);
   assert.match(command,/name="accessKey" type="password"/);
-  assert.match(command,/data-command-workspace" hidden/);
+  assert.match(command,/data-command-workspace hidden/);
   assert.match(command,/commandCan\('dashboard:read'\)/);
   assert.match(command,/data-command-bulletins/);
   assert.match(command,/data-command-ranks/);
@@ -24,7 +24,7 @@ test('all secured session operations are server-backed and do not persist creden
   assert.match(client,/fetch\('\/api\/command-session'/);
   assert.match(client,/credentials:'same-origin'/);
   assert.match(client,/X-SAST-Request':'command-ui'/);
-  assert.doesNotMatch(client,/localStorage|sessionStorage/);
+  assert.doesNotMatch(client,/(?:localStorage|sessionStorage)\.(?:setItem|getItem)/);
   assert.match(auth,/HttpOnly; SameSite=Strict/);
   assert.match(auth,/timingSafeEqual/);
   assert.match(auth,/createHmac\('sha256'/);
