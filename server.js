@@ -6,12 +6,17 @@ import {rankDirectoryData, directoryRanks} from './rank-directory-data.js';
 import {createResignationHandler} from './resignation-service.js';
 import {createBulletinHandler} from './bulletin-service.js';
 import {createLocalBulletinStore} from './bulletin-storage.js';
+import {createCommandAuth} from './command-auth.js';
+import {createCommandOverviewHandler} from './command-overview-service.js';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const personnelFile = path.join(root, 'data', 'personnel.json');
 const types = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.webp':'image/webp','.jpg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml','.json':'application/json'};
 const sendJson = (response, status, body) => response.writeHead(status, {'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify(body));
 const resignationHandler = createResignationHandler();
-const bulletinHandler = createBulletinHandler({store:createLocalBulletinStore()});
+const bulletinStore=createLocalBulletinStore();
+const bulletinHandler = createBulletinHandler({store:bulletinStore});
+const commandAuth=createCommandAuth();
+const commandOverview=createCommandOverviewHandler({auth:commandAuth,store:bulletinStore});
 const readJson = request => new Promise((resolve, reject) => {
   let data = '';
   request.on('data', chunk => { data += chunk; if (data.length > 1024 * 1024) request.destroy(); });
@@ -52,9 +57,26 @@ export const server = http.createServer(async (request, response) => {
       await savePersonnel(people);
       return sendJson(response, 200, {person: people[position], people});
     }
+    if (pathname === '/api/command-session') {
+      if(['POST','DELETE'].includes(request.method)&&request.headers['x-sast-request']!=='command-ui')
+        return sendJson(response,403,{error:'Invalid command request.'});
+      const result=commandAuth.handle({
+        method:request.method,body:request.method==='POST'?await readJson(request):{},
+        cookie:request.headers.cookie,secure:false
+      });
+      if(result.setCookie)response.setHeader('Set-Cookie',result.setCookie);
+      response.setHeader('Vary','Cookie');
+      return sendJson(response,result.status,result.body);
+    }
+    if (pathname === '/api/command-overview') {
+      const result=await commandOverview({method:request.method,cookie:request.headers.cookie});
+      response.setHeader('Vary','Cookie');
+      return sendJson(response,result.status,result.body);
+    }
     if (pathname === '/api/bulletins') {
       const result=await bulletinHandler({
         method:request.method,authorization:request.headers.authorization,
+        role:request.headers['x-sast-request']==='command-ui'?commandAuth.verify(request.headers.cookie)?.role:null,
         body:request.method==='POST'?await readJson(request):{}
       });
       return sendJson(response,result.status,result.body);
@@ -64,6 +86,8 @@ export const server = http.createServer(async (request, response) => {
       const result = await resignationHandler({body: await readJson(request), ip: request.headers['x-forwarded-for']?.split(',')[0]?.trim() || request.socket.remoteAddress});
       return sendJson(response, result.status, result.body);
     }
+    if (pathname.startsWith('/data/')||pathname==='/.env'||pathname.startsWith('/.git/')||
+        pathname.startsWith('/api/')||pathname.endsWith('.tmp'))return sendJson(response,404,{error:'Not found.'});
     const filename = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (!filename.startsWith(root + path.sep)) { response.writeHead(403).end(); return; }
     const data = await readFile(filename);
