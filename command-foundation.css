@@ -232,3 +232,6 @@
   .command-center--secured *::before,
   .command-center--secured *::after {animation:none!important;transition:none!important}
 }
+
+/* Author-level editor label layout must not override its hidden attribute. */
+.high-command-bulletin-editor [data-high-command-key][hidden] {display:none!important}
