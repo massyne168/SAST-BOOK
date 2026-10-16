@@ -4,6 +4,8 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {rankDirectoryData, directoryRanks} from './rank-directory-data.js';
 import {createResignationHandler} from './resignation-service.js';
+import {createLocalResignationStore} from './resignation-storage.js';
+import {createResignationRecordsHandler} from './resignation-records-service.js';
 import {createBulletinHandler} from './bulletin-service.js';
 import {createLocalBulletinStore} from './bulletin-storage.js';
 import {createCommandAuth} from './command-auth.js';
@@ -12,7 +14,9 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const personnelFile = path.join(root, 'data', 'personnel.json');
 const types = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.webp':'image/webp','.jpg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml','.json':'application/json'};
 const sendJson = (response, status, body) => response.writeHead(status, {'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify(body));
-const resignationHandler = createResignationHandler();
+const resignationStore=createLocalResignationStore();
+const resignationHandler = createResignationHandler({store:resignationStore,requireStorage:true});
+const resignationRecordsHandler=createResignationRecordsHandler({store:resignationStore});
 const bulletinStore=createLocalBulletinStore();
 const bulletinHandler = createBulletinHandler({store:bulletinStore});
 const commandAuth=createCommandAuth();
@@ -79,6 +83,10 @@ export const server = http.createServer(async (request, response) => {
         role:request.headers['x-sast-request']==='command-ui'?commandAuth.verify(request.headers.cookie)?.role:null,
         body:request.method==='POST'?await readJson(request):{}
       });
+      return sendJson(response,result.status,result.body);
+    }
+    if (pathname === '/api/resignation-records') {
+      const result=await resignationRecordsHandler({method:request.method});
       return sendJson(response,result.status,result.body);
     }
     if (pathname === '/api/resignation') {
