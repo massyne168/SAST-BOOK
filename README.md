@@ -126,24 +126,28 @@ The five books are now gated through **Login with Discord**. The browser does no
 
 - `DISCORD_CLIENT_ID`: Application ID from Discord Developer Portal.
 - `DISCORD_CLIENT_SECRET`: **secret** from the same application.
-- `DISCORD_GUILD_ID`: Server ID of the intended Discord community.
+- `DISCORD_GUILD_ID`: optional override; defaults to ELYSIUM guild `1541899063501529178` from `discord-elysium-roles.js`.
 - `DISCORD_REDIRECT_URI`: exact callback URL registered in Discord OAuth2 Redirects, e.g. `https://YOUR-PROJECT.vercel.app/api/discord` (no query parameters).
 - `DISCORD_SESSION_SECRET`: independent random secret string, **32+ characters**.
-- `DISCORD_BOOK_ROLES_JSON`: JSON allowlist using **actual Discord role IDs** (strings). A book with no valid role ID is inaccessible to everyone by default.
+- `DISCORD_BOOK_ROLES_JSON`: optional **complete override** of the book allowlist in `discord-elysium-roles.js`. If set, it replaces the committed defaults. Invalid or omitted book role lists fail closed.
 
-Example configuration (IDs shown below are illustrative placeholders, **not actual permissions**):
+### ELYSIUM verified identifiers and default permissions
 
-```json
-{
-  "archive": ["111111111111111111", "222222222222222222"],
-  "directory": ["333333333333333333", "222222222222222222"],
-  "classified": ["222222222222222222"],
-  "resignation": ["333333333333333333", "222222222222222222"],
-  "bulletins": ["333333333333333333", "222222222222222222"]
-}
-```
+The real Server ID and all 13 rank role IDs supplied by the SAST project owner on 2026-10-16 are recorded as exact **strings** in `discord-elysium-roles.js`. Those identifiers are not secrets.
 
-Suggested labels for these **replaceable examples**: `archive` = Armory Officer / High Command; `directory` = Trooper / High Command; `classified` = High Command; `resignation` = Trooper / High Command; `bulletins` = Trooper / High Command (High Command publication still requires the existing Command publishing authorization). Multiple roles per book mean **any one** listed role grants reading. Enable Developer Mode in Discord, right-click a role and copy its ID; right-click the server and copy the Server ID. The IDs must be entered as strings, not numbers, to preserve precision.
+Default access mapping:
+
+| Book | Allowed ELYSIUM Discord roles |
+|---|---|
+| Armory | High Command, Chief of Police, Assistant Chief of Police |
+| Rank Directory | All 13 named leadership, sergeant and trooper roles |
+| Classified Archive | High Command, Chief of Police, Assistant Chief of Police |
+| Resignation Notices | All 13 named leadership, sergeant and trooper roles |
+| Announcements & Orders | All 13 named leadership, sergeant and trooper roles |
+
+The configured full-rank list includes High Command, Chief of Police, Assistant Chief of Police, Captain, Lieutenant, Master Sergeant, Staff Sergeant, Sergeant, Master Trooper, Senior Trooper, Trooper First Class, Trooper and Law Enforcement Trooper. Book access is allowed if the user has **at least one** role in the selected book's list. These are deliberately conservative initial defaults for the sensitive books; request a change if Captains, Lieutenants or dedicated Armory staff should have access.
+
+An existing Vercel `DISCORD_BOOK_ROLES_JSON` setting overrides the new repository defaults. **Delete an outdated placeholder override or replace it with actual IDs**; otherwise that older environment value takes precedence and can leave users locked out. `DISCORD_GUILD_ID` similarly overrides the built-in ELYSIUM guild ID. No secrets are committed to the repository.
 
 ### Discord Developer Portal steps
 
