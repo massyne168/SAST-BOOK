@@ -10,6 +10,7 @@ import {createBulletinHandler} from './bulletin-service.js';
 import {createLocalBulletinStore} from './bulletin-storage.js';
 import {createCommandAuth} from './command-auth.js';
 import {createCommandOverviewHandler} from './command-overview-service.js';
+import {createDiscordBookAccess} from './discord-book-access.js';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const personnelFile = path.join(root, 'data', 'personnel.json');
 const types = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.webp':'image/webp','.jpg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml','.json':'application/json'};
@@ -21,6 +22,7 @@ const bulletinStore=createLocalBulletinStore();
 const bulletinHandler = createBulletinHandler({store:bulletinStore});
 const commandAuth=createCommandAuth();
 const commandOverview=createCommandOverviewHandler({auth:commandAuth,store:bulletinStore});
+const discordAccess=createDiscordBookAccess();
 const readJson = request => new Promise((resolve, reject) => {
   let data = '';
   request.on('data', chunk => { data += chunk; if (data.length > 1024 * 1024) request.destroy(); });
@@ -40,6 +42,19 @@ const savePersonnel = async people => {
 export const server = http.createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url,'http://localhost').pathname);
+    if (pathname === '/api/discord') {
+      const url=new URL(request.url,'http://localhost');
+      const code=url.searchParams.get('code')||'';
+      const error=url.searchParams.get('error')||'';
+      const action=url.searchParams.get('action')||(code||error?'callback':'session');
+      const result=await discordAccess.handle({action,cookie:request.headers.cookie,code,error,
+        state:url.searchParams.get('state')||'',book:url.searchParams.get('book')||'',secure:false});
+      if(result.cookies?.length)response.setHeader('Set-Cookie',result.cookies);
+      response.setHeader('Cache-Control','no-store');
+      response.setHeader('Vary','Cookie');
+      if(result.location){response.writeHead(result.status,{Location:result.location}).end();return}
+      return sendJson(response,result.status,result.body);
+    }
     if (pathname === '/api/personnel' && request.method === 'GET') {
       return sendJson(response, 200, {people: await readPersonnel(), adminEnabled: Boolean(process.env.ADMIN_TOKEN)});
     }
@@ -78,6 +93,8 @@ export const server = http.createServer(async (request, response) => {
       return sendJson(response,result.status,result.body);
     }
     if (pathname === '/api/bulletins') {
+      const access=await discordAccess.check(request.headers.cookie,'bulletins');
+      if(access.status!==200)return sendJson(response,access.status,{error:access.body.message||'Forbidden'});
       const result=await bulletinHandler({
         method:request.method,authorization:request.headers.authorization,
         role:request.headers['x-sast-request']==='command-ui'?commandAuth.verify(request.headers.cookie)?.role:null,
@@ -86,10 +103,14 @@ export const server = http.createServer(async (request, response) => {
       return sendJson(response,result.status,result.body);
     }
     if (pathname === '/api/resignation-records') {
+      const access=await discordAccess.check(request.headers.cookie,'resignation');
+      if(access.status!==200)return sendJson(response,access.status,{error:access.body.message||'Forbidden'});
       const result=await resignationRecordsHandler({method:request.method});
       return sendJson(response,result.status,result.body);
     }
     if (pathname === '/api/resignation') {
+      const access=await discordAccess.check(request.headers.cookie,'resignation');
+      if(access.status!==200)return sendJson(response,access.status,{error:access.body.message||'Forbidden'});
       if (request.method !== 'POST') return sendJson(response, 405, {error: 'Method not allowed.'});
       const result = await resignationHandler({body: await readJson(request), ip: request.headers['x-forwarded-for']?.split(',')[0]?.trim() || request.socket.remoteAddress});
       return sendJson(response, result.status, result.body);
