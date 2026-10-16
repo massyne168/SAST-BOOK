@@ -1,3 +1,4 @@
+import {commandCan} from './command-session-client.js';
 const clean=value=>String(value??'').trim();
 const validDate=value=>{
   if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
@@ -13,7 +14,7 @@ export function validateBulletinDraft(data) {
   if(!data.message||data.message.length>4000)errors.message='Enter the full announcement or order.';
   if(data.expiryDate&&!validDate(data.expiryDate))errors.expiryDate='Choose a valid expiry date.';
   if(!data.confirmation)errors.confirmation='Confirm High Command approval before publication.';
-  if(!data.secret)errors.secret='Enter the High Command publishing access key.';
+  if(!data.secret&&!data.authorized)errors.secret='Sign in as High Command or enter an authorized publishing access key.';
   return errors;
 }
 export function createBulletinEditor({onPublished,onDraft}={}) {
@@ -31,7 +32,7 @@ export function createBulletinEditor({onPublished,onDraft}={}) {
     '<label>FULL ANNOUNCEMENT / ORDER<textarea name="message" maxlength="4000" rows="5" required placeholder="Write the authorized announcement..."></textarea></label>',
     '<label>EXPIRY DATE (OPTIONAL)<input name="expiryDate" type="date"></label>',
     '<label class="bulletin-checkbox"><input name="pinned" type="checkbox"><span>PIN NOTICE AT THE TOP</span></label>',
-    '<label>HIGH COMMAND ACCESS KEY<input name="secret" type="password" autocomplete="off" spellcheck="false" required placeholder="Publishing permission"></label>',
+    '<label data-high-command-key>HIGH COMMAND ACCESS KEY<input name="secret" type="password" autocomplete="off" spellcheck="false" required placeholder="Publishing permission"></label>',
     '<label class="bulletin-checkbox"><input name="confirmation" type="checkbox" required><span>I confirm High Command has approved publication.</span></label>',
     '<div class="bulletin-editor-actions"><button type="button" data-bulletin-review>REVIEW DRAFT</button><button type="submit" data-bulletin-publish disabled>PUBLISH TO BOOK</button></div>',
     '<p class="bulletin-editor-status" role="status" aria-live="polite" data-bulletin-status>Only approved notices are published.</p>',
@@ -47,13 +48,23 @@ export function createBulletinEditor({onPublished,onDraft}={}) {
     issuedBy:clean(form.elements.issuedBy.value),priority:clean(form.elements.priority.value),
     message:clean(form.elements.message.value),expiryDate:clean(form.elements.expiryDate.value),
     pinned:form.elements.pinned.checked,confirmation:form.elements.confirmation.checked,
-    secret:form.elements.secret.value
+    secret:form.elements.secret.value,authorized:commandCan('bulletins:publish')
   });
   const snapshot=()=>{
-    const {secret,...data}=values();
+    const {secret,authorized,...data}=values();
     return {...data,phase};
   };
   const notify=()=>onDraft?.(snapshot());
+  function applyCommandRole(){
+    const authorized=commandCan('bulletins:publish');
+    const keyGroup=element.querySelector('[data-high-command-key]');
+    keyGroup.hidden=authorized;
+    form.elements.secret.required=!authorized;
+    if(authorized)form.elements.secret.value='';
+    if(authorized)status.textContent='HIGH COMMAND VERIFIED · You may review and publish using your Command session.';
+    if(!authorized&&reviewed){reviewed=false;publish.disabled=true}
+  }
+  document.addEventListener('sast-command-session',applyCommandRole);
   function showErrors(errors) {
     form.querySelectorAll('[aria-invalid]').forEach(field=>field.removeAttribute('aria-invalid'));
     for(const field of Object.keys(errors))form.elements[field]?.setAttribute('aria-invalid','true');
@@ -84,10 +95,10 @@ export function createBulletinEditor({onPublished,onDraft}={}) {
     publishing=true;phase='publishing';review.disabled=true;publish.disabled=true;notify();
     status.textContent='SAVING OFFICIAL NOTICE...';
     try {
-      const {secret,...payload}=data;
+      const {secret,authorized,...payload}=data;
       const response=await fetch('/api/bulletins',{
-        method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+secret},
-        body:JSON.stringify(payload),cache:'no-store'
+        method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+secret,'X-SAST-Request':authorized?'command-ui':'legacy'},
+        body:JSON.stringify(payload),cache:'no-store',credentials:'same-origin'
       });
       const result=await response.json().catch(()=>({}));
       if(!response.ok)throw Error(result.error||'Publication could not be confirmed.');
@@ -102,6 +113,6 @@ export function createBulletinEditor({onPublished,onDraft}={}) {
       reviewed=false;publish.disabled=true;notify();
     } finally {publishing=false;review.disabled=false;}
   });
-  notify();
+  applyCommandRole();notify();
   return {element,snapshot,form};
 }
