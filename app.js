@@ -505,30 +505,33 @@ export function navigateBook(kind, officerId) {
       await new Promise(resolve => setTimeout(resolve, 40));
     }
     if (busy() || engine.drag || engine.pending || carouselTransitioning) throw new Error('Please finish the current page turn and try again.');
-    if (kind === 'directory') {
-      if (!main.classList.contains('directory-open')) {
-        if (!main.classList.contains('archive-closed')) await closeArchive();
-        setCarouselBook(1);
-        await openDirectory();
-      }
-      if (officerId && !await rankDirectoryModule.revealOfficer(officerId)) throw new Error('Unable to locate the officer. Please try again.');
-    } else if (kind === 'resignation') {
-      if (!main.classList.contains('resignation-open')) {
-        if (!main.classList.contains('archive-closed')) {
-          if (main.classList.contains('directory-open')) await rankDirectoryModule.closeDirectory();
-          else if (main.classList.contains('classified-open')) await closeClassified();
-          else if (main.classList.contains('bulletins-open')) await closeBulletinArchive();
-          else await closeArchive();
-        }
-        setCarouselBook(3);
-        if (!isBookFocused('resignation')) await focusBook('resignation');
-        await openResignationNotices();
-      }
+    const destinations = {archive:0,directory:1,classified:2,resignation:3,bulletins:4};
+    if (!Object.hasOwn(destinations,kind)) throw new Error('Unknown book destination.');
+    const active = [
+      ['directory','directory-open'],['classified','classified-open'],
+      ['resignation','resignation-open'],['bulletins','bulletins-open']
+    ].find(([,className])=>main.classList.contains(className))?.[0] ||
+      (main.classList.contains('archive-closed') ? null : 'archive');
+    if (active !== kind) {
+      if (active === 'directory') await rankDirectoryModule.closeDirectory();
+      else if (active === 'classified') await closeClassified();
+      else if (active === 'resignation') await closeResignationNotices();
+      else if (active === 'bulletins') await closeBulletinArchive();
+      else if (active === 'archive') await closeArchive();
+      setCarouselBook(destinations[kind]);
+      if (!isBookFocused(kind)) await focusBook(kind);
+      if (kind === 'directory') await openDirectory();
+      else if (kind === 'classified') await openClassified();
+      else if (kind === 'resignation') await openResignationNotices();
+      else if (kind === 'bulletins') await openBulletinArchive();
+      else await openArchive();
+    }
+    if (kind === 'directory' && officerId &&
+        !await rankDirectoryModule.revealOfficer(officerId)) {
+      throw new Error('Unable to locate the officer. Please try again.');
+    }
+    if (kind === 'resignation') {
       document.querySelector('.supplemental-reader--resignation [data-open-form]')?.click();
-    } else {
-      if (main.classList.contains('directory-open')) await rankDirectoryModule.closeDirectory();
-      setCarouselBook(0);
-      if (main.classList.contains('archive-closed')) await openArchive();
     }
   });
   return archiveNavigation;
