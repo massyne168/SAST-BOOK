@@ -53,7 +53,7 @@ test('tampered, expired, and rotated sessions cannot access Command',()=>{
   const token=auth.issue('administrator',credentials.administrator);
   assert.ok(token);
   const [payload,signature]=token.split('.');
-  assert.equal(auth.verify(cookie(payload+'.'+signature.slice(0,-1)+'a')),null);
+  assert.equal(auth.verify(cookie(payload+'.'+signature.slice(0,-1)+(signature.endsWith('a')?'b':'a'))),null);
   const expired=authFor({now:()=>fixed+9*60*60*1000});
   assert.equal(expired.verify(cookie(token)),null);
   const changedKey=authFor({credentials:{...credentials,administrator:'new-administrator-key-secret'}});
