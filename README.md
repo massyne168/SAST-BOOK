@@ -131,7 +131,7 @@ The five books are now gated through **Login with Discord**. The browser does no
 - `DISCORD_SESSION_SECRET`: independent random secret string, **32+ characters**.
 - `DISCORD_BOOK_ROLES_JSON`: optional **complete override** of the book allowlist in `discord-elysium-roles.js`. If set, it replaces the committed defaults. Invalid or omitted book role lists fail closed.
 
-### ELYSIUM verified identifiers and default permissions
+### ELYSIUM owner-provided identifiers and default permissions
 
 The real Server ID and all 13 rank role IDs supplied by the SAST project owner on 2026-10-16 are recorded as exact **strings** in `discord-elysium-roles.js`. Those identifiers are not secrets.
 
