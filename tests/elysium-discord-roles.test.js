@@ -60,5 +60,5 @@ test('custom role configuration remains an explicit complete override and does n
 test('OAuth secrets are still required: public guild and role IDs alone cannot authorize login',()=>{
   const noCredentials=make({});
   assert.equal(noCredentials.configured,false);
-  assert.equal(noCredentials.handle({action:'start'}).then instanceof Function,true);
+  return noCredentials.handle({action:'start'}).then(result=>assert.equal(result.status,503));
 });
