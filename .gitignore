@@ -8,3 +8,11 @@ dist/*
 !dist/assets/
 dist/assets/*
 !dist/assets/rank-directory-cover.webp
+
+# Runtime High Command publications are stored on the server, never in source control.
+data/bulletins.json
+data/bulletins.json.*.tmp
+
+# Resignation notices are sensitive roleplay records and must remain out of Git.
+data/resignations.json
+data/resignations.json.*.tmp

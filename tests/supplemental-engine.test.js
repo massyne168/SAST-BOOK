@@ -13,7 +13,7 @@ test('Classified, Resignation and Bulletins all instantiate the original strip-b
   assert.match(reader,/import \{FlipEngine\} from '\.\/flip-engine\.js'/);
   assert.match(reader,/state\.engine = new FlipEngine\(book,/);
   assert.match(reader,/render:index=>buildPage\(pages\[index\],index,kind\)/);
-  assert.match(reader,/spreadCount:5/);
+  assert.match(reader,/spreadCount:state\.documentPages\?state\.documentPages\.length\/2:5/);
   assert.match(reader,/slots:\{layer:'\.supplemental-turn-layer',left:'\.supplemental-slot-left',right:'\.supplemental-slot-right'\}/);
   assert.match(engine,/this\.stripCount = this\.lowPower \? 6 : 8/);
   assert.match(engine,/Math\.acos\(1 - 2 \* p\)/);

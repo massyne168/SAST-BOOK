@@ -4,11 +4,25 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {rankDirectoryData, directoryRanks} from './rank-directory-data.js';
 import {createResignationHandler} from './resignation-service.js';
+import {createLocalResignationStore} from './resignation-storage.js';
+import {createResignationRecordsHandler} from './resignation-records-service.js';
+import {createBulletinHandler} from './bulletin-service.js';
+import {createLocalBulletinStore} from './bulletin-storage.js';
+import {createCommandAuth} from './command-auth.js';
+import {createCommandOverviewHandler} from './command-overview-service.js';
+import {createDiscordBookAccess} from './discord-book-access.js';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const personnelFile = path.join(root, 'data', 'personnel.json');
 const types = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.webp':'image/webp','.jpg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml','.json':'application/json'};
 const sendJson = (response, status, body) => response.writeHead(status, {'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify(body));
-const resignationHandler = createResignationHandler();
+const resignationStore=createLocalResignationStore();
+const resignationHandler = createResignationHandler({store:resignationStore,requireStorage:true});
+const resignationRecordsHandler=createResignationRecordsHandler({store:resignationStore});
+const bulletinStore=createLocalBulletinStore();
+const bulletinHandler = createBulletinHandler({store:bulletinStore});
+const commandAuth=createCommandAuth();
+const commandOverview=createCommandOverviewHandler({auth:commandAuth,store:bulletinStore});
+const discordAccess=createDiscordBookAccess();
 const readJson = request => new Promise((resolve, reject) => {
   let data = '';
   request.on('data', chunk => { data += chunk; if (data.length > 1024 * 1024) request.destroy(); });
@@ -28,6 +42,19 @@ const savePersonnel = async people => {
 export const server = http.createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url,'http://localhost').pathname);
+    if (pathname === '/api/discord') {
+      const url=new URL(request.url,'http://localhost');
+      const code=url.searchParams.get('code')||'';
+      const error=url.searchParams.get('error')||'';
+      const action=url.searchParams.get('action')||(code||error?'callback':'session');
+      const result=await discordAccess.handle({action,cookie:request.headers.cookie,code,error,
+        state:url.searchParams.get('state')||'',book:url.searchParams.get('book')||'',secure:false});
+      if(result.cookies?.length)response.setHeader('Set-Cookie',result.cookies);
+      response.setHeader('Cache-Control','no-store');
+      response.setHeader('Vary','Cookie');
+      if(result.location){response.writeHead(result.status,{Location:result.location}).end();return}
+      return sendJson(response,result.status,result.body);
+    }
     if (pathname === '/api/personnel' && request.method === 'GET') {
       return sendJson(response, 200, {people: await readPersonnel(), adminEnabled: Boolean(process.env.ADMIN_TOKEN)});
     }
@@ -49,11 +76,48 @@ export const server = http.createServer(async (request, response) => {
       await savePersonnel(people);
       return sendJson(response, 200, {person: people[position], people});
     }
+    if (pathname === '/api/command-session') {
+      if(['POST','DELETE'].includes(request.method)&&request.headers['x-sast-request']!=='command-ui')
+        return sendJson(response,403,{error:'Invalid command request.'});
+      const result=commandAuth.handle({
+        method:request.method,body:request.method==='POST'?await readJson(request):{},
+        cookie:request.headers.cookie,secure:false
+      });
+      if(result.setCookie)response.setHeader('Set-Cookie',result.setCookie);
+      response.setHeader('Vary','Cookie');
+      return sendJson(response,result.status,result.body);
+    }
+    if (pathname === '/api/command-overview') {
+      const result=await commandOverview({method:request.method,cookie:request.headers.cookie});
+      response.setHeader('Vary','Cookie');
+      return sendJson(response,result.status,result.body);
+    }
+    if (pathname === '/api/bulletins') {
+      const access=await discordAccess.check(request.headers.cookie,'bulletins');
+      if(access.status!==200)return sendJson(response,access.status,{error:access.body.message||'Forbidden'});
+      const result=await bulletinHandler({
+        method:request.method,authorization:request.headers.authorization,
+        role:request.headers['x-sast-request']==='command-ui'?commandAuth.verify(request.headers.cookie)?.role:null,
+        body:request.method==='POST'?await readJson(request):{}
+      });
+      return sendJson(response,result.status,result.body);
+    }
+    if (pathname === '/api/resignation-records') {
+      const access=await discordAccess.check(request.headers.cookie,'resignation');
+      if(access.status!==200)return sendJson(response,access.status,{error:access.body.message||'Forbidden'});
+      const result=await resignationRecordsHandler({method:request.method});
+      return sendJson(response,result.status,result.body);
+    }
     if (pathname === '/api/resignation') {
+      const access=await discordAccess.check(request.headers.cookie,'resignation');
+      if(access.status!==200)return sendJson(response,access.status,{error:access.body.message||'Forbidden'});
       if (request.method !== 'POST') return sendJson(response, 405, {error: 'Method not allowed.'});
       const result = await resignationHandler({body: await readJson(request), ip: request.headers['x-forwarded-for']?.split(',')[0]?.trim() || request.socket.remoteAddress});
       return sendJson(response, result.status, result.body);
     }
+    if (pathname.startsWith('/data/')||pathname.startsWith('/api/')||
+        pathname.split('/').some(segment=>segment.startsWith('.')&&segment!=='.well-known')||
+        pathname.endsWith('.tmp'))return sendJson(response,404,{error:'Not found.'});
     const filename = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (!filename.startsWith(root + path.sep)) { response.writeHead(403).end(); return; }
     const data = await readFile(filename);

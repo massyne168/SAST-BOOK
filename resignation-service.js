@@ -27,16 +27,28 @@ export function validateResignation(value) {
 
 export const fingerprintNotice = notice => createHash('sha256').update(JSON.stringify([notice.fullName.toLowerCase(), notice.badgeNumber.toLowerCase(), notice.currentRank, notice.effectiveDate, notice.reason, notice.notes])).digest('hex');
 
-export function createResignationHandler({fetchImpl = fetch, webhookUrl = process.env.DISCORD_RESIGNATION_WEBHOOK_URL, now = () => new Date(), id = () => randomUUID(), limit = 5, windowMs = 10 * 60 * 1000, duplicateMs = 24 * 60 * 60 * 1000} = {}) {
+export function createResignationHandler({fetchImpl = fetch, webhookUrl = process.env.DISCORD_RESIGNATION_WEBHOOK_URL, store = null, requireStorage = false, now = () => new Date(), id = () => randomUUID(), limit = 5, windowMs = 10 * 60 * 1000, duplicateMs = 24 * 60 * 60 * 1000} = {}) {
   const requests = new Map(), duplicates = new Map();
   return async ({body, ip = 'unknown'}) => {
     const checked = validateResignation(body);
     if (!checked.valid) return {status: 400, body: {error: 'Please correct the highlighted fields.', fields: checked.errors}};
-    if (!webhookUrl) return {status: 503, body: {error: 'Resignation delivery is not configured. Ask an administrator to set DISCORD_RESIGNATION_WEBHOOK_URL on the server.'}};
+    if (requireStorage && !store) return {status: 503, body: {error: 'Resignation book storage is not connected. Configure server-side Redis before submitting.'}};
+    if (!webhookUrl && !store) return {status: 503, body: {error: 'Resignation delivery is not configured. Ask an administrator to set DISCORD_RESIGNATION_WEBHOOK_URL on the server.'}};
     const timestamp = now(); const key = fingerprintNotice(checked.notice); const recent = requests.get(ip) || [];
     const active = recent.filter(time => timestamp - time < windowMs);
     if (active.length >= limit) return {status: 429, body: {error: 'Too many notices submitted. Please wait and try again.'}};
     if (duplicates.get(key) && timestamp - duplicates.get(key) < duplicateMs) return {status: 409, body: {error: 'An identical resignation notice was already submitted recently.'}};
+    // The archive is the source of truth for all published book pages.
+    // Cross-invocation duplicate checks stop identical notices being saved twice on Vercel.
+    if (store) {
+      try {
+        const persisted = await store.list();
+        const same = persisted.some(entry => fingerprintNotice(entry) === key &&
+          timestamp - new Date(entry.submittedAt) >= 0 &&
+          timestamp - new Date(entry.submittedAt) < duplicateMs);
+        if (same) return {status: 409, body: {error: 'An identical resignation notice is already recorded in the book.'}};
+      } catch { return {status: 503, body: {error: 'Could not verify the resignation archive. Nothing was submitted; please retry.'}}; }
+    }
     requests.set(ip, [...active, timestamp]);
     const reference = `RN-${timestamp.getUTCFullYear()}-${id().replace(/-/g, '').slice(0, 10).toUpperCase()}`;
     const fields = [
@@ -44,13 +56,30 @@ export function createResignationHandler({fetchImpl = fetch, webhookUrl = proces
       ['Effective Resignation Date', checked.notice.effectiveDate], ['Reason for Resignation', checked.notice.reason], ['Additional Notes', checked.notice.notes || 'None provided'],
       ['Reference Number', reference], ['Submitted At', timestamp.toISOString()]
     ].map(([name, value]) => ({name, value: String(value).slice(0, 1024), inline: name !== 'Reason for Resignation' && name !== 'Additional Notes'}));
-    try {
-      const response = await fetchImpl(webhookUrl, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({allowed_mentions: {parse: []}, embeds: [{title: 'TROOPER RESIGNATION NOTICE', color: 0xb92c43, fields, timestamp: timestamp.toISOString()}]})});
-      if (!response.ok) throw new Error(`Discord returned ${response.status}`);
-      duplicates.set(key, timestamp);
-      return {status: 201, body: {reference}};
-    } catch {
-      return {status: 502, body: {error: 'Delivery could not be confirmed. Your notice was not submitted; please try again.'}};
+    if (webhookUrl) {
+      try {
+        const response = await fetchImpl(webhookUrl, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({allowed_mentions: {parse: []}, embeds: [{title: 'TROOPER RESIGNATION NOTICE', color: 0xb92c43, fields, timestamp: timestamp.toISOString()}]})});
+        if (!response.ok) throw new Error(`Discord returned ${response.status}`);
+      } catch {
+        return {status: 502, body: {error: 'Discord delivery could not be confirmed. The notice was not added to the book; please retry.'}};
+      }
     }
+    const record = {
+      reference, fullName: checked.notice.fullName, badgeNumber: checked.notice.badgeNumber,
+      currentRank: checked.notice.currentRank, effectiveDate: checked.notice.effectiveDate,
+      reason: checked.notice.reason, notes: checked.notice.notes,
+      submittedAt: timestamp.toISOString(),
+      status: 'Submitted', delivery: webhookUrl ? 'discord' : 'book-only'
+    };
+    if (store) {
+      try { await store.add(record); }
+      catch {
+        return {status: 503, body: {error: webhookUrl
+          ? 'Delivered to Discord, but archiving in the book failed. Contact High Command with reference ' + reference + ' before retrying.'
+          : 'The notice could not be archived. Nothing was published; please retry.'}};
+      }
+    }
+    duplicates.set(key, timestamp);
+    return {status: 201, body: {reference, record: store ? record : undefined, delivery: record.delivery}};
   };
 }

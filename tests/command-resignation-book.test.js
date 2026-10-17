@@ -44,7 +44,7 @@ test('the form fills a live preview but still requires validated submission', ()
 test('all three new books share the original realistic FlipEngine physics', () => {
   assert.match(readers,/import \{FlipEngine\} from '\.\/flip-engine\.js'/);
   assert.match(readers,/new FlipEngine\(book/);
-  assert.match(readers,/spreadCount:5/);
+  assert.match(readers,/spreadCount:state\.documentPages\?state\.documentPages\.length\/2:5/);
   assert.match(readers,/slots:\{layer:'\.supplemental-turn-layer'/);
   assert.match(readers,/state\.engine\.turn\(-1\)/);
   assert.match(readers,/state\.engine\.turn\(1\)/);
